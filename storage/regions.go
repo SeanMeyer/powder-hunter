@@ -14,10 +14,12 @@ import (
 func (d *DB) UpsertRegion(ctx context.Context, r domain.Region) error {
 	_, err := d.db.ExecContext(ctx, `
 		INSERT OR REPLACE INTO regions
-			(id, name, lat, lon, friction_tier, near_threshold_cm, extended_threshold_cm, country)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+			(id, name, lat, lon, friction_tier, near_threshold_in, extended_threshold_in, country,
+			 nearest_airport, drive_time_hours, drive_notes, lodging_notes)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		r.ID, r.Name, r.Latitude, r.Longitude,
-		string(r.FrictionTier), r.NearThresholdCM, r.ExtendedThresholdCM, r.Country,
+		string(r.FrictionTier), r.NearThresholdIn, r.ExtendedThresholdIn, r.Country,
+		r.Logistics.NearestAirport, r.Logistics.DriveTimeHours, r.Logistics.DriveNotes, r.Logistics.LodgingNotes,
 	)
 	if err != nil {
 		return fmt.Errorf("upsert region %s: %w", r.ID, err)
@@ -25,19 +27,27 @@ func (d *DB) UpsertRegion(ctx context.Context, r domain.Region) error {
 	return nil
 }
 
-// UpsertResort inserts or replaces a resort row. Metadata is stored as JSON.
+// UpsertResort inserts or replaces a resort row. PassAffiliations and Metadata are stored as JSON.
 func (d *DB) UpsertResort(ctx context.Context, r domain.Resort) error {
 	meta, err := json.Marshal(r.Metadata)
 	if err != nil {
 		return fmt.Errorf("marshal resort metadata: %w", err)
 	}
 
+	pass, err := json.Marshal(r.PassAffiliations)
+	if err != nil {
+		return fmt.Errorf("marshal resort pass affiliations: %w", err)
+	}
+
 	_, err = d.db.ExecContext(ctx, `
 		INSERT OR REPLACE INTO resorts
-			(id, region_id, name, lat, lon, elevation_m, pass_affiliation, vertical_drop_m, lift_count, metadata)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			(id, region_id, name, lat, lon,
+			 summit_elevation_ft, base_elevation_ft, vertical_drop_ft, skiable_acres,
+			 lift_count, pass_affiliations, metadata)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		r.ID, r.RegionID, r.Name, r.Latitude, r.Longitude,
-		r.ElevationM, r.PassAffiliation, r.VerticalDropM, r.LiftCount, string(meta),
+		r.SummitElevationFt, r.BaseElevationFt, r.VerticalDropFt, r.SkiableAcres,
+		r.LiftCount, string(pass), string(meta),
 	)
 	if err != nil {
 		return fmt.Errorf("upsert resort %s: %w", r.ID, err)
@@ -48,7 +58,8 @@ func (d *DB) UpsertResort(ctx context.Context, r domain.Resort) error {
 // ListRegions returns all regions in the database.
 func (d *DB) ListRegions(ctx context.Context) ([]domain.Region, error) {
 	rows, err := d.db.QueryContext(ctx, `
-		SELECT id, name, lat, lon, friction_tier, near_threshold_cm, extended_threshold_cm, country
+		SELECT id, name, lat, lon, friction_tier, near_threshold_in, extended_threshold_in, country,
+		       nearest_airport, drive_time_hours, drive_notes, lodging_notes
 		FROM regions`)
 	if err != nil {
 		return nil, fmt.Errorf("list regions: %w", err)
@@ -72,7 +83,8 @@ func (d *DB) ListRegions(ctx context.Context) ([]domain.Region, error) {
 // GetRegionWithResorts returns a region and all its resorts.
 func (d *DB) GetRegionWithResorts(ctx context.Context, regionID string) (domain.Region, []domain.Resort, error) {
 	row := d.db.QueryRowContext(ctx, `
-		SELECT id, name, lat, lon, friction_tier, near_threshold_cm, extended_threshold_cm, country
+		SELECT id, name, lat, lon, friction_tier, near_threshold_in, extended_threshold_in, country,
+		       nearest_airport, drive_time_hours, drive_notes, lodging_notes
 		FROM regions WHERE id = ?`, regionID)
 
 	region, err := scanRegionRow(row)
@@ -84,7 +96,9 @@ func (d *DB) GetRegionWithResorts(ctx context.Context, regionID string) (domain.
 	}
 
 	rows, err := d.db.QueryContext(ctx, `
-		SELECT id, region_id, name, lat, lon, elevation_m, pass_affiliation, vertical_drop_m, lift_count, metadata
+		SELECT id, region_id, name, lat, lon,
+		       summit_elevation_ft, base_elevation_ft, vertical_drop_ft, skiable_acres,
+		       lift_count, pass_affiliations, metadata
 		FROM resorts WHERE region_id = ?`, regionID)
 	if err != nil {
 		return domain.Region{}, nil, fmt.Errorf("list resorts for region %s: %w", regionID, err)
@@ -106,7 +120,7 @@ func (d *DB) GetRegionWithResorts(ctx context.Context, regionID string) (domain.
 	return region, resorts, nil
 }
 
-// scanner is the common interface between *sql.Row and *sql.Rows so scanRegion
+// scanner is the common interface between *sql.Row and *sql.Rows so scan helpers
 // can be called from both QueryRow and Query paths.
 type scanner interface {
 	Scan(dest ...any) error
@@ -115,8 +129,12 @@ type scanner interface {
 func scanRegion(s scanner) (domain.Region, error) {
 	var r domain.Region
 	var ft string
-	err := s.Scan(&r.ID, &r.Name, &r.Latitude, &r.Longitude,
-		&ft, &r.NearThresholdCM, &r.ExtendedThresholdCM, &r.Country)
+	err := s.Scan(
+		&r.ID, &r.Name, &r.Latitude, &r.Longitude,
+		&ft, &r.NearThresholdIn, &r.ExtendedThresholdIn, &r.Country,
+		&r.Logistics.NearestAirport, &r.Logistics.DriveTimeHours,
+		&r.Logistics.DriveNotes, &r.Logistics.LodgingNotes,
+	)
 	if err != nil {
 		return domain.Region{}, err
 	}
@@ -127,8 +145,12 @@ func scanRegion(s scanner) (domain.Region, error) {
 func scanRegionRow(row *sql.Row) (domain.Region, error) {
 	var r domain.Region
 	var ft string
-	err := row.Scan(&r.ID, &r.Name, &r.Latitude, &r.Longitude,
-		&ft, &r.NearThresholdCM, &r.ExtendedThresholdCM, &r.Country)
+	err := row.Scan(
+		&r.ID, &r.Name, &r.Latitude, &r.Longitude,
+		&ft, &r.NearThresholdIn, &r.ExtendedThresholdIn, &r.Country,
+		&r.Logistics.NearestAirport, &r.Logistics.DriveTimeHours,
+		&r.Logistics.DriveNotes, &r.Logistics.LodgingNotes,
+	)
 	if err != nil {
 		return domain.Region{}, err
 	}
@@ -138,11 +160,17 @@ func scanRegionRow(row *sql.Row) (domain.Region, error) {
 
 func scanResort(s scanner) (domain.Resort, error) {
 	var r domain.Resort
-	var metaJSON string
-	err := s.Scan(&r.ID, &r.RegionID, &r.Name, &r.Latitude, &r.Longitude,
-		&r.ElevationM, &r.PassAffiliation, &r.VerticalDropM, &r.LiftCount, &metaJSON)
+	var passJSON, metaJSON string
+	err := s.Scan(
+		&r.ID, &r.RegionID, &r.Name, &r.Latitude, &r.Longitude,
+		&r.SummitElevationFt, &r.BaseElevationFt, &r.VerticalDropFt, &r.SkiableAcres,
+		&r.LiftCount, &passJSON, &metaJSON,
+	)
 	if err != nil {
 		return domain.Resort{}, err
+	}
+	if err := json.Unmarshal([]byte(passJSON), &r.PassAffiliations); err != nil {
+		return domain.Resort{}, fmt.Errorf("unmarshal resort pass_affiliations: %w", err)
 	}
 	if err := json.Unmarshal([]byte(metaJSON), &r.Metadata); err != nil {
 		return domain.Resort{}, fmt.Errorf("unmarshal resort metadata: %w", err)

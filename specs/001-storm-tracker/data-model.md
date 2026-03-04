@@ -17,8 +17,8 @@ single trip decision.
 | Latitude | float64 | Representative coordinate for weather lookups |
 | Longitude | float64 | Representative coordinate for weather lookups |
 | FrictionTier | enum | `local` / `regional_driveable` / `flight` |
-| NearThresholdCM | float64 | Near-range (1-7 day) snowfall threshold in cm |
-| ExtendedThresholdCM | float64 | Extended-range (8-16 day) threshold in cm |
+| NearThresholdIn | float64 | Near-range (1-7 day) snowfall threshold in inches |
+| ExtendedThresholdIn | float64 | Extended-range (8-16 day) threshold in inches |
 | Country | string | "US" or "CA" (determines NWS availability) |
 
 **Relationships**: Has many Resorts.
@@ -31,14 +31,11 @@ single trip decision.
 
 **Default thresholds** (derived from friction tier):
 
-| Friction Tier | Near (cm) | Extended (cm) |
+| Friction Tier | Near (inches) | Extended (inches) |
 | --- | --- | --- |
-| local | 20 | 30 |
-| regional_driveable | 36 | 51 |
-| flight | 61 | 91 |
-
-(Converted from inches: local 8"/12", regional 14"/20",
-flight 24"/36")
+| local | 8 | 12 |
+| regional_driveable | 14 | 20 |
+| flight | 24 | 36 |
 
 ### Resort
 

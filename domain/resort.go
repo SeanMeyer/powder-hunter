@@ -18,22 +18,33 @@ type Region struct {
 	Latitude            float64
 	Longitude           float64
 	FrictionTier        FrictionTier
-	NearThresholdCM     float64 // 1-7 day snowfall threshold to trigger detection
-	ExtendedThresholdCM float64 // 8-16 day snowfall threshold to trigger detection
+	NearThresholdIn     float64 // 1-7 day snowfall threshold in inches
+	ExtendedThresholdIn float64 // 8-16 day snowfall threshold in inches
 	Country             string  // "US" or "CA"
+	Logistics           RegionLogistics
 }
 
-// Resort is a ski area. Metadata carries extensible key-value pairs surfaced to the LLM
-// for evaluation context (e.g. terrain rating, typical crowd level, best aspect).
+// RegionLogistics captures travel context for LLM evaluation prompts.
+type RegionLogistics struct {
+	NearestAirport string  // IATA code (e.g., "DEN")
+	DriveTimeHours float64 // from user's home base
+	DriveNotes     string  // road conditions, traffic patterns
+	LodgingNotes   string  // price range, availability patterns
+}
+
+// Resort is a ski area within a region. Core stats are typed fields the system
+// uses programmatically; metadata is an extensible map surfaced to the LLM.
 type Resort struct {
-	ID              string
-	RegionID        string
-	Name            string
-	Latitude        float64
-	Longitude       float64
-	ElevationM      int
-	PassAffiliation string // "ikon", "epic", "indy", "independent"
-	VerticalDropM   int
-	LiftCount       int
-	Metadata        map[string]string
+	ID               string
+	RegionID         string
+	Name             string
+	Latitude         float64
+	Longitude        float64
+	SummitElevationFt int
+	BaseElevationFt  int
+	VerticalDropFt   int
+	SkiableAcres     int
+	LiftCount        int
+	PassAffiliations []string         // ["ikon"], ["epic"], ["ikon", "indy"], etc.
+	Metadata         map[string]string // LLM-facing context (see seed data JSON)
 }

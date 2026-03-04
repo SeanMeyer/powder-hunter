@@ -4,22 +4,28 @@ CREATE TABLE IF NOT EXISTS regions (
     lat                   REAL NOT NULL,
     lon                   REAL NOT NULL,
     friction_tier         TEXT NOT NULL,
-    near_threshold_cm     REAL NOT NULL,
-    extended_threshold_cm REAL NOT NULL,
-    country               TEXT NOT NULL
+    near_threshold_in     REAL NOT NULL,
+    extended_threshold_in REAL NOT NULL,
+    country               TEXT NOT NULL,
+    nearest_airport       TEXT NOT NULL DEFAULT '',
+    drive_time_hours      REAL NOT NULL DEFAULT 0,
+    drive_notes           TEXT NOT NULL DEFAULT '',
+    lodging_notes         TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS resorts (
-    id               TEXT PRIMARY KEY,
-    region_id        TEXT NOT NULL REFERENCES regions(id),
-    name             TEXT NOT NULL,
-    lat              REAL NOT NULL,
-    lon              REAL NOT NULL,
-    elevation_m      INTEGER NOT NULL,
-    pass_affiliation TEXT NOT NULL,
-    vertical_drop_m  INTEGER NOT NULL,
-    lift_count       INTEGER NOT NULL,
-    metadata         TEXT NOT NULL DEFAULT '{}'
+    id                  TEXT PRIMARY KEY,
+    region_id           TEXT NOT NULL REFERENCES regions(id),
+    name                TEXT NOT NULL,
+    lat                 REAL NOT NULL,
+    lon                 REAL NOT NULL,
+    summit_elevation_ft INTEGER NOT NULL DEFAULT 0,
+    base_elevation_ft   INTEGER NOT NULL DEFAULT 0,
+    vertical_drop_ft    INTEGER NOT NULL DEFAULT 0,
+    skiable_acres       INTEGER NOT NULL DEFAULT 0,
+    lift_count          INTEGER NOT NULL,
+    pass_affiliations   TEXT NOT NULL DEFAULT '[]',
+    metadata            TEXT NOT NULL DEFAULT '{}'
 );
 
 CREATE TABLE IF NOT EXISTS storms (

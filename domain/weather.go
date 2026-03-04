@@ -22,10 +22,14 @@ type DailyForecast struct {
 
 // SnowfallWindow summarizes accumulated snowfall over a date range. The near/extended
 // distinction drives which threshold to compare against for storm detection.
+// TotalIn is in inches — weather clients convert from API units (cm) at the parse boundary.
 type SnowfallWindow struct {
 	RegionID    string
 	StartDate   time.Time
 	EndDate     time.Time
-	TotalCM     float64
-	IsNearRange bool // true if 1-7 days out, false if 8-16
+	TotalIn     float64 // total snowfall in inches
+	IsNearRange bool    // true if 1-7 days out, false if 8-16
 }
+
+// CMToInches converts centimeters to inches.
+func CMToInches(cm float64) float64 { return cm / 2.54 }

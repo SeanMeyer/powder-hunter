@@ -1,0 +1,120 @@
+{
+  "regions": [
+    {
+      "id": "co_summit_county",
+      "name": "Summit County, CO",
+      "country": "US",
+      "friction_tier": "local",
+      "coords": { "lat": 39.4817, "lon": -106.0384 },
+      "thresholds_inches": { "near": 8, "extended": 12 },
+      "logistics": {
+        "nearest_airport": "DEN",
+        "drive_time_hours": 1.5,
+        "drive_notes": "I-70 westbound, chain law applies, brutal weekend traffic",
+        "lodging_notes": "Silverthorne/Dillon have budget lodging; on-mountain is pricey"
+      },
+      "resorts": [
+        {
+          "id": "arapahoe_basin",
+          "name": "Arapahoe Basin",
+          "coords": { "lat": 39.6428, "lon": -105.8714 },
+          "stats": {
+            "summit_elevation_ft": 13050,
+            "base_elevation_ft": 10780,
+            "vertical_drop_ft": 2270,
+            "skiable_acres": 1428,
+            "lifts": 9,
+            "pass_affiliations": ["ikon"]
+          },
+          "metadata": {
+            "reputation": "Highest base in CO, legendary late-season into June, no-frills soul mountain",
+            "terrain_character": "High alpine bowls, steep chutes, exposed ridgelines; not for beginners",
+            "snow_quality_notes": "High elevation = consistently cold dry powder; wind can scour exposed terrain",
+            "best_for": "steeps, alpine, late_season",
+            "crowd_factor": "Low midweek, moderate weekends; locals mountain",
+            "logistics_notes": "US-6 over Loveland Pass — road can close in storms; no lodging at mountain"
+          }
+        },
+        {
+          "id": "breckenridge",
+          "name": "Breckenridge",
+          "coords": { "lat": 39.4817, "lon": -106.0384 },
+          "stats": {
+            "summit_elevation_ft": 12998,
+            "base_elevation_ft": 9600,
+            "vertical_drop_ft": 3398,
+            "skiable_acres": 2908,
+            "lifts": 35,
+            "pass_affiliations": ["epic"]
+          },
+          "metadata": {
+            "reputation": "Iconic Colorado destination, massive above-treeline bowl terrain",
+            "terrain_character": "Wide open bowls above treeline plus groomed cruisers; can be wind-scoured up high",
+            "snow_quality_notes": "High elevation keeps snow cold; lower mountain can suffer in warm spells",
+            "best_for": "all_levels, bowls, groomed",
+            "crowd_factor": "High on weekends and holidays; moderate midweek",
+            "logistics_notes": "Hwy 9 from I-70 at Frisco; free town shuttles; avoid I-70 eastbound Sunday PM"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ut_wasatch_front",
+      "name": "Wasatch Front, UT",
+      "country": "US",
+      "friction_tier": "regional_driveable",
+      "coords": { "lat": 40.5878, "lon": -111.6386 },
+      "thresholds_inches": { "near": 14, "extended": 20 },
+      "logistics": {
+        "nearest_airport": "SLC",
+        "drive_time_hours": 0.5,
+        "drive_notes": "Little Cottonwood Canyon road can close for avalanche control; check UDOT before leaving",
+        "lodging_notes": "Salt Lake City base is economical; Snowbird/Alta on-mountain lodging is expensive but unbeatable"
+      },
+      "resorts": [
+        {
+          "id": "alta",
+          "name": "Alta Ski Area",
+          "coords": { "lat": 40.5878, "lon": -111.6386 },
+          "stats": {
+            "summit_elevation_ft": 10550,
+            "base_elevation_ft": 8530,
+            "vertical_drop_ft": 2020,
+            "skiable_acres": 2614,
+            "lifts": 14,
+            "pass_affiliations": ["ikon", "indy"]
+          },
+          "metadata": {
+            "reputation": "Skiers-only Wasatch legend; some of the deepest, driest snow in North America",
+            "terrain_character": "All-mountain with world-class steeps; the Rustler and High Rustler chutes are classics",
+            "snow_quality_notes": "Persistent low-density Utah powder; Albion bowl holds snow long after storms",
+            "best_for": "powder, steeps, advanced",
+            "crowd_factor": "Manageable; skiers-only keeps snowboarders out, improves lift lines",
+            "logistics_notes": "LCC road can close for avalanche control — leave early or stay on-mountain"
+          }
+        },
+        {
+          "id": "snowbird",
+          "name": "Snowbird",
+          "coords": { "lat": 40.5831, "lon": -111.6558 },
+          "stats": {
+            "summit_elevation_ft": 11000,
+            "base_elevation_ft": 7760,
+            "vertical_drop_ft": 3240,
+            "skiable_acres": 2500,
+            "lifts": 25,
+            "pass_affiliations": ["ikon"]
+          },
+          "metadata": {
+            "reputation": "Big vert, big terrain, big storm totals; one of the top resorts in North America",
+            "terrain_character": "Steep and challenging; massive cirque with cliffs and chutes; Mineral Basin adds mellow terrain",
+            "snow_quality_notes": "Same dry Utah powder as Alta; tram to Hidden Peak opens up the whole mountain",
+            "best_for": "steeps, powder, experts",
+            "crowd_factor": "Busy on storm days; tram line can be long; Mineral Basin is quieter",
+            "logistics_notes": "Combined Alta-Snowbird ticket available; LCC road closure risk same as Alta"
+          }
+        }
+      ]
+    }
+  ]
+}
