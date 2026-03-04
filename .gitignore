@@ -1,2 +1,8 @@
+# macOS
+.DS_Store
+
+# Claude Code
+.claude/
+
 # Override global gitignore for docs/ in this project
 !docs/
