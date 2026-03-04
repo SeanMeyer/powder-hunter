@@ -162,11 +162,11 @@ pings.
 
 ### Implementation
 
-- [ ] T041 [P] [US4] Implement pure embed formatter: evaluation → Discord embed struct with tier-colored fields, key factors, logistics summary, strategy in discord/formatter.go
-- [ ] T042 [P] [US4] Implement notification level logic: tier + change class → @here ping / silent post / thread-only in discord/formatter.go
-- [ ] T043 [US4] Implement webhook client: POST to forum channel with thread_name (new storm) or thread_id (update), handle @here via content + allowed_mentions, retry on transient failure in discord/webhook.go
-- [ ] T044 [US4] Implement Discord thread ID persistence: save thread ID to storm after initial post, load for updates in storage/storms.go (extend T012)
-- [ ] T045 [US4] Integrate Discord posting into pipeline: after comparison, post new storms or updates based on change class, mark delivered/undelivered in pipeline/pipeline.go (extend T039)
+- [x] T041 [P] [US4] Implement pure embed formatter: evaluation → Discord embed struct with tier-colored fields, key factors, logistics summary, strategy in discord/formatter.go
+- [x] T042 [P] [US4] Implement notification level logic: tier + change class → @here ping / silent post / thread-only in discord/formatter.go
+- [x] T043 [US4] Implement webhook client: POST to forum channel with thread_name (new storm) or thread_id (update), handle @here via content + allowed_mentions, retry on transient failure in discord/webhook.go
+- [x] T044 [US4] Implement Discord thread ID persistence: save thread ID to storm after initial post, load for updates in storage/storms.go (extend T012)
+- [x] T045 [US4] Integrate Discord posting into pipeline: after comparison, post new storms or updates based on change class, mark delivered/undelivered in pipeline/pipeline.go (extend T039)
 
 **Checkpoint**: Full pipeline runs end-to-end: scan → evaluate →
 compare → post to Discord. Storm threads created and updated
@@ -185,11 +185,11 @@ block others, all results persisted.
 
 ### Implementation
 
-- [ ] T046 [US5] Implement `powder-hunter run` CLI command: parse flags (--db, --dry-run, --region, --verbose), configure slog, initialize all real clients, invoke pipeline in cmd/powder-hunter/main.go (extend T003)
-- [ ] T047 [US5] Implement `powder-hunter replay` CLI command: load evaluation from DB, re-run through specified prompt version, output result without posting in cmd/powder-hunter/main.go
-- [ ] T048 [US5] Implement pipeline-level error isolation: each region processed independently, errors collected and logged, partial results persisted in pipeline/pipeline.go (extend T045)
-- [ ] T049 [US5] Write sociable tests at pipeline boundary: full pipeline with fake weather, fake evaluator, fake poster, real SQLite. Test happy path, threshold filtering, error isolation, storm lifecycle in pipeline/pipeline_test.go
-- [ ] T050 [US5] Create Dockerfile: multi-stage build (Go build → scratch/alpine), expose --db volume mount, document env vars in Dockerfile
+- [x] T046 [US5] Implement `powder-hunter run` CLI command: parse flags (--db, --dry-run, --region, --verbose), configure slog, initialize all real clients, invoke pipeline in cmd/powder-hunter/main.go (extend T003)
+- [x] T047 [US5] Implement `powder-hunter replay` CLI command: load evaluation from DB, re-run through specified prompt version, output result without posting in cmd/powder-hunter/main.go
+- [x] T048 [US5] Implement pipeline-level error isolation: each region processed independently, errors collected and logged, partial results persisted in pipeline/pipeline.go (extend T045)
+- [x] T049 [US5] Write sociable tests at pipeline boundary: full pipeline with fake weather, fake evaluator, fake poster, real SQLite. Test happy path, threshold filtering, error isolation, storm lifecycle in pipeline/pipeline_test.go
+- [x] T050 [US5] Create Dockerfile: multi-stage build (Go build → scratch/alpine), expose --db volume mount, document env vars in Dockerfile
 
 **Checkpoint**: System is fully functional and deployable. Docker
 container runs via cron on Unraid.
@@ -203,8 +203,8 @@ container runs via cron on Unraid.
 - [ ] T051 Review and refine storm evaluation prompt template v1.0.0 content for completeness and consistency of tier assignments
 - [ ] T052 Review region seed data quality: verify coordinates, friction tiers, resort metadata accuracy for all ~40-50 regions
 - [ ] T053 Run quickstart.md validation: follow quickstart steps from scratch, verify all commands work
-- [ ] T054 [P] Add edge-case unit tests for detection threshold logic (many friction tier × forecast range combinations) in domain/detection_test.go
-- [ ] T055 [P] Add edge-case unit tests for storm comparison logic (tier changes, snowfall deltas, boundary cases) in domain/comparison_test.go
+- [x] T054 [P] Add edge-case unit tests for detection threshold logic (many friction tier × forecast range combinations) in domain/detection_test.go
+- [x] T055 [P] Add edge-case unit tests for storm comparison logic (tier changes, snowfall deltas, boundary cases) in domain/comparison_test.go
 
 ---
 
