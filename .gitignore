@@ -18,6 +18,7 @@
 # Environment
 .env
 .env.*
+!.env.example
 
 # Override global gitignore for docs/ in this project
 !docs/

@@ -17,19 +17,18 @@ const openMeteoEndpoint = "https://api.open-meteo.com/v1/forecast"
 
 // openMeteoDailyVars are the daily variables requested from the API. Order must
 // match the documented parallel-array response.
-const openMeteoDailyVars = "snowfall_sum,temperature_2m_max,temperature_2m_min,precipitation_sum,freezinglevel_height_max"
+const openMeteoDailyVars = "snowfall_sum,temperature_2m_max,temperature_2m_min,precipitation_sum"
 
 type openMeteoResponse struct {
 	Daily openMeteoDailyData `json:"daily"`
 }
 
 type openMeteoDailyData struct {
-	Time                 []string  `json:"time"`
-	SnowfallSum          []float64 `json:"snowfall_sum"`
-	Temperature2mMax     []float64 `json:"temperature_2m_max"`
-	Temperature2mMin     []float64 `json:"temperature_2m_min"`
-	PrecipitationSum     []float64 `json:"precipitation_sum"`
-	FreezingLevelHeightMax []float64 `json:"freezinglevel_height_max"`
+	Time             []string  `json:"time"`
+	SnowfallSum      []float64 `json:"snowfall_sum"`
+	Temperature2mMax []float64 `json:"temperature_2m_max"`
+	Temperature2mMin []float64 `json:"temperature_2m_min"`
+	PrecipitationSum []float64 `json:"precipitation_sum"`
 }
 
 // OpenMeteoClient fetches weather forecasts from the Open-Meteo public API.
@@ -102,8 +101,7 @@ func parseOpenMeteoDailyData(d openMeteoDailyData) ([]domain.DailyForecast, erro
 	if len(d.SnowfallSum) != n ||
 		len(d.Temperature2mMax) != n ||
 		len(d.Temperature2mMin) != n ||
-		len(d.PrecipitationSum) != n ||
-		len(d.FreezingLevelHeightMax) != n {
+		len(d.PrecipitationSum) != n {
 		return nil, fmt.Errorf("daily arrays have inconsistent lengths (time=%d)", n)
 	}
 
@@ -119,7 +117,6 @@ func parseOpenMeteoDailyData(d openMeteoDailyData) ([]domain.DailyForecast, erro
 			TemperatureMaxC: d.Temperature2mMax[i],
 			TemperatureMinC: d.Temperature2mMin[i],
 			PrecipitationMM: d.PrecipitationSum[i],
-			FreezingLevelM:  d.FreezingLevelHeightMax[i],
 		})
 	}
 	return forecasts, nil
