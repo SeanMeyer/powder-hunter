@@ -1,0 +1,2 @@
+# Override global gitignore for docs/ in this project
+!docs/
