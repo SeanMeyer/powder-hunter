@@ -5,10 +5,28 @@ package domain
 type FrictionTier string
 
 const (
-	FrictionLocal             FrictionTier = "local"
-	FrictionRegionalDriveable FrictionTier = "regional_driveable"
+	FrictionLocalDrive        FrictionTier = "local_drive"
+	FrictionRegionalDrive     FrictionTier = "regional_drive"
+	FrictionHighFrictionDrive FrictionTier = "high_friction_drive"
 	FrictionFlight            FrictionTier = "flight"
 )
+
+// Thresholds returns the near-range and extended-range snowfall thresholds (in inches)
+// for this friction tier. These define how much forecasted snow triggers a detection.
+func (ft FrictionTier) Thresholds() (nearIn, extendedIn float64) {
+	switch ft {
+	case FrictionLocalDrive:
+		return 6, 12
+	case FrictionRegionalDrive:
+		return 14, 20
+	case FrictionHighFrictionDrive:
+		return 18, 24
+	case FrictionFlight:
+		return 24, 36
+	default:
+		return 14, 20 // safe default: regional
+	}
+}
 
 // Region is the geographic unit for weather fetching and storm detection.
 // Resorts share a region when they receive effectively the same snowfall.

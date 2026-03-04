@@ -133,6 +133,23 @@ func (d *DB) GetEvaluationHistory(ctx context.Context, stormID int64) ([]domain.
 	return evals, nil
 }
 
+// MarkEvaluationDelivered flips the delivered flag for an evaluation after a
+// successful Discord post. A separate update avoids re-marshalling all JSON fields.
+func (d *DB) MarkEvaluationDelivered(ctx context.Context, evalID int64, delivered bool) error {
+	val := 0
+	if delivered {
+		val = 1
+	}
+	_, err := d.db.ExecContext(ctx,
+		`UPDATE evaluations SET delivered = ? WHERE id = ?`,
+		val, evalID,
+	)
+	if err != nil {
+		return fmt.Errorf("mark evaluation %d delivered=%v: %w", evalID, delivered, err)
+	}
+	return nil
+}
+
 // GetEvaluation returns a single evaluation by ID.
 func (d *DB) GetEvaluation(ctx context.Context, evalID int64) (*domain.Evaluation, error) {
 	row := d.db.QueryRowContext(ctx, `

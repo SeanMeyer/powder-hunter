@@ -62,6 +62,22 @@ func (d *DB) GetActivePrompt(ctx context.Context, id string) (version, template 
 	return version, template, nil
 }
 
+// GetPromptByVersion returns the template body for a specific version of a prompt ID.
+func (d *DB) GetPromptByVersion(ctx context.Context, id, version string) (string, string, error) {
+	row := d.db.QueryRowContext(ctx,
+		`SELECT version, template FROM prompt_templates WHERE id = ? AND version = ?`,
+		id, version,
+	)
+	var v, tmpl string
+	if err := row.Scan(&v, &tmpl); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", "", fmt.Errorf("prompt %s version %s not found: %w", id, version, err)
+		}
+		return "", "", fmt.Errorf("get prompt %s version %s: %w", id, version, err)
+	}
+	return v, tmpl, nil
+}
+
 // ListPromptVersions returns all versions of a prompt ID in creation order.
 func (d *DB) ListPromptVersions(ctx context.Context, id string) ([]PromptVersion, error) {
 	rows, err := d.db.QueryContext(ctx, `

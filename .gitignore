@@ -8,7 +8,7 @@
 *.exe
 *.test
 *.out
-powder-hunter
+/powder-hunter
 
 # SQLite
 *.db

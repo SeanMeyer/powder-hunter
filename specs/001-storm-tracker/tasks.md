@@ -90,12 +90,12 @@ re-fetch.
 
 ### Implementation
 
-- [ ] T026 [P] [US1] Implement Open-Meteo client: fetch 16-day forecast, parse snowfall_sum (cm) into domain Forecast type in weather/openmeteo.go
-- [ ] T027 [P] [US1] Implement NWS client: two-step points→gridpoints, parse snowfallAmount for days 1-3, cache grid lookups in weather/nws.go
-- [ ] T028 [US1] Implement WeatherService that aggregates Open-Meteo + NWS (both for US, Open-Meteo only for CA), parallel fetch via errgroup in weather/weather.go
-- [ ] T029 [US1] Implement pure detection logic: compare forecast snowfall against region's friction-tier thresholds, return list of flagged regions in domain/detection.go
-- [ ] T030 [US1] Implement storm creation and overlapping-window merge: check existing active storms, create new or expand window in storage/storms.go (extend T012)
-- [ ] T031 [US1] Wire scanner stage: query active storms from DB and always include their regions in fetch list (FR-003), fetch all regions → detect → create/merge storms → persist, with per-region error isolation and slog logging in pipeline/pipeline.go
+- [x] T026 [P] [US1] Implement Open-Meteo client: fetch 16-day forecast, parse snowfall_sum (cm) into domain Forecast type in weather/openmeteo.go
+- [x] T027 [P] [US1] Implement NWS client: two-step points→gridpoints, parse snowfallAmount for days 1-3, cache grid lookups in weather/nws.go
+- [x] T028 [US1] Implement WeatherService that aggregates Open-Meteo + NWS (both for US, Open-Meteo only for CA), parallel fetch via errgroup in weather/weather.go
+- [x] T029 [US1] Implement pure detection logic: compare forecast snowfall against region's friction-tier thresholds, return list of flagged regions in domain/detection.go
+- [x] T030 [US1] Implement storm creation and overlapping-window merge: check existing active storms, create new or expand window in storage/storms.go (extend T012)
+- [x] T031 [US1] Wire scanner stage: query active storms from DB and always include their regions in fetch list (FR-003), fetch all regions → detect → create/merge storms → persist, with per-region error isolation and slog logging in pipeline/pipeline.go
 
 **Checkpoint**: `powder-hunter run --dry-run` scans weather for all
 regions, detects storms, persists to DB. No evaluation or Discord
@@ -115,11 +115,11 @@ required fields.
 
 ### Implementation
 
-- [ ] T032 [US2] Create initial storm evaluation prompt template v1.0.0 with tier definitions, evaluation factors (snow quality, timing, logistics, cost, crowds, terrain, work flexibility, resort reputation), and structured output schema. Store as seed PromptTemplate row in seed/prompts.go
-- [ ] T033 [US2] Implement prompt template rendering: load active template, substitute weather data, region metadata, user profile, and evaluation history placeholders in evaluation/prompt.go
-- [ ] T034 [US2] Implement Gemini 3 Flash client: single call with GoogleSearch tool + ResponseSchema, parse structured response + grounding metadata in evaluation/gemini.go
-- [ ] T035 [US2] Implement evaluation orchestration: load profile, load prompt, call Gemini with concurrency cap (errgroup semaphore, 3-5 simultaneous), persist full result in pipeline/pipeline.go (extend T031)
-- [ ] T036 [US2] Implement evaluation persistence: save structured result, weather snapshot, raw response, grounding sources, prompt version in storage/evaluations.go (extend T013)
+- [x] T032 [US2] Create initial storm evaluation prompt template v1.0.0 with tier definitions, evaluation factors (snow quality, timing, logistics, cost, crowds, terrain, work flexibility, resort reputation), and structured output schema. Store as seed PromptTemplate row in seed/prompts.go
+- [x] T033 [US2] Implement prompt template rendering: load active template, substitute weather data, region metadata, user profile, and evaluation history placeholders in evaluation/prompt.go
+- [x] T034 [US2] Implement Gemini 3 Flash client: single call with GoogleSearch tool + ResponseSchema, parse structured response + grounding metadata in evaluation/gemini.go
+- [x] T035 [US2] Implement evaluation orchestration: load profile, load prompt, call Gemini with concurrency cap (errgroup semaphore, 3-5 simultaneous), persist full result in pipeline/pipeline.go (extend T031)
+- [x] T036 [US2] Implement evaluation persistence: save structured result, weather snapshot, raw response, grounding sources, prompt version in storage/evaluations.go (extend T013)
 
 **Checkpoint**: `powder-hunter run --dry-run` scans weather AND
 evaluates flagged storms with Gemini. Results persisted to DB with
@@ -139,10 +139,10 @@ classification and state transitions.
 
 ### Implementation
 
-- [ ] T037 [P] [US3] Implement pure comparison logic: given previous and current evaluation, classify as new/material/minor/downgrade based on tier change and snowfall delta in domain/comparison.go
-- [ ] T038 [P] [US3] Implement storm state transition logic: enforce state machine (detected→evaluated→briefed→updated→expired), validate transitions in domain/storm.go (extend T007)
-- [ ] T039 [US3] Integrate comparison into pipeline: after evaluation, load prior evaluation, run comparison, set ChangeClass on result, update storm state in pipeline/pipeline.go (extend T035)
-- [ ] T040 [US3] Handle storm expiration: when forecast degrades below thresholds for a tracked storm, transition to expired state in pipeline/pipeline.go
+- [x] T037 [P] [US3] Implement pure comparison logic: given previous and current evaluation, classify as new/material/minor/downgrade based on tier change and snowfall delta in domain/comparison.go
+- [x] T038 [P] [US3] Implement storm state transition logic: enforce state machine (detected→evaluated→briefed→updated→expired), validate transitions in domain/storm.go (extend T007)
+- [x] T039 [US3] Integrate comparison into pipeline: after evaluation, load prior evaluation, run comparison, set ChangeClass on result, update storm state in pipeline/pipeline.go (extend T035)
+- [x] T040 [US3] Handle storm expiration: when forecast degrades below thresholds for a tracked storm, transition to expired state in pipeline/pipeline.go
 
 **Checkpoint**: Pipeline tracks storms across runs, detects
 material changes, manages lifecycle states. Full evaluation

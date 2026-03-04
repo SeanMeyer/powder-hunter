@@ -26,24 +26,18 @@ type regionsFile struct {
 }
 
 type regionJSON struct {
-	ID           string          `json:"id"`
-	Name         string          `json:"name"`
-	Country      string          `json:"country"`
-	FrictionTier string          `json:"friction_tier"`
-	Coords       coordsJSON      `json:"coords"`
-	ThresholdsIn thresholdsJSON  `json:"thresholds_inches"`
-	Logistics    logisticsJSON   `json:"logistics"`
-	Resorts      []resortJSON    `json:"resorts"`
+	ID           string       `json:"id"`
+	Name         string       `json:"name"`
+	Country      string       `json:"country"`
+	FrictionTier string       `json:"friction_tier"`
+	Coords       coordsJSON   `json:"coords"`
+	Logistics    logisticsJSON `json:"logistics"`
+	Resorts      []resortJSON `json:"resorts"`
 }
 
 type coordsJSON struct {
 	Lat float64 `json:"lat"`
 	Lon float64 `json:"lon"`
-}
-
-type thresholdsJSON struct {
-	Near     float64 `json:"near"`
-	Extended float64 `json:"extended"`
 }
 
 type logisticsJSON struct {
@@ -91,15 +85,17 @@ func Regions() []RegionWithResorts {
 }
 
 func toRegion(j regionJSON) domain.Region {
+	ft := domain.FrictionTier(j.FrictionTier)
+	near, ext := ft.Thresholds()
 	return domain.Region{
 		ID:                  j.ID,
 		Name:                j.Name,
 		Country:             j.Country,
-		FrictionTier:        domain.FrictionTier(j.FrictionTier),
+		FrictionTier:        ft,
 		Latitude:            j.Coords.Lat,
 		Longitude:           j.Coords.Lon,
-		NearThresholdIn:     j.ThresholdsIn.Near,
-		ExtendedThresholdIn: j.ThresholdsIn.Extended,
+		NearThresholdIn:     near,
+		ExtendedThresholdIn: ext,
 		Logistics: domain.RegionLogistics{
 			NearestAirport: j.Logistics.NearestAirport,
 			DriveTimeHours: j.Logistics.DriveTimeHours,

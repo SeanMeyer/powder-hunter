@@ -1,23 +1,43 @@
 {
   "regions": [
     {
-      "id": "co_summit_county",
-      "name": "Summit County, CO",
+      "id": "co_i70_corridor",
+      "name": "Colorado I-70 Corridor",
       "country": "US",
-      "friction_tier": "local",
-      "coords": { "lat": 39.4817, "lon": -106.0384 },
-      "thresholds_inches": { "near": 8, "extended": 12 },
+      "friction_tier": "local_drive",
+      "coords": { "lat": 39.6042, "lon": -106.1417 },
       "logistics": {
         "nearest_airport": "DEN",
         "drive_time_hours": 1.5,
-        "drive_notes": "I-70 westbound, chain law applies, brutal weekend traffic",
-        "lodging_notes": "Silverthorne/Dillon have budget lodging; on-mountain is pricey"
+        "drive_notes": "I-70 westbound. Traction laws frequently active. Severe weekend traffic bottlenecks at the Eisenhower Tunnel.",
+        "lodging_notes": "Silverthorne, Frisco, and Dillon serve as central budget hubs. On-mountain lodging is premium."
       },
       "resorts": [
         {
+          "id": "winter_park",
+          "name": "Winter Park",
+          "coords": { "lat": 39.8868, "lon": -105.7625 },
+          "stats": {
+            "summit_elevation_ft": 12060,
+            "base_elevation_ft": 9000,
+            "vertical_drop_ft": 3060,
+            "skiable_acres": 3081,
+            "lifts": 24,
+            "pass_affiliations": ["ikon"]
+          },
+          "metadata": {
+            "reputation": "Denver's local mountain. Famous for endless moguls and great tree skiing.",
+            "terrain_character": "Incredible glades (Mary Jane), heavily bumped out main runs, steep alpine chutes in the Cirque.",
+            "snow_quality_notes": "Consistently good cold snow. Winds can scour the top but fill in the trees nicely.",
+            "best_for": "tree_skiing, moguls, advanced_riders",
+            "crowd_factor": "Very high on weekends, but the Mary Jane side spreads experts out well.",
+            "logistics_notes": "The Winter Park Express train runs directly from Denver Union Station right to the lifts."
+          }
+        },
+        {
           "id": "arapahoe_basin",
           "name": "Arapahoe Basin",
-          "coords": { "lat": 39.6428, "lon": -105.8714 },
+          "coords": { "lat": 39.6425, "lon": -105.8719 },
           "stats": {
             "summit_elevation_ft": 13050,
             "base_elevation_ft": 10780,
@@ -27,18 +47,60 @@
             "pass_affiliations": ["ikon"]
           },
           "metadata": {
-            "reputation": "Highest base in CO, legendary late-season into June, no-frills soul mountain",
-            "terrain_character": "High alpine bowls, steep chutes, exposed ridgelines; not for beginners",
-            "snow_quality_notes": "High elevation = consistently cold dry powder; wind can scour exposed terrain",
-            "best_for": "steeps, alpine, late_season",
-            "crowd_factor": "Low midweek, moderate weekends; locals mountain",
-            "logistics_notes": "US-6 over Loveland Pass — road can close in storms; no lodging at mountain"
+            "reputation": "High-alpine soul mountain with the longest season in Colorado.",
+            "terrain_character": "Legendary steep hike-to chutes (East Wall) and intense high-alpine bowls. Very little beginner terrain.",
+            "snow_quality_notes": "Extremely high base elevation guarantees cold, dry snow when lower resorts get heavy snow or rain.",
+            "best_for": "steeps, alpine_bowls, late_season",
+            "crowd_factor": "Low mid-week, moderate on weekends. Highly favored by locals.",
+            "logistics_notes": "Requires driving over Loveland Pass (US-6) which frequently closes during storms."
+          }
+        },
+        {
+          "id": "loveland",
+          "name": "Loveland",
+          "coords": { "lat": 39.6800, "lon": -105.8970 },
+          "stats": {
+            "summit_elevation_ft": 13010,
+            "base_elevation_ft": 10800,
+            "vertical_drop_ft": 2210,
+            "skiable_acres": 1800,
+            "lifts": 7,
+            "pass_affiliations": ["indy"]
+          },
+          "metadata": {
+            "reputation": "No-frills, old-school local favorite situated directly on the Continental Divide.",
+            "terrain_character": "Wide open, above-treeline bowls. Lift 9 accesses incredible high-alpine ridges.",
+            "snow_quality_notes": "Catches massive wind-buff. Stays incredibly cold.",
+            "best_for": "bowls, wind_buff, budget_friendly",
+            "crowd_factor": "Generally low. Avoids the worst I-70 crowds.",
+            "logistics_notes": "Located *before* the Eisenhower tunnel, saving 30+ minutes of traffic compared to Summit County."
+          }
+        },
+        {
+          "id": "copper_mountain",
+          "name": "Copper Mountain",
+          "coords": { "lat": 39.5017, "lon": -106.1564 },
+          "stats": {
+            "summit_elevation_ft": 12313,
+            "base_elevation_ft": 9712,
+            "vertical_drop_ft": 2738,
+            "skiable_acres": 2507,
+            "lifts": 23,
+            "pass_affiliations": ["ikon"]
+          },
+          "metadata": {
+            "reputation": "Perfectly naturally-separated terrain from beginner to expert.",
+            "terrain_character": "Incredible high alpine bowls (Tucker Mountain) and great sustained pitch.",
+            "snow_quality_notes": "Classic Colorado dry powder. High elevation keeps it well preserved.",
+            "best_for": "bowls, parks, cruisers",
+            "crowd_factor": "High on weekends, but the natural separation prevents extreme bottlenecks.",
+            "logistics_notes": "Free parking available in Alpine lot with shuttles."
           }
         },
         {
           "id": "breckenridge",
           "name": "Breckenridge",
-          "coords": { "lat": 39.4817, "lon": -106.0384 },
+          "coords": { "lat": 39.4808, "lon": -106.0667 },
           "stats": {
             "summit_elevation_ft": 12998,
             "base_elevation_ft": 9600,
@@ -48,70 +110,438 @@
             "pass_affiliations": ["epic"]
           },
           "metadata": {
-            "reputation": "Iconic Colorado destination, massive above-treeline bowl terrain",
-            "terrain_character": "Wide open bowls above treeline plus groomed cruisers; can be wind-scoured up high",
-            "snow_quality_notes": "High elevation keeps snow cold; lower mountain can suffer in warm spells",
-            "best_for": "all_levels, bowls, groomed",
-            "crowd_factor": "High on weekends and holidays; moderate midweek",
-            "logistics_notes": "Hwy 9 from I-70 at Frisco; free town shuttles; avoid I-70 eastbound Sunday PM"
+            "reputation": "Massive resort attached to a historic mining town. Incredible high alpine.",
+            "terrain_character": "High alpine bowls (Imperial Express) are amazing, but the lower mountain acts as a flat bottleneck.",
+            "snow_quality_notes": "High elevation holds snow perfectly, but high winds above treeline can severely scour the bowls.",
+            "best_for": "alpine_bowls, parks, town_access",
+            "crowd_factor": "Extremely crowded. The lower mountain base areas get heavily congested.",
+            "logistics_notes": "Parking in town is expensive; relies heavily on gondola access from the main lots."
+          }
+        },
+        {
+          "id": "keystone",
+          "name": "Keystone",
+          "coords": { "lat": 39.6051, "lon": -105.9447 },
+          "stats": {
+            "summit_elevation_ft": 12408,
+            "base_elevation_ft": 9280,
+            "vertical_drop_ft": 3128,
+            "skiable_acres": 3149,
+            "lifts": 20,
+            "pass_affiliations": ["epic"]
+          },
+          "metadata": {
+            "reputation": "Family-heavy frontside with a massive, rugged footprint in the back.",
+            "terrain_character": "Dercum Mountain is all cruisers, but The Outback and North Peak offer incredibly steep, tight tree skiing.",
+            "snow_quality_notes": "The Outback holds powder for days because the frontside crowds rarely venture back that far.",
+            "best_for": "tree_skiing, cruisers, families",
+            "crowd_factor": "Frontside is a zoo; the Outback hides the crowds perfectly.",
+            "logistics_notes": "Offers some of the best night skiing in Colorado."
+          }
+        },
+        {
+          "id": "vail",
+          "name": "Vail",
+          "coords": { "lat": 39.6061, "lon": -106.3549 },
+          "stats": {
+            "summit_elevation_ft": 11570,
+            "base_elevation_ft": 8120,
+            "vertical_drop_ft": 3450,
+            "skiable_acres": 5317,
+            "lifts": 32,
+            "pass_affiliations": ["epic"]
+          },
+          "metadata": {
+            "reputation": "Sprawling luxury mega-resort with world-famous Back Bowls.",
+            "terrain_character": "Endless open bowl skiing, deep glades in Blue Sky Basin, and massive front-side groomers.",
+            "snow_quality_notes": "Great snow, but the sheer volume of skiers tracks out the main runs quickly.",
+            "best_for": "bowls, tree_skiing, luxury",
+            "crowd_factor": "Front-side bottlenecks are brutal, but advanced riders can easily escape crowds in the back bowls.",
+            "logistics_notes": "Extremely expensive parking. Best to carpool or use the bus from outer lots."
+          }
+        },
+        {
+          "id": "beaver_creek",
+          "name": "Beaver Creek",
+          "coords": { "lat": 39.6044, "lon": -106.5167 },
+          "stats": {
+            "summit_elevation_ft": 11440,
+            "base_elevation_ft": 8100,
+            "vertical_drop_ft": 3340,
+            "skiable_acres": 2082,
+            "lifts": 25,
+            "pass_affiliations": ["epic"]
+          },
+          "metadata": {
+            "reputation": "Luxury grooming and free cookies, often overlooked by powder chasers.",
+            "terrain_character": "Impeccable groomers, but Grouse Mountain hides incredibly steep, demanding tree runs and bump lines.",
+            "snow_quality_notes": "Slightly lower elevation means the base can get warm late season, but the upper trees hold snow well.",
+            "best_for": "steep_trees, groomers, luxury",
+            "crowd_factor": "Consistently less crowded than Vail or Breckenridge on a powder day.",
+            "logistics_notes": "Further down I-70, adding 20+ mins to the drive from Denver."
           }
         }
       ]
     },
     {
-      "id": "ut_wasatch_front",
-      "name": "Wasatch Front, UT",
+      "id": "co_roaring_fork",
+      "name": "Roaring Fork Valley",
       "country": "US",
-      "friction_tier": "regional_driveable",
-      "coords": { "lat": 40.5878, "lon": -111.6386 },
-      "thresholds_inches": { "near": 14, "extended": 20 },
+      "friction_tier": "regional_drive",
+      "coords": { "lat": 39.186, "lon": -106.818 },
       "logistics": {
-        "nearest_airport": "SLC",
-        "drive_time_hours": 0.5,
-        "drive_notes": "Little Cottonwood Canyon road can close for avalanche control; check UDOT before leaving",
-        "lodging_notes": "Salt Lake City base is economical; Snowbird/Alta on-mountain lodging is expensive but unbeatable"
+        "nearest_airport": "ASE",
+        "drive_time_hours": 3.5,
+        "drive_notes": "Long drive past Glenwood Canyon. Highway 82 can be treacherous.",
+        "lodging_notes": "Aspen/Snowmass proper is luxury pricing. Budget lodging requires a 40+ minute commute from down-valley (Basalt, Carbondale, or Glenwood Springs)."
       },
       "resorts": [
         {
-          "id": "alta",
-          "name": "Alta Ski Area",
-          "coords": { "lat": 40.5878, "lon": -111.6386 },
+          "id": "snowmass",
+          "name": "Snowmass",
+          "coords": { "lat": 39.2066, "lon": -106.9450 },
           "stats": {
-            "summit_elevation_ft": 10550,
-            "base_elevation_ft": 8530,
-            "vertical_drop_ft": 2020,
-            "skiable_acres": 2614,
-            "lifts": 14,
-            "pass_affiliations": ["ikon", "indy"]
+            "summit_elevation_ft": 12510,
+            "base_elevation_ft": 8104,
+            "vertical_drop_ft": 4406,
+            "skiable_acres": 3342,
+            "lifts": 20,
+            "pass_affiliations": ["ikon", "mountain_collective"]
           },
           "metadata": {
-            "reputation": "Skiers-only Wasatch legend; some of the deepest, driest snow in North America",
-            "terrain_character": "All-mountain with world-class steeps; the Rustler and High Rustler chutes are classics",
-            "snow_quality_notes": "Persistent low-density Utah powder; Albion bowl holds snow long after storms",
-            "best_for": "powder, steeps, advanced",
-            "crowd_factor": "Manageable; skiers-only keeps snowboarders out, improves lift lines",
-            "logistics_notes": "LCC road can close for avalanche control — leave early or stay on-mountain"
+            "reputation": "The sprawling giant of the Aspen area. Something for everyone.",
+            "terrain_character": "Massive vertical, incredible hike-to alpine terrain (Hanging Valley), and endless cruisers.",
+            "snow_quality_notes": "Consistently excellent cold, dry powder.",
+            "best_for": "cruisers, hike_to_steeps, families",
+            "crowd_factor": "Moderate. Its massive size absorbs crowds effortlessly.",
+            "logistics_notes": "Free shuttle buses connect all four Aspen mountains."
           }
         },
         {
-          "id": "snowbird",
-          "name": "Snowbird",
-          "coords": { "lat": 40.5831, "lon": -111.6558 },
+          "id": "aspen_mountain",
+          "name": "Aspen Mountain",
+          "coords": { "lat": 39.1867, "lon": -106.8182 },
           "stats": {
-            "summit_elevation_ft": 11000,
-            "base_elevation_ft": 7760,
-            "vertical_drop_ft": 3240,
-            "skiable_acres": 2500,
-            "lifts": 25,
+            "summit_elevation_ft": 11212,
+            "base_elevation_ft": 7945,
+            "vertical_drop_ft": 3267,
+            "skiable_acres": 675,
+            "lifts": 8,
+            "pass_affiliations": ["ikon", "mountain_collective"]
+          },
+          "metadata": {
+            "reputation": "Classic steep skiing dumping right into the heart of downtown Aspen.",
+            "terrain_character": "No green runs. Steep sustained pitches, tight trees, and heavy bumps.",
+            "snow_quality_notes": "Holds snow well on the upper mountain, but the face can get baked in the afternoon.",
+            "best_for": "steeps, bumps, town_access",
+            "crowd_factor": "Low to moderate on powder days. Most people favor Snowmass for sheer acreage.",
+            "logistics_notes": "You can walk to the gondola from downtown Aspen."
+          }
+        },
+        {
+          "id": "aspen_highlands",
+          "name": "Aspen Highlands",
+          "coords": { "lat": 39.1819, "lon": -106.8564 },
+          "stats": {
+            "summit_elevation_ft": 11675,
+            "base_elevation_ft": 8040,
+            "vertical_drop_ft": 3635,
+            "skiable_acres": 1040,
+            "lifts": 5,
+            "pass_affiliations": ["ikon", "mountain_collective"]
+          },
+          "metadata": {
+            "reputation": "The crown jewel of Colorado steep skiing.",
+            "terrain_character": "Highlands Bowl is a legendary 45-minute hike-to powder experience. Insanely steep.",
+            "snow_quality_notes": "Highlands Bowl preserves powder for days after a storm due to its aspect.",
+            "best_for": "extreme_steeps, hiking, expert_powder",
+            "crowd_factor": "Low. The physical effort required keeps the crowds away.",
+            "logistics_notes": "Not a mountain for beginners or casual cruising."
+          }
+        },
+        {
+          "id": "buttermilk",
+          "name": "Buttermilk",
+          "coords": { "lat": 39.2046, "lon": -106.8643 },
+          "stats": {
+            "summit_elevation_ft": 9900,
+            "base_elevation_ft": 7870,
+            "vertical_drop_ft": 2030,
+            "skiable_acres": 435,
+            "lifts": 6,
+            "pass_affiliations": ["ikon", "mountain_collective"]
+          },
+          "metadata": {
+            "reputation": "Home of the X-Games, but primarily known as a beginner mountain.",
+            "terrain_character": "Very flat, rolling groomers and massive terrain parks. Tiehack side has some decent pitched cruisers.",
+            "snow_quality_notes": "Lower elevation means snow quality degrades faster than Highlands or Snowmass.",
+            "best_for": "beginners, terrain_parks, cruising",
+            "crowd_factor": "Virtually empty on powder days since all the experts go to Highlands or Aspen Mountain.",
+            "logistics_notes": "Great option if you want untouched corduroy or massive terrain parks."
+          }
+        },
+        {
+          "id": "sunlight",
+          "name": "Sunlight",
+          "coords": { "lat": 39.4005, "lon": -107.3377 },
+          "stats": {
+            "summit_elevation_ft": 9895,
+            "base_elevation_ft": 7885,
+            "vertical_drop_ft": 2010,
+            "skiable_acres": 730,
+            "lifts": 3,
+            "pass_affiliations": []
+          },
+          "metadata": {
+            "reputation": "A hidden, low-cost local gem just outside Glenwood Springs.",
+            "terrain_character": "One of the steepest sustained pitches in the state (The Heathen). Great, tight tree runs.",
+            "snow_quality_notes": "A bit lower in elevation, but heavily protected by trees.",
+            "best_for": "budget_friendly, steeps, trees",
+            "crowd_factor": "Very low. Mostly locals from Glenwood Springs.",
+            "logistics_notes": "Offers a much cheaper alternative to the Aspen mountains while still catching similar storm tracks."
+          }
+        }
+      ]
+    },
+    {
+      "id": "co_steamboat",
+      "name": "The Steamboat Bubble",
+      "country": "US",
+      "friction_tier": "regional_drive",
+      "coords": { "lat": 40.457, "lon": -106.804 },
+      "logistics": {
+        "nearest_airport": "HDN",
+        "drive_time_hours": 3.0,
+        "drive_notes": "Rabbit Ears Pass can be highly dangerous during a storm. Bypasses the worst of I-70.",
+        "lodging_notes": "Plenty of lodging in Steamboat Springs, ranging from budget to luxury."
+      },
+      "resorts": [
+        {
+          "id": "steamboat",
+          "name": "Steamboat",
+          "coords": { "lat": 40.4608, "lon": -106.7437 },
+          "stats": {
+            "summit_elevation_ft": 10568,
+            "base_elevation_ft": 6900,
+            "vertical_drop_ft": 3668,
+            "skiable_acres": 3741,
+            "lifts": 23,
             "pass_affiliations": ["ikon"]
           },
           "metadata": {
-            "reputation": "Big vert, big terrain, big storm totals; one of the top resorts in North America",
-            "terrain_character": "Steep and challenging; massive cirque with cliffs and chutes; Mineral Basin adds mellow terrain",
-            "snow_quality_notes": "Same dry Utah powder as Alta; tram to Hidden Peak opens up the whole mountain",
-            "best_for": "steeps, powder, experts",
-            "crowd_factor": "Busy on storm days; tram line can be long; Mineral Basin is quieter",
-            "logistics_notes": "Combined Alta-Snowbird ticket available; LCC road closure risk same as Alta"
+            "reputation": "The 'Champagne Powder' capital of Colorado.",
+            "terrain_character": "Arguably the best perfectly-spaced tree skiing in the state (Shadows and Closets). Very few steep chutes.",
+            "snow_quality_notes": "Catches unique northern storm cells that miss I-70 completely. Snow is incredibly light.",
+            "best_for": "tree_skiing, light_powder, cruising",
+            "crowd_factor": "High on powder days, but massive acreage spreads it out.",
+            "logistics_notes": "Base elevation is very low for Colorado (6,900ft), making the very bottom susceptible to warming."
+          }
+        }
+      ]
+    },
+    {
+      "id": "co_san_juans",
+      "name": "Southwest Colorado (San Juans)",
+      "country": "US",
+      "friction_tier": "high_friction_drive",
+      "coords": { "lat": 37.937, "lon": -107.812 },
+      "logistics": {
+        "nearest_airport": "MTJ",
+        "drive_time_hours": 6.5,
+        "drive_notes": "Extreme high-friction drive from Denver. Requires a multi-day trip commitment.",
+        "lodging_notes": "Telluride is wildly expensive. Purgatory/Durango offers much more affordable options."
+      },
+      "resorts": [
+        {
+          "id": "telluride",
+          "name": "Telluride",
+          "coords": { "lat": 37.9365, "lon": -107.8463 },
+          "stats": {
+            "summit_elevation_ft": 13150,
+            "base_elevation_ft": 8725,
+            "vertical_drop_ft": 4425,
+            "skiable_acres": 2000,
+            "lifts": 19,
+            "pass_affiliations": ["epic"]
+          },
+          "metadata": {
+            "reputation": "The most beautiful mountain town in America with jaw-dropping extreme terrain.",
+            "terrain_character": "Incredible steep chutes, massive hike-to terrain (Palmyra Peak), and long, gorgeous groomers.",
+            "snow_quality_notes": "Catches southern storms. High elevation preserves the powder perfectly.",
+            "best_for": "steeps, hike_to_powder, scenery",
+            "crowd_factor": "Very low. Its extreme isolation prevents casual weekend crowds.",
+            "logistics_notes": "Free gondola connects the town to the mountain village."
+          }
+        },
+        {
+          "id": "purgatory",
+          "name": "Purgatory",
+          "coords": { "lat": 37.6290, "lon": -107.8143 },
+          "stats": {
+            "summit_elevation_ft": 10822,
+            "base_elevation_ft": 8793,
+            "vertical_drop_ft": 2029,
+            "skiable_acres": 1635,
+            "lifts": 11,
+            "pass_affiliations": []
+          },
+          "metadata": {
+            "reputation": "Laid back, family-friendly resort near Durango.",
+            "terrain_character": "Cruisy, undulating terrain. Great, widely-spaced trees. Lacks extreme steeps.",
+            "snow_quality_notes": "Needs a good southern storm track, but holds snow well.",
+            "best_for": "tree_skiing, cruising, families",
+            "crowd_factor": "Extremely low. Walk-on lifts are common even on powder days.",
+            "logistics_notes": "30-minute drive north of Durango."
+          }
+        },
+        {
+          "id": "silverton",
+          "name": "Silverton",
+          "coords": { "lat": 37.8845, "lon": -107.6657 },
+          "stats": {
+            "summit_elevation_ft": 13487,
+            "base_elevation_ft": 10400,
+            "vertical_drop_ft": 3087,
+            "skiable_acres": 1819,
+            "lifts": 1,
+            "pass_affiliations": []
+          },
+          "metadata": {
+            "reputation": "Hardcore, experts-only freeride mecca.",
+            "terrain_character": "Un-groomed, intense avalanche terrain. Only one lift; heavily reliant on hiking or heli-drops.",
+            "snow_quality_notes": "Extremely high elevation. Deep, untouched powder.",
+            "best_for": "expert_freeride, hiking, guided_skiing",
+            "crowd_factor": "Capped daily capacity. Zero crowds.",
+            "logistics_notes": "Requires avalanche gear (beacon, shovel, probe). Guided-only for most of the primary powder season."
+          }
+        }
+      ]
+    },
+    {
+      "id": "co_wolf_creek",
+      "name": "Wolf Creek",
+      "country": "US",
+      "friction_tier": "regional_drive",
+      "coords": { "lat": 37.472, "lon": -106.793 },
+      "logistics": {
+        "nearest_airport": "DRO",
+        "drive_time_hours": 4.5,
+        "drive_notes": "Wolf Creek Pass is notoriously treacherous during snowstorms.",
+        "lodging_notes": "No on-mountain lodging. Stay in Pagosa Springs (30 mins west) or South Fork (30 mins east)."
+      },
+      "resorts": [
+        {
+          "id": "wolf_creek",
+          "name": "Wolf Creek",
+          "coords": { "lat": 37.4720, "lon": -106.7934 },
+          "stats": {
+            "summit_elevation_ft": 11904,
+            "base_elevation_ft": 10300,
+            "vertical_drop_ft": 1604,
+            "skiable_acres": 1600,
+            "lifts": 11,
+            "pass_affiliations": []
+          },
+          "metadata": {
+            "reputation": "The undisputed snow magnet of Colorado.",
+            "terrain_character": "Consistently gets the most snow in the state. Short but fun, steep pitches and hike-to ridges.",
+            "snow_quality_notes": "High base elevation guarantees deep, cold powder.",
+            "best_for": "deep_powder, trees, budget_friendly",
+            "crowd_factor": "Very low. Remote location keeps lift lines to a minimum.",
+            "logistics_notes": "Incredibly affordable lift tickets compared to mega-resorts."
+          }
+        }
+      ]
+    },
+    {
+      "id": "co_route_50",
+      "name": "Route 50 Corridor",
+      "country": "US",
+      "friction_tier": "regional_drive",
+      "coords": { "lat": 38.899, "lon": -106.965 },
+      "logistics": {
+        "nearest_airport": "GUC",
+        "drive_time_hours": 3.5,
+        "drive_notes": "Route 50 over Monarch pass can be difficult, but typically avoids I-70 gridlock.",
+        "lodging_notes": "Gunnison and Salida offer cheap lodging. Mt. Crested Butte is more premium."
+      },
+      "resorts": [
+        {
+          "id": "crested_butte",
+          "name": "Crested Butte",
+          "coords": { "lat": 38.8997, "lon": -106.9658 },
+          "stats": {
+            "summit_elevation_ft": 12162,
+            "base_elevation_ft": 9375,
+            "vertical_drop_ft": 2787,
+            "skiable_acres": 1547,
+            "lifts": 15,
+            "pass_affiliations": ["epic"]
+          },
+          "metadata": {
+            "reputation": "Extreme, rocky steeps and a fiercely independent town culture.",
+            "terrain_character": "The Extremes (North Face, Headwall) are some of the steepest lift-accessed terrain in North America.",
+            "snow_quality_notes": "Incredibly rocky. Needs a massive base to safely open the best terrain.",
+            "best_for": "extreme_steeps, advanced_riders",
+            "crowd_factor": "Low. The drive distance keeps casual Denver weekenders away.",
+            "logistics_notes": "About a 4 to 4.5 hour drive from Denver depending on weather."
+          }
+        },
+        {
+          "id": "monarch",
+          "name": "Monarch",
+          "coords": { "lat": 38.5379, "lon": -106.3314 },
+          "stats": {
+            "summit_elevation_ft": 11952,
+            "base_elevation_ft": 10790,
+            "vertical_drop_ft": 1162,
+            "skiable_acres": 800,
+            "lifts": 7,
+            "pass_affiliations": []
+          },
+          "metadata": {
+            "reputation": "100% all-natural snow. A true local's gem straddling the Continental Divide.",
+            "terrain_character": "Mirkwood basin offers incredible hike-to powder. Very fun, rolling natural terrain.",
+            "snow_quality_notes": "Incredible snow preservation due to high base elevation and zero snowmaking.",
+            "best_for": "all_natural_snow, hiking, budget_friendly",
+            "crowd_factor": "Low midweek, but tiny base area creates severe bottlenecks on powder weekends when locals flock there.",
+            "logistics_notes": "About a 3 to 3.5 hour drive from Denver."
+          }
+        }
+      ]
+    },
+    {
+      "id": "co_powderhorn",
+      "name": "Grand Mesa (Powderhorn)",
+      "country": "US",
+      "friction_tier": "regional_drive",
+      "coords": { "lat": 39.069, "lon": -108.150 },
+      "logistics": {
+        "nearest_airport": "GJT",
+        "drive_time_hours": 4.0,
+        "drive_notes": "Requires driving all the way past Glenwood Springs to the Grand Mesa.",
+        "lodging_notes": "Grand Junction or Palisade are the closest major towns, about 45 mins away."
+      },
+      "resorts": [
+        {
+          "id": "powderhorn",
+          "name": "Powderhorn",
+          "coords": { "lat": 39.0693, "lon": -108.1500 },
+          "stats": {
+            "summit_elevation_ft": 9850,
+            "base_elevation_ft": 8200,
+            "vertical_drop_ft": 1650,
+            "skiable_acres": 1600,
+            "lifts": 5,
+            "pass_affiliations": ["indy"]
+          },
+          "metadata": {
+            "reputation": "Unique, flat-topped mountain riding on the edge of the desert.",
+            "terrain_character": "Incredible glade skiing and boulder drops. Very flat on top, but steeper at the bottom.",
+            "snow_quality_notes": "Catches unique western flow storms that miss the rest of Colorado.",
+            "best_for": "tree_skiing, boulder_drops, solitude",
+            "crowd_factor": "Extremely low. Very isolated from the I-70 corridor crowds.",
+            "logistics_notes": "Great option if a massive storm hits the far western edge of the state."
           }
         }
       ]
