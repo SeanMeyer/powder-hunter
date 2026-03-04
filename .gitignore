@@ -4,5 +4,20 @@
 # Claude Code
 .claude/
 
+# Go
+*.exe
+*.test
+*.out
+powder-hunter
+
+# SQLite
+*.db
+*.db-wal
+*.db-shm
+
+# Environment
+.env
+.env.*
+
 # Override global gitignore for docs/ in this project
 !docs/
