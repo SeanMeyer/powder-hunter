@@ -77,7 +77,7 @@ Respond with JSON matching this schema:
 		t.Error("RawResponse is empty")
 	}
 	if len(result.GroundingSources) == 0 {
-		t.Log("WARNING: GroundingSources is empty — model chose not to search (this is valid but means no live data was fetched)")
+		t.Error("GroundingSources is empty — grounding search did not return any sources")
 	}
 	if len(result.KeyFactors.Pros) == 0 {
 		t.Error("KeyFactors.Pros is empty")

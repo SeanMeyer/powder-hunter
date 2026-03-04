@@ -103,6 +103,11 @@ func (g *GeminiClient) EvaluateStorm(ctx context.Context, prompt string) (Gemini
 
 	result.DayByDay = parseDayByDay(structured)
 	result.GroundingSources = extractGroundingSources(resp)
+	// Grounding metadata is empty when structured output is enabled.
+	// Fall back to the research_sources field the model includes in its JSON.
+	if len(result.GroundingSources) == 0 {
+		result.GroundingSources = stringSliceField(structured, "research_sources")
+	}
 
 	return result, nil
 }
@@ -143,6 +148,11 @@ func stormEvalSchema() *genai.Schema {
 					Required: []string{"date", "snowfall", "conditions", "recommendation"},
 				},
 			},
+			"research_sources": {
+				Type:        genai.TypeArray,
+				Items:       &genai.Schema{Type: genai.TypeString},
+				Description: "URLs of websites consulted during research (lodging, flights, road conditions, etc.)",
+			},
 		},
 		Required: []string{
 			"tier", "recommendation", "strategy",
@@ -150,7 +160,7 @@ func stormEvalSchema() *genai.Schema {
 			"key_factors_pros", "key_factors_cons",
 			"logistics_lodging", "logistics_transportation",
 			"logistics_road_conditions", "logistics_flight_cost", "logistics_car_rental",
-			"day_by_day",
+			"day_by_day", "research_sources",
 		},
 	}
 }
