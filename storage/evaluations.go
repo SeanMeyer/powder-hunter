@@ -37,7 +37,7 @@ func (d *DB) SaveEvaluation(ctx context.Context, e domain.Evaluation) (int64, er
 	if err != nil {
 		return 0, fmt.Errorf("marshal grounding_sources: %w", err)
 	}
-	resortPicks, err := json.Marshal(e.TopResortPicks)
+	resortPicks, err := json.Marshal(e.ResortInsights)
 	if err != nil {
 		return 0, fmt.Errorf("marshal top_resort_picks: %w", err)
 	}
@@ -221,7 +221,7 @@ func scanEvaluation(s scanner) (domain.Evaluation, error) {
 	if err := json.Unmarshal([]byte(grounding), &e.GroundingSources); err != nil {
 		return domain.Evaluation{}, fmt.Errorf("unmarshal grounding_sources: %w", err)
 	}
-	if err := json.Unmarshal([]byte(resortPicks), &e.TopResortPicks); err != nil {
+	if err := json.Unmarshal([]byte(resortPicks), &e.ResortInsights); err != nil {
 		return domain.Evaluation{}, fmt.Errorf("unmarshal top_resort_picks: %w", err)
 	}
 
@@ -268,7 +268,7 @@ func scanEvaluationRow(row *sql.Row) (domain.Evaluation, error) {
 	if err := json.Unmarshal([]byte(grounding), &e.GroundingSources); err != nil {
 		return domain.Evaluation{}, fmt.Errorf("unmarshal grounding_sources: %w", err)
 	}
-	if err := json.Unmarshal([]byte(resortPicks), &e.TopResortPicks); err != nil {
+	if err := json.Unmarshal([]byte(resortPicks), &e.ResortInsights); err != nil {
 		return domain.Evaluation{}, fmt.Errorf("unmarshal top_resort_picks: %w", err)
 	}
 

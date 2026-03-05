@@ -243,8 +243,8 @@ func buildFields(eval domain.Evaluation, region domain.Region) []EmbedField {
 		fields = append(fields, EmbedField{Name: "Strategy", Value: eval.Strategy, Inline: false})
 	}
 
-	if len(eval.TopResortPicks) > 0 {
-		fields = append(fields, EmbedField{Name: "Top Picks", Value: formatResortPicks(eval.TopResortPicks), Inline: false})
+	if len(eval.ResortInsights) > 0 {
+		fields = append(fields, EmbedField{Name: "Resort Insights", Value: formatResortInsights(eval.ResortInsights), Inline: false})
 	}
 
 	bestDay := bestDayLine(eval)
@@ -366,11 +366,11 @@ func formatWindowDates(eval domain.Evaluation) string {
 	return fmt.Sprintf("%s–%s", first.Format("Jan 2"), last.Format("Jan 2"))
 }
 
-func formatResortPicks(picks []domain.ResortPick) string {
+func formatResortInsights(insights []domain.ResortInsight) string {
 	var sb strings.Builder
-	for i, p := range picks {
-		fmt.Fprintf(&sb, "%d. **%s** — %s", i+1, p.Resort, p.Reason)
-		if i < len(picks)-1 {
+	for i, ins := range insights {
+		fmt.Fprintf(&sb, "%d. **%s** — %s", i+1, ins.Resort, ins.Insight)
+		if i < len(insights)-1 {
 			sb.WriteString("\n")
 		}
 	}
@@ -393,11 +393,11 @@ func buildCompactEmbed(eval domain.Evaluation, region domain.Region) Embed {
 		embed.Fields = append(embed.Fields, EmbedField{Name: "Best Day", Value: bestDay, Inline: true})
 	}
 
-	if len(eval.TopResortPicks) > 0 {
-		pick := eval.TopResortPicks[0]
+	if len(eval.ResortInsights) > 0 {
+		insight := eval.ResortInsights[0]
 		embed.Fields = append(embed.Fields, EmbedField{
-			Name:   "Top Pick",
-			Value:  fmt.Sprintf("**%s** — %s", pick.Resort, pick.Reason),
+			Name:   "Resort Insight",
+			Value:  fmt.Sprintf("**%s** — %s", insight.Resort, insight.Insight),
 			Inline: false,
 		})
 	}

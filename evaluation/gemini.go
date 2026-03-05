@@ -45,7 +45,7 @@ type GeminiResult struct {
 	Tier               domain.Tier
 	Recommendation     string
 	Summary            string
-	TopResortPicks     []domain.ResortPick
+	ResortInsights     []domain.ResortInsight
 	DayByDay           []domain.DayEvaluation
 	KeyFactors         domain.KeyFactors
 	LogisticsSummary   domain.LogisticsSummary
@@ -130,7 +130,7 @@ numbers, dates, and findings from the research. Do not add information that isn'
 	result.Tier = domain.Tier(stringField(structured, "tier"))
 	result.Recommendation = stringField(structured, "recommendation")
 	result.Summary = stringField(structured, "summary")
-	result.TopResortPicks = parseResortPicks(structured)
+	result.ResortInsights = parseResortInsights(structured)
 	result.Strategy = stringField(structured, "strategy")
 	result.SnowQuality = stringField(structured, "snow_quality")
 	result.CrowdEstimate = stringField(structured, "crowd_estimate")
@@ -338,7 +338,7 @@ func parseDayByDay(m map[string]any) []domain.DayEvaluation {
 	return result
 }
 
-func parseResortPicks(m map[string]any) []domain.ResortPick {
+func parseResortInsights(m map[string]any) []domain.ResortInsight {
 	raw, ok := m["top_resort_picks"]
 	if !ok {
 		return nil
@@ -347,15 +347,15 @@ func parseResortPicks(m map[string]any) []domain.ResortPick {
 	if !ok {
 		return nil
 	}
-	result := make([]domain.ResortPick, 0, len(items))
+	result := make([]domain.ResortInsight, 0, len(items))
 	for _, item := range items {
 		entry, ok := item.(map[string]any)
 		if !ok {
 			continue
 		}
-		result = append(result, domain.ResortPick{
-			Resort: stringField(entry, "resort"),
-			Reason: stringField(entry, "reason"),
+		result = append(result, domain.ResortInsight{
+			Resort:  stringField(entry, "resort"),
+			Insight: stringField(entry, "reason"),
 		})
 	}
 	return result
@@ -461,7 +461,7 @@ func (e *GeminiEvaluator) Evaluate(ctx context.Context, ec EvalContext) (domain.
 		Tier:               gemResult.Tier,
 		Recommendation:     gemResult.Recommendation,
 		Summary:            gemResult.Summary,
-		TopResortPicks:     gemResult.TopResortPicks,
+		ResortInsights:     gemResult.ResortInsights,
 		DayByDay:           gemResult.DayByDay,
 		KeyFactors:         gemResult.KeyFactors,
 		LogisticsSummary:   gemResult.LogisticsSummary,

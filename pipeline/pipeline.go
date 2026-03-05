@@ -715,9 +715,9 @@ func (p *Pipeline) Group(ctx context.Context, results []CompareResult, summary *
 					BestDay:        r.Evaluation.BestSkiDay.Format("Mon Jan 2"),
 					BestDayReason:  r.Evaluation.BestSkiDayReason,
 				}
-				if len(r.Evaluation.TopResortPicks) > 0 {
-					rs.TopPick = r.Evaluation.TopResortPicks[0].Resort
-					rs.TopPickReason = r.Evaluation.TopResortPicks[0].Reason
+				if len(r.Evaluation.ResortInsights) > 0 {
+					rs.TopPick = r.Evaluation.ResortInsights[0].Resort
+					rs.TopPickReason = r.Evaluation.ResortInsights[0].Insight
 				}
 				summaries[i] = rs
 			}

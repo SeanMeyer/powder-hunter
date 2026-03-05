@@ -16,7 +16,7 @@ type Evaluation struct {
 	KeyFactors         KeyFactors
 	LogisticsSummary   LogisticsSummary
 	Summary            string
-	TopResortPicks     []ResortPick
+	ResortInsights     []ResortInsight
 	Strategy           string
 	SnowQuality        string
 	CrowdEstimate      string
@@ -57,11 +57,12 @@ type KeyFactors struct {
 	Cons []string
 }
 
-// ResortPick is a single resort recommendation with reasoning for why it suits
-// this specific storm. The LLM ranks 2-3 picks per evaluation.
-type ResortPick struct {
-	Resort string
-	Reason string
+// ResortInsight captures a notable finding about a resort that affects the
+// storm decision -- closures that create powder stashes, special access
+// considerations, pass coverage notes. Not a ranking or recommendation.
+type ResortInsight struct {
+	Resort  string `json:"resort"`
+	Insight string `json:"reason"` // JSON key kept as "reason" for DB backwards compat
 }
 
 // LogisticsSummary holds the LLM's narrative on trip logistics. Fields are strings
