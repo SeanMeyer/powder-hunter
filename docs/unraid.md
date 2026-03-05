@@ -1,31 +1,20 @@
 # Unraid Setup
 
-An Unraid Docker template is included at `unraid/powder-hunter.xml`.
-
 ## Installation
 
-1. Build the image from the repo directory:
+1. Download the template to your Unraid boot drive:
 
    ```bash
-   docker build -t powder-hunter .
+   curl -o /boot/config/plugins/dockerMan/templates-user/my-powder-hunter.xml \
+     https://raw.githubusercontent.com/seanmeyer/powder-hunter/main/unraid/powder-hunter.xml
    ```
 
-2. Copy the template to your Unraid boot drive:
+2. In the Unraid Docker tab, click **Add Container** and select **powder-hunter**.
 
-   ```bash
-   cp unraid/powder-hunter.xml /boot/config/plugins/dockerMan/templates-user/my-powder-hunter.xml
-   ```
+3. Fill in your API keys, home location, and preferences in the form, then click **Apply**.
 
-3. In the Unraid Docker tab, click **Add Container** and select **powder-hunter**.
-
-4. Fill in your API keys and preferences in the form, then click **Apply**.
+The image is pulled automatically from `ghcr.io/seanmeyer/powder-hunter:latest`.
 
 ## Updating
 
-```bash
-cd /mnt/user/appdata/powder-hunter
-git pull
-docker build -t powder-hunter .
-```
-
-Then restart the container from the Unraid Docker UI.
+Click the container icon in the Docker tab and select **Update**. Unraid pulls the latest image automatically.
