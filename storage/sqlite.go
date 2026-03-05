@@ -33,6 +33,14 @@ func Open(path string) (*DB, error) {
 		return nil, fmt.Errorf("set WAL mode: %w", err)
 	}
 
+	// Wait up to 5 seconds for a write lock instead of failing immediately
+	// with SQLITE_BUSY. This handles concurrent storm persistence during
+	// parallel weather fetches.
+	if _, err := db.ExecContext(context.Background(), `PRAGMA busy_timeout=5000`); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("set busy timeout: %w", err)
+	}
+
 	if _, err := db.ExecContext(context.Background(), `PRAGMA foreign_keys=ON`); err != nil {
 		db.Close()
 		return nil, fmt.Errorf("enable foreign keys: %w", err)
