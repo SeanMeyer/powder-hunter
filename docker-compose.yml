@@ -1,6 +1,8 @@
 services:
   powder-hunter:
-    build: .
+    # To build from source instead: comment 'image' and uncomment 'build'
+    image: ghcr.io/seanmeyer/powder-hunter:latest
+    # build: .
     container_name: powder-hunter
     restart: unless-stopped
     env_file:

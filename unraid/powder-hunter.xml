@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>powder-hunter</Name>
-  <Repository>powder-hunter</Repository>
+  <Repository>ghcr.io/seanmeyer/powder-hunter</Repository>
   <Registry/>
   <Network>bridge</Network>
   <Privileged>false</Privileged>
