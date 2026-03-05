@@ -92,15 +92,13 @@ func FormatGroupedStorm(group GroupedPost) WebhookPayload {
 
 	embeds := []Embed{summaryEmbed}
 
-	// --- per-region embeds (reuse buildEmbed, cap at 10 total) ---
+	// --- per-region embeds (compact to stay under Discord's 6000-char total) ---
 	maxRegionEmbeds := 10 - len(embeds) // Discord allows at most 10 embeds
 	for i, ew := range group.Evaluations {
 		if i >= maxRegionEmbeds {
 			break
 		}
-		regionEmbed := buildEmbed(ew.Evaluation, ew.Region)
-		regionEmbed.Title = fmt.Sprintf("%s %s", tierEmoji(ew.Evaluation.Tier), ew.Region.Name)
-		embeds = append(embeds, regionEmbed)
+		embeds = append(embeds, buildCompactEmbed(ew.Evaluation, ew.Region))
 	}
 
 	// --- thread name ---
@@ -377,6 +375,34 @@ func formatResortPicks(picks []domain.ResortPick) string {
 		}
 	}
 	return sb.String()
+}
+
+// buildCompactEmbed creates a short embed for grouped posts — just the tier,
+// recommendation, best day, and top resort pick. Full details live in the
+// individual storm threads. This keeps grouped payloads under Discord's
+// 6000-character embed limit.
+func buildCompactEmbed(eval domain.Evaluation, region domain.Region) Embed {
+	embed := Embed{
+		Title:       fmt.Sprintf("%s %s", tierEmoji(eval.Tier), region.Name),
+		Description: eval.Recommendation,
+		Color:       tierColor(eval.Tier),
+	}
+
+	bestDay := bestDayLine(eval)
+	if bestDay != "" {
+		embed.Fields = append(embed.Fields, EmbedField{Name: "Best Day", Value: bestDay, Inline: true})
+	}
+
+	if len(eval.TopResortPicks) > 0 {
+		pick := eval.TopResortPicks[0]
+		embed.Fields = append(embed.Fields, EmbedField{
+			Name:   "Top Pick",
+			Value:  fmt.Sprintf("**%s** — %s", pick.Resort, pick.Reason),
+			Inline: false,
+		})
+	}
+
+	return embed
 }
 
 func tierColor(t domain.Tier) int {
