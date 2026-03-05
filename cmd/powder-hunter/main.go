@@ -139,6 +139,12 @@ func runPipeline(ctx context.Context, args []string) int {
 		return 1
 	}
 
+	profile := config.ProfileFromEnv(os.Getenv)
+	if profile.HomeBase == "" || profile.HomeLatitude == 0 || profile.HomeLongitude == 0 {
+		slog.Error("HOME_BASE, HOME_LATITUDE, and HOME_LONGITUDE are required. Set them in .env or as environment variables.")
+		return 1
+	}
+
 	db, err := storage.Open(*dbPath)
 	if err != nil {
 		slog.Error("open database", "error", err)

@@ -26,7 +26,7 @@ func TestProfileFromEnv_AllDefaults(t *testing.T) {
 	if p.HomeLongitude != d.HomeLongitude {
 		t.Errorf("HomeLongitude = %v, want %v", p.HomeLongitude, d.HomeLongitude)
 	}
-	if len(p.PassesHeld) != len(d.PassesHeld) || p.PassesHeld[0] != d.PassesHeld[0] {
+	if len(p.PassesHeld) != len(d.PassesHeld) {
 		t.Errorf("PassesHeld = %v, want %v", p.PassesHeld, d.PassesHeld)
 	}
 	if p.SkillLevel != d.SkillLevel {
@@ -111,7 +111,7 @@ func TestProfileFromEnv_PartialOverride(t *testing.T) {
 	if p.RemoteWorkCapable != d.RemoteWorkCapable {
 		t.Errorf("RemoteWorkCapable = %v, want default %v", p.RemoteWorkCapable, d.RemoteWorkCapable)
 	}
-	if len(p.PassesHeld) != len(d.PassesHeld) || p.PassesHeld[0] != d.PassesHeld[0] {
+	if len(p.PassesHeld) != len(d.PassesHeld) {
 		t.Errorf("PassesHeld = %v, want default %v", p.PassesHeld, d.PassesHeld)
 	}
 }

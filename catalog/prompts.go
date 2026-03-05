@@ -7,26 +7,21 @@ import "github.com/seanmeyer/powder-hunter/domain"
 func DefaultProfile() domain.UserProfile {
 	return domain.UserProfile{
 		ID:                1,
-		HomeBase:          "Denver, CO",
-		HomeLatitude:      39.7392,
-		HomeLongitude:     -104.9903,
-		PassesHeld:        []string{"ikon"},
-		SkillLevel:        "expert",
-		Preferences: "Primary goal is powder strike missions — finding deep, untouched snow. " +
-			"Terrain preference is moderately steep trees and open bowls, but terrain is secondary " +
-			"to powder quality and availability. Strong preference for situations where untouched " +
-			"runs last for hours or days, not minutes. Crowds matter primarily as they affect powder " +
-			"longevity — a big resort with extensive expert terrain can absorb crowds and still have " +
-			"stashes, while a small resort gets tracked out fast.",
-		RemoteWorkCapable: true,
-		TypicalPTODays:    15,
+		HomeBase:          "",
+		HomeLatitude:      0,
+		HomeLongitude:     0,
+		PassesHeld:        nil,
+		SkillLevel:        "intermediate",
+		Preferences:       "",
+		RemoteWorkCapable: false,
+		TypicalPTODays:    10,
 	}
 }
 
 const stormEvalPromptID = "storm_eval"
 const stormEvalPromptVersion = "v3.0.0"
 
-// stormEvalPromptTemplate is the v1.0.0 template for LLM storm evaluation.
+// stormEvalPromptTemplate is the LLM prompt for storm evaluation.
 // Placeholders are substituted by evaluation.RenderPrompt before each API call.
 const stormEvalPromptTemplate = `You are an expert powder skiing advisor evaluating a storm opportunity for a specific subscriber.
 Your job is to classify the storm into one of three tiers and provide actionable guidance.
@@ -72,9 +67,7 @@ this powder?" If the honest answer is no, this should be ON_THE_RADAR at most.
   high-confidence windows should be WORTH_A_LOOK. Routine big-mountain snowfall (even 20-30") at these
   destinations is not alert-worthy — that's just what these places do.
 
-**Opportunity cost matters.** If the subscriber lives in Denver and both the I-70 corridor and Alaska are
-getting storms, a decent Alaska storm is far less interesting than a decent Colorado storm. Factor in what
-else is available when you assess whether a distant destination is worth the friction.
+**Opportunity cost matters.** If both a local region and a distant flight destination are getting storms, the local storm is more interesting unless the distant storm is truly exceptional — the subscriber can get a similar experience for a fraction of the cost and hassle.
 
 ## Your Evaluation Lens
 
