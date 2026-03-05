@@ -26,41 +26,41 @@ type Evaluator interface {
 	Evaluate(ctx context.Context, ec EvalContext) (domain.Evaluation, error)
 }
 
-// CompareContext holds the inputs for a multi-region storm comparison.
-type CompareContext struct {
+// BriefingContext holds the inputs for a multi-region storm briefing.
+type BriefingContext struct {
 	MacroRegionName string
 	FrictionTier    string
 	Summaries       []RegionSummary
 }
 
-// RegionSummary is a condensed view of one region's evaluation for comparison.
+// RegionSummary is a condensed view of one region's evaluation for briefing.
 type RegionSummary struct {
 	RegionID       string
 	RegionName     string
 	Tier           string
 	Snowfall       string
 	SnowQuality    string
-	TopPick        string
-	TopPickReason  string
+	CrowdEstimate  string
+	Strategy       string
+	Recommendation string
 	BestDay        string
 	BestDayReason  string
-	Recommendation string
 	LodgingCost    string
 	FlightCost     string
 	CarRental      string
 }
 
-// ComparisonResult is the LLM's synthesis across multiple regions.
-type ComparisonResult struct {
-	TopPickRegion  string
-	TopPickName    string
-	Reasoning      string
-	RunnerUp       string
-	RunnerUpReason string
-	RawResponse    string
+// BriefingResult is the LLM's synthesized storm briefing for one or more regions.
+// Used as the opening Discord notification for all storms (singletons and groups).
+type BriefingResult struct {
+	Briefing      string // 2-4 sentence storm briefing (the notification text)
+	BestDay       string // YYYY-MM-DD
+	BestDayReason string
+	Action        string // "go_now", "book_flexibly", "keep_watching"
+	RawResponse   string
 }
 
-// Comparer synthesizes multiple region evaluations into a grouped recommendation.
-type Comparer interface {
-	CompareRegions(ctx context.Context, cc CompareContext) (ComparisonResult, error)
+// Briefer synthesizes per-region evaluations into a storm briefing.
+type Briefer interface {
+	BriefStorm(ctx context.Context, bc BriefingContext) (BriefingResult, error)
 }

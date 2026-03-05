@@ -42,7 +42,7 @@ type Pipeline struct {
 	logger       *slog.Logger
 	costTracker  CostTracker
 	budgetConfig BudgetConfig
-	comparer     evaluation.Comparer
+	briefer      evaluation.Briefer
 }
 
 func New(weather *weather.Service, store *storage.DB, evaluator evaluation.Evaluator, logger *slog.Logger) *Pipeline {
@@ -61,9 +61,9 @@ func (p *Pipeline) WithBudgetConfig(bc BudgetConfig) *Pipeline {
 	return p
 }
 
-// WithComparer attaches an LLM comparer for multi-region storm groups.
-func (p *Pipeline) WithComparer(c evaluation.Comparer) *Pipeline {
-	p.comparer = c
+// WithBriefer attaches an LLM briefer for multi-region storm groups.
+func (p *Pipeline) WithBriefer(b evaluation.Briefer) *Pipeline {
+	p.briefer = b
 	return p
 }
 
@@ -537,12 +537,12 @@ type CompareResult struct {
 	PrevTier    domain.Tier // empty string if this is the first evaluation
 }
 
-// GroupedResult wraps a storm group with its optional LLM comparison and the
-// original CompareResults for posting. Singleton groups have an empty Comparison.
+// GroupedResult wraps a storm group with its optional LLM briefing and the
+// original CompareResults for posting. Singleton groups have an empty Briefing.
 type GroupedResult struct {
-	Group      domain.StormGroup
-	Comparison evaluation.ComparisonResult // empty for singletons
-	Results    []CompareResult             // the individual CompareResults in this group
+	Group   domain.StormGroup
+	Briefing evaluation.BriefingResult // empty for singletons
+	Results []CompareResult            // the individual CompareResults in this group
 }
 
 // Compare classifies the change for each evaluation against the storm's prior
@@ -689,9 +689,9 @@ func (p *Pipeline) Group(ctx context.Context, results []CompareResult, summary *
 			members[i] = results[m.Index]
 		}
 
-		var comparison evaluation.ComparisonResult
+		var briefing evaluation.BriefingResult
 
-		if len(members) >= 2 && p.comparer != nil {
+		if len(members) >= 2 && p.briefer != nil {
 			summaries := make([]evaluation.RegionSummary, len(members))
 			for i, r := range members {
 				// Build snowfall summary from day-by-day data.
@@ -702,12 +702,14 @@ func (p *Pipeline) Group(ctx context.Context, results []CompareResult, summary *
 					}
 				}
 
-				rs := evaluation.RegionSummary{
+				summaries[i] = evaluation.RegionSummary{
 					RegionID:       r.Region.ID,
 					RegionName:     r.Region.Name,
 					Tier:           string(r.Evaluation.Tier),
 					Snowfall:       strings.Join(snowParts, ", "),
 					SnowQuality:    r.Evaluation.SnowQuality,
+					CrowdEstimate:  r.Evaluation.CrowdEstimate,
+					Strategy:       r.Evaluation.Strategy,
 					Recommendation: r.Evaluation.Recommendation,
 					LodgingCost:    r.Evaluation.LogisticsSummary.LodgingCost,
 					FlightCost:     r.Evaluation.LogisticsSummary.FlightCost,
@@ -715,41 +717,35 @@ func (p *Pipeline) Group(ctx context.Context, results []CompareResult, summary *
 					BestDay:        r.Evaluation.BestSkiDay.Format("Mon Jan 2"),
 					BestDayReason:  r.Evaluation.BestSkiDayReason,
 				}
-				if len(r.Evaluation.ResortInsights) > 0 {
-					rs.TopPick = r.Evaluation.ResortInsights[0].Resort
-					rs.TopPickReason = r.Evaluation.ResortInsights[0].Insight
-				}
-				summaries[i] = rs
 			}
 
-			cc := evaluation.CompareContext{
+			bc := evaluation.BriefingContext{
 				MacroRegionName: domain.MacroRegionDisplayName(sg.Key),
 				FrictionTier:    string(members[0].Region.FrictionTier),
 				Summaries:       summaries,
 			}
 
-			result, err := p.comparer.CompareRegions(ctx, cc)
+			result, err := p.briefer.BriefStorm(ctx, bc)
 			if err != nil {
-				p.logger.WarnContext(ctx, "LLM comparison failed, posting without comparison",
+				p.logger.WarnContext(ctx, "LLM briefing failed, posting without briefing",
 					"group_key", sg.Key,
 					"members", len(members),
 					"error", err,
 				)
 			} else {
-				comparison = result
-				p.logger.InfoContext(ctx, "group compared",
+				briefing = result
+				p.logger.InfoContext(ctx, "group briefed",
 					"group_key", sg.Key,
 					"members", len(members),
-					"top_pick", result.TopPickRegion,
 				)
 			}
 			summary.Comparisons++
 		}
 
 		grouped = append(grouped, GroupedResult{
-			Group:      sg,
-			Comparison: comparison,
-			Results:    members,
+			Group:    sg,
+			Briefing: briefing,
+			Results:  members,
 		})
 		summary.Grouped++
 	}
@@ -812,7 +808,7 @@ func (p *Pipeline) PostGrouped(ctx context.Context, groups []GroupedResult) (int
 		gp := discord.GroupedPost{
 			MacroRegionName: domain.MacroRegionDisplayName(g.Group.Key),
 			FrictionTier:    g.Results[0].Region.FrictionTier,
-			Comparison:      g.Comparison,
+			Briefing:        g.Briefing,
 			Evaluations:     evals,
 		}
 

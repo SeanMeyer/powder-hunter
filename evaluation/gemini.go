@@ -401,11 +401,11 @@ func NewGeminiEvaluator(gemini *GeminiClient, store *storage.DB) *GeminiEvaluato
 	return &GeminiEvaluator{gemini: gemini, store: store}
 }
 
-// CompareRegions delegates to GeminiClient.CompareRegions for multi-region
-// storm comparison. No prompt template or grounding is needed — all data has
-// already been evaluated.
-func (e *GeminiEvaluator) CompareRegions(ctx context.Context, cc CompareContext) (ComparisonResult, error) {
-	return e.gemini.CompareRegions(ctx, cc)
+// BriefStorm delegates to GeminiClient.BriefStorm for multi-region storm
+// briefing. No prompt template or grounding is needed — all data has already
+// been evaluated.
+func (e *GeminiEvaluator) BriefStorm(ctx context.Context, bc BriefingContext) (BriefingResult, error) {
+	return e.gemini.BriefStorm(ctx, bc)
 }
 
 // Evaluate loads the active prompt, renders it with context data, calls Gemini,

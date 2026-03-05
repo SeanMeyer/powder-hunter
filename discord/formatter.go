@@ -54,7 +54,7 @@ type AllowedMentions struct {
 type GroupedPost struct {
 	MacroRegionName string
 	FrictionTier    domain.FrictionTier
-	Comparison      evaluation.ComparisonResult
+	Briefing        evaluation.BriefingResult
 	Evaluations     []EvalWithRegion // individual evaluations in tier-descending order
 }
 
@@ -71,21 +71,26 @@ func FormatGroupedStorm(group GroupedPost) WebhookPayload {
 	highestTier := highestTier(group.Evaluations)
 	emoji := tierEmoji(highestTier)
 
-	// --- comparison summary embed ---
+	// --- briefing summary embed ---
 	summaryEmbed := Embed{
 		Title:       fmt.Sprintf("%s %s", emoji, group.MacroRegionName),
 		Color:       tierColor(highestTier),
-		Description: group.Comparison.Reasoning,
+		Description: group.Briefing.Briefing,
 	}
 
-	summaryFields := []EmbedField{
-		{Name: "Top Pick", Value: fmt.Sprintf("**%s** — %s", group.Comparison.TopPickName, group.Comparison.Reasoning), Inline: false},
-	}
-	if group.Comparison.RunnerUp != "" {
+	var summaryFields []EmbedField
+	if group.Briefing.BestDay != "" {
 		summaryFields = append(summaryFields, EmbedField{
-			Name:   "Runner Up",
-			Value:  fmt.Sprintf("**%s** — %s", group.Comparison.RunnerUp, group.Comparison.RunnerUpReason),
+			Name:   "Best Day",
+			Value:  fmt.Sprintf("**%s** — %s", group.Briefing.BestDay, group.Briefing.BestDayReason),
 			Inline: false,
+		})
+	}
+	if group.Briefing.Action != "" {
+		summaryFields = append(summaryFields, EmbedField{
+			Name:   "Action",
+			Value:  group.Briefing.Action,
+			Inline: true,
 		})
 	}
 	summaryEmbed.Fields = summaryFields
@@ -109,13 +114,13 @@ func FormatGroupedStorm(group GroupedPost) WebhookPayload {
 	threadName := fmt.Sprintf("%s %s — %s", emoji, group.MacroRegionName, dateRange)
 
 	payload := WebhookPayload{
-		Content:    group.Comparison.Reasoning,
+		Content:    group.Briefing.Briefing,
 		Embeds:     embeds,
 		ThreadName: threadName,
 	}
 
 	if highestTier == domain.TierDropEverything {
-		payload.Content = "@here\n" + group.Comparison.Reasoning
+		payload.Content = "@here\n" + group.Briefing.Briefing
 		payload.AllowedMentions = &AllowedMentions{Parse: []string{"everyone"}}
 	}
 

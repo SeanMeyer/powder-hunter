@@ -165,7 +165,7 @@ func runPipeline(ctx context.Context, args []string) int {
 
 	p := pipeline.New(weatherSvc, db, evaluator, slog.Default())
 	p.WithDryRun(*dryRun)
-	p.WithComparer(evaluator)
+	p.WithBriefer(evaluator)
 	p.WithCostTracker(db)
 	p.WithBudgetConfig(pipeline.BudgetConfig{
 		MonthlyLimitUSD:  *budget,

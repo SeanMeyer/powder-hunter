@@ -1213,14 +1213,14 @@ func TestPipeline_BudgetExceeded_FirstEvalStillProceeds(t *testing.T) {
 
 // --- Grouping Tests ---
 
-// fakeComparer implements evaluation.Comparer for testing.
-type fakeComparer struct {
-	result evaluation.ComparisonResult
-	calls  []evaluation.CompareContext
+// fakeBriefer implements evaluation.Briefer for testing.
+type fakeBriefer struct {
+	result evaluation.BriefingResult
+	calls  []evaluation.BriefingContext
 }
 
-func (f *fakeComparer) CompareRegions(ctx context.Context, cc evaluation.CompareContext) (evaluation.ComparisonResult, error) {
-	f.calls = append(f.calls, cc)
+func (f *fakeBriefer) BriefStorm(ctx context.Context, bc evaluation.BriefingContext) (evaluation.BriefingResult, error) {
+	f.calls = append(f.calls, bc)
 	return f.result, nil
 }
 
@@ -1341,17 +1341,15 @@ func TestPipeline_GroupMultiRegion(t *testing.T) {
 
 	fakeEval := &evaluation.FakeEvaluator{Results: evalResults}
 	fakePoster := &discord.FakePoster{NextThreadID: "thread-grouped"}
-	fc := &fakeComparer{
-		result: evaluation.ComparisonResult{
-			TopPickRegion: "wa-central",
-			TopPickName:   "Test wa-central",
-			Reasoning:     "Best snow overall.",
+	fc := &fakeBriefer{
+		result: evaluation.BriefingResult{
+			Briefing: "Best snow overall.",
 		},
 	}
 
 	p := pipeline.New(nil, db, fakeEval, discardLogger())
 	p.WithPoster(fakePoster)
-	p.WithComparer(fc)
+	p.WithBriefer(fc)
 
 	summary := pipeline.RunSummary{}
 	evals, err := p.Evaluate(ctx, scans, &summary)
@@ -1402,12 +1400,12 @@ func TestPipeline_GroupMultiRegion(t *testing.T) {
 		}
 	}
 
-	// Verify the comparer was called once with 3 summaries.
+	// Verify the briefer was called once with 3 summaries.
 	if len(fc.calls) != 1 {
-		t.Fatalf("expected 1 comparer call, got %d", len(fc.calls))
+		t.Fatalf("expected 1 briefer call, got %d", len(fc.calls))
 	}
 	if len(fc.calls[0].Summaries) != 3 {
-		t.Errorf("expected 3 summaries in compare call, got %d", len(fc.calls[0].Summaries))
+		t.Errorf("expected 3 summaries in briefer call, got %d", len(fc.calls[0].Summaries))
 	}
 }
 
