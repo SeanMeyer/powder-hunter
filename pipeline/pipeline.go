@@ -720,7 +720,7 @@ func (p *Pipeline) Group(ctx context.Context, results []CompareResult, summary *
 			}
 
 			bc := evaluation.BriefingContext{
-				MacroRegionName: domain.MacroRegionDisplayName(sg.Key),
+				MacroRegionName: domain.MacroRegionDisplayNameFromKey(sg.Key),
 				FrictionTier:    string(members[0].Region.FrictionTier),
 				Summaries:       summaries,
 			}
@@ -806,7 +806,7 @@ func (p *Pipeline) PostGrouped(ctx context.Context, groups []GroupedResult) (int
 		}
 
 		gp := discord.GroupedPost{
-			MacroRegionName: domain.MacroRegionDisplayName(g.Group.Key),
+			MacroRegionName: domain.MacroRegionDisplayNameFromKey(g.Group.Key),
 			FrictionTier:    g.Results[0].Region.FrictionTier,
 			Briefing:        g.Briefing,
 			Evaluations:     evals,

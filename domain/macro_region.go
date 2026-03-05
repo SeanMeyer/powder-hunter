@@ -1,5 +1,7 @@
 package domain
 
+import "strings"
+
 // MacroRegionNames maps macro-region keys to human-readable display names.
 // Used for Discord thread titles and log messages.
 var MacroRegionNames = map[string]string{
@@ -35,4 +37,14 @@ func MacroRegionDisplayName(key string) string {
 		return name
 	}
 	return key
+}
+
+// MacroRegionDisplayNameFromKey extracts the macro region from a group key
+// (which has format "macro_region:friction_tier") and returns its display name.
+func MacroRegionDisplayNameFromKey(groupKey string) string {
+	macroRegion := groupKey
+	if i := strings.Index(groupKey, ":"); i >= 0 {
+		macroRegion = groupKey[:i]
+	}
+	return MacroRegionDisplayName(macroRegion)
 }
