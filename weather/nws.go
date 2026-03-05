@@ -288,13 +288,14 @@ func parseGridpointForecast(body []byte, loc *time.Location) ([]domain.DailyFore
 				}
 			}
 
-			snowCM := domain.SnowfallFromPrecip(hourlyMM, tempC)
-			slr := domain.CalculateSLR(tempC)
+			snowCM := domain.SnowfallFromPrecip(hourlyMM, tempC, 0) // TODO(task4): pass real wind speed
+			density := domain.CalculateDensity(tempC, 0)
+			slr := domain.SLRFromDensity(density)
 
 			if hourlyMM > 0 {
-				if slr == 0 {
+				if domain.IsRain(tempC) {
 					acc.rainHours++
-				} else if slr == 5 {
+				} else if domain.IsMixedPrecip(tempC) {
 					acc.mixedHours++
 				}
 			}

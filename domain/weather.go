@@ -172,6 +172,17 @@ func SnowfallFromPrecip(precipMM float64, tempC float64, windSpeedMs float64) fl
 	return precipMM / 10.0 * slr
 }
 
+// IsRain returns true if the temperature is above the rain threshold (35°F / 1.67°C).
+func IsRain(tempC float64) bool {
+	return tempC > slrThresholdRainC
+}
+
+// IsMixedPrecip returns true if the temperature is in the mixed precipitation zone
+// (32-35°F / 0-1.67°C) — snow may be mixed with rain/sleet.
+func IsMixedPrecip(tempC float64) bool {
+	return tempC >= 0 && tempC <= slrThresholdRainC
+}
+
 // ComputeConsensus takes multiple Forecast values (same region, different models),
 // aligns by date, and computes spread/mean/confidence per day. Pure function, no I/O.
 func ComputeConsensus(forecasts []Forecast) ModelConsensus {

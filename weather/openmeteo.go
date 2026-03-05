@@ -385,13 +385,15 @@ func parseOpenMeteoHourly(h openMeteoHourlyData) ([]domain.DailyForecast, error)
 			gust = h.WindGusts10m[i]
 		}
 
-		snowCM := domain.SnowfallFromPrecip(precip, temp)
-		slr := domain.CalculateSLR(temp)
+		windMs := wind / 3.6 // km/h → m/s
+		snowCM := domain.SnowfallFromPrecip(precip, temp, windMs)
+		density := domain.CalculateDensity(temp, windMs)
+		slr := domain.SLRFromDensity(density)
 
 		if precip > 0 {
-			if slr == 0 {
+			if domain.IsRain(temp) {
 				acc.rainHours++
-			} else if slr == 5 {
+			} else if domain.IsMixedPrecip(temp) {
 				acc.mixedHours++
 			}
 		}
