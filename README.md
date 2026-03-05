@@ -1,13 +1,23 @@
 # Powder Hunter
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go](https://img.shields.io/badge/Go-1.24+-00ADD8?logo=go)](https://go.dev)
+
 Automated powder day alerts. Monitors weather forecasts across ski regions, uses Gemini AI to evaluate storm opportunities, and sends personalized alerts to Discord.
+
+## How It Works
+
+1. **Scan** — Fetches multi-model weather forecasts for 170+ ski regions across North America
+2. **Detect** — Identifies significant snowfall windows that cross alert thresholds based on your proximity to each region
+3. **Evaluate** — Sends promising storms to Gemini AI for deep analysis (snow quality, crowd dynamics, travel logistics, resort operations)
+4. **Post** — Delivers personalized storm briefings to your Discord channel with day-by-day strategy
 
 ## Quick Start
 
 1. Clone and copy the example config:
 
    ```bash
-   git clone <repo-url>
+   git clone https://github.com/seanmeyer/powder-hunter.git
    cd powder-hunter
    cp .env.example .env
    ```
@@ -85,12 +95,7 @@ docker compose logs -f powder-hunter
 
 ## Unraid
 
-An Unraid Docker template is included at `unraid/powder-hunter.xml`. To install:
-
-1. Build the image: `docker build -t powder-hunter .` (from the repo directory)
-2. Copy the template: `cp unraid/powder-hunter.xml /boot/config/plugins/dockerMan/templates-user/my-powder-hunter.xml`
-3. In the Unraid Docker tab, click **Add Container** and select **powder-hunter**
-4. Fill in your API keys and preferences in the form, then click **Apply**
+An Unraid Docker template is included. See [docs/unraid.md](docs/unraid.md) for setup instructions.
 
 ## Updating
 
@@ -112,10 +117,12 @@ docker build -t powder-hunter .
 
 Then restart the container from the Unraid Docker UI.
 
-## TODO: Published Docker Images
+## Limitations
 
-Currently the image must be built from source. Once the repo is public, add a GitHub Actions workflow to publish images to `ghcr.io` on tagged releases. This would enable:
+- **US-focused weather**: NWS forecasts are US-only. Canadian and international regions use Open-Meteo only (fewer models, no forecast discussions).
+- **Discord-only**: Notifications are delivered via Discord webhooks. Other channels (Slack, email) are not currently supported.
+- **Detection thresholds**: Friction tiers are auto-calculated from your home coordinates using straight-line distance. Actual drive times may differ, but the LLM accounts for real travel logistics in its evaluation.
 
-- Unraid auto-update support (no more SSH + rebuild)
-- Users skip building entirely -- just pull and run
-- Template points to `ghcr.io/seanmeyer/powder-hunter:latest` instead of a local build
+## Contributing
+
+Contributions are welcome! Please open an issue to discuss changes before submitting a PR.
