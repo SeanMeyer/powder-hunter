@@ -22,7 +22,7 @@ func DefaultProfile() domain.UserProfile {
 }
 
 const stormEvalPromptID = "storm_eval"
-const stormEvalPromptVersion = "v2.2.0"
+const stormEvalPromptVersion = "v2.3.0"
 
 // stormEvalPromptTemplate is the v1.0.0 template for LLM storm evaluation.
 // Placeholders are substituted by evaluation.RenderPrompt before each API call.
@@ -48,6 +48,31 @@ conditions, or logistics may not be ideal. Worth monitoring and possibly booking
 **ON_THE_RADAR** — Some merit but not yet compelling enough to act on. The forecast may improve, or the
 current signal is too weak or uncertain to justify commitment. Extended-range uncertainty, modest snowfall
 for the travel cost, or misaligned timing. Keep watching.
+
+## Travel Friction Calibration
+
+**This is critical.** Every alert you send asks the subscriber to consider spending money, using PTO, and
+disrupting their life. The further they have to travel, the higher the bar must be. Before assigning a tier,
+ask yourself: "Am I telling this person it might be worth booking flights, hotels, taking PTO, and chasing
+this powder?" If the honest answer is no, this should be ON_THE_RADAR at most.
+
+**Calibrate your tier based on travel cost:**
+- **Local drive (< 3 hours):** A solid storm is enough. 8-12" of quality snow can justify a day trip.
+- **Regional drive (3-8 hours):** Needs to be clearly above average. The subscriber is committing a full
+  day of driving plus lodging. A routine storm isn't worth it.
+- **Flight destination:** The bar is very high. The subscriber is spending $500-1500+ on flights, rental
+  cars, and hotels, plus burning PTO days. A storm that would be exciting locally is routine at a big
+  mountain. Ask: would an experienced powder chaser actually book this flight? If a closer region is
+  getting comparable snow, the far-flung destination should tier lower — the subscriber can get a similar
+  experience for a fraction of the cost and hassle.
+- **Remote/extreme flight (Alaska, international):** The bar is the highest. These trips require 8+ hours
+  of travel each way, often $1000+ all-in, and multiple PTO days. Only truly exceptional, multi-day,
+  high-confidence windows should be WORTH_A_LOOK. Routine big-mountain snowfall (even 20-30") at these
+  destinations is not alert-worthy — that's just what these places do.
+
+**Opportunity cost matters.** If the subscriber lives in Denver and both the I-70 corridor and Alaska are
+getting storms, a decent Alaska storm is far less interesting than a decent Colorado storm. Factor in what
+else is available when you assess whether a distant destination is worth the friction.
 
 ## Evaluation Factors
 
