@@ -26,15 +26,14 @@ type regionsFile struct {
 }
 
 type regionJSON struct {
-	ID           string        `json:"id"`
-	Name         string        `json:"name"`
-	Country      string        `json:"country"`
-	Timezone     string        `json:"timezone"`
-	FrictionTier string        `json:"friction_tier"`
-	MacroRegion  string        `json:"macro_region"`
-	Coords       coordsJSON    `json:"coords"`
-	Logistics    logisticsJSON `json:"logistics"`
-	Resorts      []resortJSON  `json:"resorts"`
+	ID          string        `json:"id"`
+	Name        string        `json:"name"`
+	Country     string        `json:"country"`
+	Timezone    string        `json:"timezone"`
+	MacroRegion string        `json:"macro_region"`
+	Coords      coordsJSON    `json:"coords"`
+	Logistics   logisticsJSON `json:"logistics"`
+	Resorts     []resortJSON  `json:"resorts"`
 }
 
 type coordsJSON struct {
@@ -43,10 +42,9 @@ type coordsJSON struct {
 }
 
 type logisticsJSON struct {
-	NearestAirport string  `json:"nearest_airport"`
-	DriveTimeHours float64 `json:"drive_time_hours"`
-	DriveNotes     string  `json:"drive_notes"`
-	LodgingNotes   string  `json:"lodging_notes"`
+	NearestAirport string `json:"nearest_airport"`
+	DriveNotes     string `json:"drive_notes"`
+	LodgingNotes   string `json:"lodging_notes"`
 }
 
 type resortJSON struct {
@@ -87,26 +85,36 @@ func Regions() []RegionWithResorts {
 }
 
 func toRegion(j regionJSON) domain.Region {
-	ft := domain.FrictionTier(j.FrictionTier)
-	near, ext := ft.Thresholds()
 	return domain.Region{
-		ID:                  j.ID,
-		Name:                j.Name,
-		Country:             j.Country,
-		Timezone:            j.Timezone,
-		FrictionTier:        ft,
-		Latitude:            j.Coords.Lat,
-		Longitude:           j.Coords.Lon,
-		NearThresholdIn:     near,
-		ExtendedThresholdIn: ext,
+		ID:        j.ID,
+		Name:      j.Name,
+		Country:   j.Country,
+		Timezone:  j.Timezone,
+		Latitude:  j.Coords.Lat,
+		Longitude: j.Coords.Lon,
 		Logistics: domain.RegionLogistics{
 			NearestAirport: j.Logistics.NearestAirport,
-			DriveTimeHours: j.Logistics.DriveTimeHours,
 			DriveNotes:     j.Logistics.DriveNotes,
 			LodgingNotes:   j.Logistics.LodgingNotes,
 		},
 		StormGroup: j.MacroRegion,
 	}
+}
+
+// RegionsForUser loads regions and assigns friction tiers based on the user's
+// home coordinates. Each region's tier is calculated from the straight-line
+// distance between the user's home and the region.
+func RegionsForUser(homeLat, homeLon float64) []RegionWithResorts {
+	regions := Regions()
+	for i := range regions {
+		r := &regions[i].Region
+		dist := domain.HaversineDistanceKM(homeLat, homeLon, r.Latitude, r.Longitude)
+		r.FrictionTier = domain.FrictionTierFromDistance(dist)
+		near, ext := r.FrictionTier.Thresholds()
+		r.NearThresholdIn = near
+		r.ExtendedThresholdIn = ext
+	}
+	return regions
 }
 
 func toResorts(regionID string, js []resortJSON) []domain.Resort {

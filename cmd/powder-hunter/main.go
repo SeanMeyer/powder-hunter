@@ -152,7 +152,7 @@ func runPipeline(ctx context.Context, args []string) int {
 	}
 	defer db.Close()
 
-	if err := autoSeed(ctx, db); err != nil {
+	if err := autoSeed(ctx, db, profile); err != nil {
 		slog.Error("auto-seed failed", "error", err)
 		return 1
 	}
@@ -217,7 +217,7 @@ func runPipeline(ctx context.Context, args []string) int {
 // autoSeed detects a fresh database (no regions) and seeds regions, resorts,
 // and the initial prompt template. It always upserts the user profile from
 // environment variables so config changes take effect on restart.
-func autoSeed(ctx context.Context, db *storage.DB) error {
+func autoSeed(ctx context.Context, db *storage.DB, profile domain.UserProfile) error {
 	count, err := db.CountRegions(ctx)
 	if err != nil {
 		return fmt.Errorf("count regions: %w", err)
@@ -225,7 +225,7 @@ func autoSeed(ctx context.Context, db *storage.DB) error {
 
 	if count == 0 {
 		slog.Info("first run detected, seeding database")
-		regions := catalog.Regions()
+		regions := catalog.RegionsForUser(profile.HomeLatitude, profile.HomeLongitude)
 		for _, r := range regions {
 			if err := db.UpsertRegion(ctx, r.Region); err != nil {
 				return fmt.Errorf("upsert region %s: %w", r.Region.ID, err)
@@ -245,8 +245,6 @@ func autoSeed(ctx context.Context, db *storage.DB) error {
 		slog.Info("seeded prompt template", "version", promptVersion)
 	}
 
-	// Always upsert profile from env vars so changes take effect on restart.
-	profile := config.ProfileFromEnv(os.Getenv)
 	if err := db.SaveProfile(ctx, profile); err != nil {
 		return fmt.Errorf("save profile: %w", err)
 	}
@@ -429,6 +427,12 @@ func runSeed(ctx context.Context, args []string) int {
 		return 1
 	}
 
+	profile := config.ProfileFromEnv(os.Getenv)
+	if profile.HomeLatitude == 0 || profile.HomeLongitude == 0 {
+		slog.Error("HOME_LATITUDE and HOME_LONGITUDE are required")
+		return 1
+	}
+
 	db, err := storage.Open(*dbPath)
 	if err != nil {
 		slog.Error("open database", "error", err)
@@ -436,7 +440,7 @@ func runSeed(ctx context.Context, args []string) int {
 	}
 	defer db.Close()
 
-	regions := catalog.Regions()
+	regions := catalog.RegionsForUser(profile.HomeLatitude, profile.HomeLongitude)
 	for _, r := range regions {
 		if err := db.UpsertRegion(ctx, r.Region); err != nil {
 			slog.Error("upsert region", "region", r.Region.ID, "error", err)
@@ -450,20 +454,11 @@ func runSeed(ctx context.Context, args []string) int {
 		}
 	}
 
-	// Create default profile if none exists.
-	profile, err := db.GetProfile(ctx)
-	if err != nil {
-		slog.Error("check profile", "error", err)
+	if err := db.SaveProfile(ctx, profile); err != nil {
+		slog.Error("save profile", "error", err)
 		return 1
 	}
-	if profile == nil {
-		defaultProfile := catalog.DefaultProfile()
-		if err := db.SaveProfile(ctx, defaultProfile); err != nil {
-			slog.Error("create default profile", "error", err)
-			return 1
-		}
-		slog.Info("created default user profile", "home", defaultProfile.HomeBase)
-	}
+	slog.Info("saved user profile", "home", profile.HomeBase)
 
 	// Seed the initial prompt template if it doesn't already exist.
 	promptID, promptVersion, promptTemplate := catalog.InitialPromptTemplate()
@@ -537,7 +532,12 @@ func runProfile(ctx context.Context, args []string) int {
 }
 
 func runRegions() int {
-	regions := catalog.Regions()
+	profile := config.ProfileFromEnv(os.Getenv)
+	if profile.HomeLatitude == 0 || profile.HomeLongitude == 0 {
+		slog.Error("HOME_LATITUDE and HOME_LONGITUDE are required")
+		return 1
+	}
+	regions := catalog.RegionsForUser(profile.HomeLatitude, profile.HomeLongitude)
 	rows := make([]trace.RegionRow, len(regions))
 	for i, r := range regions {
 		rows[i] = trace.RegionRow{
@@ -591,8 +591,14 @@ func runTrace(ctx context.Context, args []string) int {
 		return 1
 	}
 
+	traceProfile := config.ProfileFromEnv(os.Getenv)
+	if traceProfile.HomeLatitude == 0 || traceProfile.HomeLongitude == 0 {
+		fmt.Fprintln(os.Stderr, "error: HOME_LATITUDE and HOME_LONGITUDE are required")
+		return 1
+	}
+
 	// Find region in seed data.
-	allRegions := catalog.Regions()
+	allRegions := catalog.RegionsForUser(traceProfile.HomeLatitude, traceProfile.HomeLongitude)
 	var found *catalog.RegionWithResorts
 	for i := range allRegions {
 		if allRegions[i].Region.ID == *regionID {
@@ -646,7 +652,7 @@ func runTrace(ctx context.Context, args []string) int {
 
 	if *weatherOnly {
 		if *showPrompt {
-			prompt := buildPrompt(found.Region, found.Resorts, forecasts)
+			prompt := buildPrompt(found.Region, found.Resorts, forecasts, traceProfile)
 			trace.FormatPrompt(w, prompt)
 		}
 		trace.FormatWeatherOnly(w)
@@ -694,19 +700,11 @@ func runTrace(ctx context.Context, args []string) int {
 		}
 	}
 
-	profile, err := db.GetProfile(ctx)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: get profile: %v\n", err)
+	if saveErr := db.SaveProfile(ctx, traceProfile); saveErr != nil {
+		fmt.Fprintf(os.Stderr, "error: save profile: %v\n", saveErr)
 		return 1
 	}
-	if profile == nil {
-		defaultProfile := catalog.DefaultProfile()
-		if saveErr := db.SaveProfile(ctx, defaultProfile); saveErr != nil {
-			fmt.Fprintf(os.Stderr, "error: create default profile: %v\n", saveErr)
-			return 1
-		}
-		profile = &defaultProfile
-	}
+	profile := &traceProfile
 
 	// Seed the prompt template.
 	promptID, promptVersion, promptTemplate := catalog.InitialPromptTemplate()
@@ -752,10 +750,8 @@ func runTrace(ctx context.Context, args []string) int {
 
 // buildPrompt renders the LLM prompt using seed data and a default profile,
 // without requiring a database or API key. Used by --show-prompt in weather-only mode.
-func buildPrompt(region domain.Region, resorts []domain.Resort, forecasts []domain.Forecast) string {
+func buildPrompt(region domain.Region, resorts []domain.Resort, forecasts []domain.Forecast, profile domain.UserProfile) string {
 	_, promptVersion, promptTemplate := catalog.InitialPromptTemplate()
-
-	defaultProfile := catalog.DefaultProfile()
 
 	detection := domain.Detect(region, forecasts)
 
@@ -763,7 +759,7 @@ func buildPrompt(region domain.Region, resorts []domain.Resort, forecasts []doma
 		WeatherData:       evaluation.FormatWeatherForPrompt(forecasts),
 		RegionName:        region.Name,
 		Resorts:           evaluation.FormatResortsForPrompt(resorts),
-		UserProfile:       evaluation.FormatProfileForPrompt(defaultProfile),
+		UserProfile:       evaluation.FormatProfileForPrompt(profile),
 		StormWindow:       evaluation.FormatDetectionForPrompt(detection),
 		EvaluationHistory: "No prior evaluations",
 		PromptVersion:     promptVersion,

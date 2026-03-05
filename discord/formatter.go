@@ -277,14 +277,6 @@ func buildFields(eval domain.Evaluation, region domain.Region) []EmbedField {
 		fields = append(fields, EmbedField{Name: "Total Est. Cost", Value: eval.LogisticsSummary.TotalEstimatedCost, Inline: false})
 	}
 
-	if region.Logistics.DriveTimeHours > 0 && region.FrictionTier != domain.FrictionFlight {
-		fields = append(fields, EmbedField{
-			Name:   "Drive Time",
-			Value:  fmt.Sprintf("%.1fh", region.Logistics.DriveTimeHours),
-			Inline: true,
-		})
-	}
-
 	return fields
 }
 

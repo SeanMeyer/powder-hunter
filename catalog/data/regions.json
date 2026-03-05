@@ -5,7 +5,6 @@
       "name": "Colorado I-70 Corridor",
       "country": "US",
       "timezone": "America/Denver",
-      "friction_tier": "local_drive",
       "macro_region": "co_front_range",
       "coords": {
         "lat": 39.6042,
@@ -13,7 +12,6 @@
       },
       "logistics": {
         "nearest_airport": "DEN",
-        "drive_time_hours": 1.5,
         "drive_notes": "I-70 westbound. Traction laws frequently active. Severe weekend traffic bottlenecks at the Eisenhower Tunnel.",
         "lodging_notes": "Silverthorne, Frisco, and Dillon serve as central budget hubs. On-mountain lodging is premium."
       },
@@ -233,7 +231,6 @@
       "name": "Roaring Fork Valley",
       "country": "US",
       "timezone": "America/Denver",
-      "friction_tier": "regional_drive",
       "macro_region": "co_roaring_fork",
       "coords": {
         "lat": 39.186,
@@ -241,7 +238,6 @@
       },
       "logistics": {
         "nearest_airport": "ASE",
-        "drive_time_hours": 3.5,
         "drive_notes": "Long drive past Glenwood Canyon. Highway 82 can be treacherous.",
         "lodging_notes": "Aspen/Snowmass proper is luxury pricing. Budget lodging requires a 40+ minute commute from down-valley (Basalt, Carbondale, or Glenwood Springs)."
       },
@@ -385,7 +381,6 @@
       "name": "The Steamboat Bubble",
       "country": "US",
       "timezone": "America/Denver",
-      "friction_tier": "regional_drive",
       "macro_region": "co_steamboat",
       "coords": {
         "lat": 40.457,
@@ -393,7 +388,6 @@
       },
       "logistics": {
         "nearest_airport": "HDN",
-        "drive_time_hours": 3.0,
         "drive_notes": "Rabbit Ears Pass can be highly dangerous during a storm. Bypasses the worst of I-70.",
         "lodging_notes": "Plenty of lodging in Steamboat Springs, ranging from budget to luxury."
       },
@@ -431,7 +425,6 @@
       "name": "Southwest Colorado (San Juans)",
       "country": "US",
       "timezone": "America/Denver",
-      "friction_tier": "high_friction_drive",
       "macro_region": "co_southern",
       "coords": {
         "lat": 37.937,
@@ -439,7 +432,6 @@
       },
       "logistics": {
         "nearest_airport": "MTJ",
-        "drive_time_hours": 6.5,
         "drive_notes": "Extreme high-friction drive from Denver. Requires a multi-day trip commitment.",
         "lodging_notes": "Telluride is wildly expensive. Purgatory/Durango offers much more affordable options."
       },
@@ -525,7 +517,6 @@
       "name": "Wolf Creek",
       "country": "US",
       "timezone": "America/Denver",
-      "friction_tier": "regional_drive",
       "macro_region": "co_southern",
       "coords": {
         "lat": 37.472,
@@ -533,7 +524,6 @@
       },
       "logistics": {
         "nearest_airport": "DRO",
-        "drive_time_hours": 4.5,
         "drive_notes": "Wolf Creek Pass is notoriously treacherous during snowstorms.",
         "lodging_notes": "No on-mountain lodging. Stay in Pagosa Springs (30 mins west) or South Fork (30 mins east)."
       },
@@ -569,7 +559,6 @@
       "name": "Route 50 Corridor",
       "country": "US",
       "timezone": "America/Denver",
-      "friction_tier": "regional_drive",
       "macro_region": "co_western_slope",
       "coords": {
         "lat": 38.899,
@@ -577,7 +566,6 @@
       },
       "logistics": {
         "nearest_airport": "GUC",
-        "drive_time_hours": 3.5,
         "drive_notes": "Route 50 over Monarch pass can be difficult, but typically avoids I-70 gridlock.",
         "lodging_notes": "Gunnison and Salida offer cheap lodging. Mt. Crested Butte is more premium."
       },
@@ -639,7 +627,6 @@
       "name": "Grand Mesa (Powderhorn)",
       "country": "US",
       "timezone": "America/Denver",
-      "friction_tier": "regional_drive",
       "macro_region": "co_western_slope",
       "coords": {
         "lat": 39.069,
@@ -647,7 +634,6 @@
       },
       "logistics": {
         "nearest_airport": "GJT",
-        "drive_time_hours": 4.0,
         "drive_notes": "Requires driving all the way past Glenwood Springs to the Grand Mesa.",
         "lodging_notes": "Grand Junction or Palisade are the closest major towns, about 45 mins away."
       },
@@ -685,7 +671,6 @@
       "name": "Little Cottonwood Canyon, UT",
       "country": "US",
       "timezone": "America/Denver",
-      "friction_tier": "high_friction_drive",
       "macro_region": "wasatch",
       "coords": {
         "lat": 40.584,
@@ -693,7 +678,6 @@
       },
       "logistics": {
         "nearest_airport": "SLC",
-        "drive_time_hours": 8.5,
         "drive_notes": "Highway 210 is a notorious avalanche corridor. The 'Red Snake' morning traffic is brutal. Strict traction laws.",
         "lodging_notes": "Stay in SLC or Sandy for budget options. On-mountain at Alta/Bird is extremely limited and expensive."
       },
@@ -759,7 +743,6 @@
       "name": "Big Cottonwood Canyon, UT",
       "country": "US",
       "timezone": "America/Denver",
-      "friction_tier": "high_friction_drive",
       "macro_region": "wasatch",
       "coords": {
         "lat": 40.603,
@@ -767,7 +750,6 @@
       },
       "logistics": {
         "nearest_airport": "SLC",
-        "drive_time_hours": 8.0,
         "drive_notes": "Highway 190 traffic is awful on weekends. Required winter tires/chains.",
         "lodging_notes": "Cottonwood Heights offers great access and cheaper lodging."
       },
@@ -831,7 +813,6 @@
       "name": "Park City Area, UT",
       "country": "US",
       "timezone": "America/Denver",
-      "friction_tier": "high_friction_drive",
       "macro_region": "wasatch",
       "coords": {
         "lat": 40.651,
@@ -839,7 +820,6 @@
       },
       "logistics": {
         "nearest_airport": "SLC",
-        "drive_time_hours": 7.5,
         "drive_notes": "I-80 route is a massive multi-lane highway, much easier and less prone to closure than the Cottonwood Canyons.",
         "lodging_notes": "Park City is expensive luxury lodging. Kimball Junction is slightly cheaper."
       },
@@ -927,7 +907,6 @@
       "name": "Northern Utah (Ogden / Logan)",
       "country": "US",
       "timezone": "America/Denver",
-      "friction_tier": "high_friction_drive",
       "macro_region": "wasatch",
       "coords": {
         "lat": 41.25,
@@ -935,7 +914,6 @@
       },
       "logistics": {
         "nearest_airport": "SLC",
-        "drive_time_hours": 7.0,
         "drive_notes": "Easy drive north of SLC on I-15. Avoids all canyon gridlock of LCC/BCC.",
         "lodging_notes": "Ogden offers affordable city lodging. Huntsville has quiet, local options."
       },
@@ -1024,7 +1002,6 @@
       "name": "Southern Utah",
       "country": "US",
       "timezone": "America/Denver",
-      "friction_tier": "high_friction_drive",
       "macro_region": "ut_southern",
       "coords": {
         "lat": 38.3,
@@ -1032,7 +1009,6 @@
       },
       "logistics": {
         "nearest_airport": "SLC",
-        "drive_time_hours": 8.0,
         "drive_notes": "Long drive through the desert, but highly scenic and avoids SLC canyon traffic.",
         "lodging_notes": "Beaver, UT provides access. Very remote."
       },
@@ -1094,7 +1070,6 @@
       "name": "North Lake Tahoe",
       "country": "US",
       "timezone": "America/Los_Angeles",
-      "friction_tier": "flight",
       "macro_region": "sierra_nevada",
       "coords": {
         "lat": 39.25,
@@ -1102,7 +1077,6 @@
       },
       "logistics": {
         "nearest_airport": "RNO",
-        "drive_time_hours": 16.0,
         "drive_notes": "Flight to RNO is mandatory from Denver. I-80 (Donner Pass) frequently closes during storms. Turo with 3PMSF tires is essential.",
         "lodging_notes": "Truckee is the hub. Staying north of the lake is mandatory to avoid Highway 89 avalanche closures."
       },
@@ -1262,7 +1236,6 @@
       "name": "South Lake Tahoe",
       "country": "US",
       "timezone": "America/Los_Angeles",
-      "friction_tier": "flight",
       "macro_region": "sierra_nevada",
       "coords": {
         "lat": 38.866,
@@ -1270,7 +1243,6 @@
       },
       "logistics": {
         "nearest_airport": "RNO",
-        "drive_time_hours": 16.5,
         "drive_notes": "Highway 50 (from Sacramento) or NV-207 (Kingsbury Grade) from Reno. Do NOT expect to travel between North and South Tahoe during a storm due to Hwy 89 Emerald Bay closures.",
         "lodging_notes": "Stateline NV offers massive casino-hotel options. South Lake Tahoe has endless budget motels."
       },
@@ -1358,7 +1330,6 @@
       "name": "Eastern Sierra",
       "country": "US",
       "timezone": "America/Los_Angeles",
-      "friction_tier": "flight",
       "macro_region": "sierra_nevada",
       "coords": {
         "lat": 37.63,
@@ -1366,7 +1337,6 @@
       },
       "logistics": {
         "nearest_airport": "MMH",
-        "drive_time_hours": 15.0,
         "drive_notes": "Flight to Mammoth (MMH) or Reno (RNO) + 3hr drive south. Highway 395 is gorgeous but exposed to extreme winds.",
         "lodging_notes": "Mammoth Lakes offers everything from hostels to luxury condos."
       },
@@ -1430,7 +1400,6 @@
       "name": "Central Sierra",
       "country": "US",
       "timezone": "America/Los_Angeles",
-      "friction_tier": "flight",
       "macro_region": "sierra_nevada",
       "coords": {
         "lat": 38.0,
@@ -1438,7 +1407,6 @@
       },
       "logistics": {
         "nearest_airport": "FAT",
-        "drive_time_hours": 18.0,
         "drive_notes": "Requires driving up winding, low-elevation Sierra foothills. Chain control is absolute.",
         "lodging_notes": "Lodging is localized and limited compared to Tahoe."
       },
@@ -1522,7 +1490,6 @@
       "name": "Central Washington Cascades",
       "country": "US",
       "timezone": "America/Los_Angeles",
-      "friction_tier": "flight",
       "macro_region": "pnw_cascades",
       "coords": {
         "lat": 47.422,
@@ -1530,7 +1497,6 @@
       },
       "logistics": {
         "nearest_airport": "SEA",
-        "drive_time_hours": 20.0,
         "drive_notes": "Flight to SEA required. I-90 and US-2 are notorious for severe winter closures. 3PMSF winter tires are mandatory.",
         "lodging_notes": "Staying 'on pass' is highly recommended to avoid being locked out behind highway avalanche gates during a major storm."
       },
@@ -1620,7 +1586,6 @@
       "name": "South Washington Cascades (Mt. Rainier Area)",
       "country": "US",
       "timezone": "America/Los_Angeles",
-      "friction_tier": "flight",
       "macro_region": "pnw_cascades",
       "coords": {
         "lat": 46.935,
@@ -1628,7 +1593,6 @@
       },
       "logistics": {
         "nearest_airport": "SEA",
-        "drive_time_hours": 19.0,
         "drive_notes": "Highway 410 (to Crystal) can experience severe delays or closures due to avalanches.",
         "lodging_notes": "Greenwater offers cabin rentals; staying near the resort is highly advised during active storms."
       },
@@ -1690,7 +1654,6 @@
       "name": "North Cascades",
       "country": "US",
       "timezone": "America/Los_Angeles",
-      "friction_tier": "flight",
       "macro_region": "pnw_cascades",
       "coords": {
         "lat": 48.861,
@@ -1698,7 +1661,6 @@
       },
       "logistics": {
         "nearest_airport": "BLI",
-        "drive_time_hours": 24.0,
         "drive_notes": "Flight to Bellingham (BLI) or Seattle (SEA) + long drive north. Highway 542 is the only way in.",
         "lodging_notes": "No on-mountain lodging. Stay in Glacier or Bellingham."
       },
@@ -1734,7 +1696,6 @@
       "name": "Eastern Washington",
       "country": "US",
       "timezone": "America/Los_Angeles",
-      "friction_tier": "flight",
       "macro_region": "pnw_interior",
       "coords": {
         "lat": 47.954,
@@ -1742,7 +1703,6 @@
       },
       "logistics": {
         "nearest_airport": "GEG",
-        "drive_time_hours": 16.0,
         "drive_notes": "Flight to Spokane (GEG). Much drier climate than the Cascades.",
         "lodging_notes": "Spokane or Wenatchee serve as great hubs."
       },
@@ -1826,7 +1786,6 @@
       "name": "Mount Hood Area, OR",
       "country": "US",
       "timezone": "America/Los_Angeles",
-      "friction_tier": "flight",
       "macro_region": "pnw_cascades",
       "coords": {
         "lat": 45.33,
@@ -1834,7 +1793,6 @@
       },
       "logistics": {
         "nearest_airport": "PDX",
-        "drive_time_hours": 18.0,
         "drive_notes": "Flight to Portland (PDX). Highway 26 can get nasty during storms.",
         "lodging_notes": "Government Camp provides great local access. Portland is only 1.5 hours away."
       },
@@ -1918,7 +1876,6 @@
       "name": "Central Oregon",
       "country": "US",
       "timezone": "America/Los_Angeles",
-      "friction_tier": "flight",
       "macro_region": "pnw_interior",
       "coords": {
         "lat": 43.979,
@@ -1926,7 +1883,6 @@
       },
       "logistics": {
         "nearest_airport": "RDM",
-        "drive_time_hours": 17.0,
         "drive_notes": "Flight to Redmond (RDM) or PDX + 3.5 hour drive.",
         "lodging_notes": "Bend, OR is an incredible ski town with great breweries and lodging."
       },
@@ -2012,7 +1968,6 @@
       "name": "Eastern Oregon",
       "country": "US",
       "timezone": "America/Los_Angeles",
-      "friction_tier": "flight",
       "macro_region": "pnw_interior",
       "coords": {
         "lat": 44.962,
@@ -2020,7 +1975,6 @@
       },
       "logistics": {
         "nearest_airport": "BOI",
-        "drive_time_hours": 14.0,
         "drive_notes": "Highly remote. Driving from Boise (BOI) is the easiest access point.",
         "lodging_notes": "Baker City is the nearest civilization."
       },
@@ -2056,7 +2010,6 @@
       "name": "The Tetons (WY/ID)",
       "country": "US",
       "timezone": "America/Denver",
-      "friction_tier": "flight",
       "macro_region": "snake_river_tetons",
       "coords": {
         "lat": 43.587,
@@ -2064,7 +2017,6 @@
       },
       "logistics": {
         "nearest_airport": "JAC",
-        "drive_time_hours": 8.5,
         "drive_notes": "An 8.5 hour extreme drive from Denver, or a flight into JAC. Winter driving over Teton Pass or through the Snake River Canyon is extremely hazardous.",
         "lodging_notes": "Jackson is luxury pricing. Driggs/Victor (Idaho side) is much more affordable but requires driving Teton Pass."
       },
@@ -2153,7 +2105,6 @@
       "name": "Southwest Montana (Bozeman Area)",
       "country": "US",
       "timezone": "America/Denver",
-      "friction_tier": "flight",
       "macro_region": "northern_rockies",
       "coords": {
         "lat": 45.28,
@@ -2161,7 +2112,6 @@
       },
       "logistics": {
         "nearest_airport": "BZN",
-        "drive_time_hours": 10.5,
         "drive_notes": "Flight to Bozeman (BZN).",
         "lodging_notes": "Bozeman is a great hub. Big Sky resort lodging is extremely expensive."
       },
@@ -2248,7 +2198,6 @@
       "name": "Western & Northern Montana",
       "country": "US",
       "timezone": "America/Denver",
-      "friction_tier": "flight",
       "macro_region": "northern_rockies",
       "coords": {
         "lat": 48.48,
@@ -2256,7 +2205,6 @@
       },
       "logistics": {
         "nearest_airport": "FCA",
-        "drive_time_hours": 14.0,
         "drive_notes": "Flight into Kalispell (FCA) or Missoula (MSO).",
         "lodging_notes": "Whitefish is an excellent ski town. Missoula offers great access to the smaller gems."
       },
@@ -2438,7 +2386,6 @@
       "name": "Idaho Panhandle",
       "country": "US",
       "timezone": "America/Boise",
-      "friction_tier": "flight",
       "macro_region": "northern_rockies",
       "coords": {
         "lat": 48.367,
@@ -2446,7 +2393,6 @@
       },
       "logistics": {
         "nearest_airport": "GEG",
-        "drive_time_hours": 15.0,
         "drive_notes": "Fly into Spokane, WA (GEG) and drive east into Idaho.",
         "lodging_notes": "Sandpoint, ID is a gorgeous lake town with access to Schweitzer."
       },
@@ -2532,7 +2478,6 @@
       "name": "Central & Southern Idaho",
       "country": "US",
       "timezone": "America/Boise",
-      "friction_tier": "flight",
       "macro_region": "snake_river_tetons",
       "coords": {
         "lat": 43.766,
@@ -2540,7 +2485,6 @@
       },
       "logistics": {
         "nearest_airport": "BOI",
-        "drive_time_hours": 12.0,
         "drive_notes": "Fly into Boise (BOI) or Sun Valley (SUN).",
         "lodging_notes": "Boise offers city convenience, while McCall and Ketchum offer true ski-town vibes."
       },
@@ -2707,7 +2651,6 @@
       "name": "Northern New Mexico",
       "country": "US",
       "timezone": "America/Denver",
-      "friction_tier": "regional_drive",
       "macro_region": "nm_northern",
       "coords": {
         "lat": 36.596,
@@ -2715,7 +2658,6 @@
       },
       "logistics": {
         "nearest_airport": "ABQ",
-        "drive_time_hours": 4.5,
         "drive_notes": "A relatively easy drive south from Denver on I-25. Generally avoids the brutal gridlock of I-70.",
         "lodging_notes": "Taos has limited on-mountain lodging; the town of Taos (30 mins away) is the primary budget hub. Santa Fe offers great city lodging."
       },
@@ -2826,7 +2768,6 @@
       "name": "Central & Southern New Mexico",
       "country": "US",
       "timezone": "America/Denver",
-      "friction_tier": "high_friction_drive",
       "macro_region": "nm_southern",
       "coords": {
         "lat": 33.397,
@@ -2834,7 +2775,6 @@
       },
       "logistics": {
         "nearest_airport": "ABQ",
-        "drive_time_hours": 7.5,
         "drive_notes": "Long drive south down I-25. Very desolate stretches of highway.",
         "lodging_notes": "Ruidoso serves as the main hub for Ski Apache."
       },
@@ -2894,7 +2834,6 @@
       "name": "Arizona",
       "country": "US",
       "timezone": "America/Phoenix",
-      "friction_tier": "flight",
       "macro_region": "az_flagstaff",
       "coords": {
         "lat": 35.33,
@@ -2902,7 +2841,6 @@
       },
       "logistics": {
         "nearest_airport": "PHX",
-        "drive_time_hours": 11.5,
         "drive_notes": "Drive is over 11 hours. Flying into PHX and driving 2.5 hours north is preferred.",
         "lodging_notes": "Flagstaff is an incredible mountain town with endless lodging options."
       },
@@ -2962,7 +2900,6 @@
       "name": "Alaska (Chugach Range)",
       "country": "US",
       "timezone": "America/Anchorage",
-      "friction_tier": "flight",
       "macro_region": "ak_chugach",
       "coords": {
         "lat": 60.96,
@@ -2970,7 +2907,6 @@
       },
       "logistics": {
         "nearest_airport": "ANC",
-        "drive_time_hours": 48.0,
         "drive_notes": "Flight to Anchorage (ANC) is absolute necessity. 45-minute drive south to Alyeska on the Seward Highway.",
         "lodging_notes": "Alyeska Resort has a luxury hotel at the base, or you can stay in Girdwood."
       },
@@ -3034,7 +2970,6 @@
       "name": "Midwest (Upper Peninsula)",
       "country": "US",
       "timezone": "America/Detroit",
-      "friction_tier": "flight",
       "macro_region": "mi_upper_peninsula",
       "coords": {
         "lat": 47.388,
@@ -3042,7 +2977,6 @@
       },
       "logistics": {
         "nearest_airport": "CMX",
-        "drive_time_hours": 18.0,
         "drive_notes": "Flight to Houghton (CMX) or massive drive through the Midwest.",
         "lodging_notes": "On-site yurts and a hostel. Very rustic."
       },
@@ -3078,7 +3012,6 @@
       "name": "Northern Vermont (The Snow Pocket)",
       "country": "US",
       "timezone": "America/New_York",
-      "friction_tier": "flight",
       "macro_region": "northeast",
       "coords": {
         "lat": 44.924,
@@ -3086,7 +3019,6 @@
       },
       "logistics": {
         "nearest_airport": "BTV",
-        "drive_time_hours": 30.0,
         "drive_notes": "Flight to Burlington (BTV). Only trigger this trip if the Western U.S. is completely dry and a massive Nor'easter stalls over New England.",
         "lodging_notes": "Burlington, Waterbury, or Stowe offer great hubs. Driving between resorts in winter can be slow going."
       },
@@ -3276,7 +3208,6 @@
       "name": "Maine & The Adirondacks",
       "country": "US",
       "timezone": "America/New_York",
-      "friction_tier": "flight",
       "macro_region": "northeast",
       "coords": {
         "lat": 44.302,
@@ -3284,7 +3215,6 @@
       },
       "logistics": {
         "nearest_airport": "PWM",
-        "drive_time_hours": 32.0,
         "drive_notes": "Fly into Portland, ME (PWM) or Albany, NY (ALB). Very remote driving.",
         "lodging_notes": "Lodging is highly isolated near the specific mountains."
       },
@@ -3402,7 +3332,6 @@
       "name": "British Columbia (Coast Mountains)",
       "country": "CA",
       "timezone": "America/Vancouver",
-      "friction_tier": "flight",
       "macro_region": "bc_coast",
       "coords": {
         "lat": 50.115,
@@ -3410,7 +3339,6 @@
       },
       "logistics": {
         "nearest_airport": "YVR",
-        "drive_time_hours": 24.0,
         "drive_notes": "Fly into Vancouver (YVR). Beautiful, easy 2-hour drive up the Sea-to-Sky Highway. Passports required.",
         "lodging_notes": "Whistler Village is sprawling and very expensive."
       },
@@ -3448,7 +3376,6 @@
       "name": "British Columbia (The Powder Highway)",
       "country": "CA",
       "timezone": "America/Vancouver",
-      "friction_tier": "flight",
       "macro_region": "bc_interior",
       "coords": {
         "lat": 51.0,
@@ -3456,7 +3383,6 @@
       },
       "logistics": {
         "nearest_airport": "YLW",
-        "drive_time_hours": 20.0,
         "drive_notes": "Fly into Kelowna (YLW), Calgary (YYC), or Spokane (GEG). Driving the Powder Highway in winter requires absolute confidence in severe winter driving.",
         "lodging_notes": "Towns like Revelstoke, Golden, and Fernie offer amazing, rustic ski-town lodging."
       },
@@ -3599,7 +3525,6 @@
       "name": "Alberta (Banff & Lake Louise)",
       "country": "CA",
       "timezone": "America/Edmonton",
-      "friction_tier": "flight",
       "macro_region": "alberta_rockies",
       "coords": {
         "lat": 51.411,
@@ -3607,7 +3532,6 @@
       },
       "logistics": {
         "nearest_airport": "YYC",
-        "drive_time_hours": 18.0,
         "drive_notes": "Fly into Calgary (YYC). Very easy, flat 1.5-hour drive on the Trans-Canada Highway.",
         "lodging_notes": "Banff is a bustling, gorgeous national park town. Very strict development laws keep it pristine."
       },
@@ -3673,7 +3597,6 @@
       "name": "Southern Vermont & New Hampshire",
       "country": "US",
       "timezone": "America/New_York",
-      "friction_tier": "flight",
       "macro_region": "northeast",
       "coords": {
         "lat": 43.113,
@@ -3681,7 +3604,6 @@
       },
       "logistics": {
         "nearest_airport": "BOS",
-        "drive_time_hours": 30.0,
         "drive_notes": "Fly to Boston (BOS) or Albany (ALB). Major winter Nor'easters make I-89 and I-91 very treacherous.",
         "lodging_notes": "Southern Vermont is heavily populated with resort lodging, but books up instantly during storms."
       },
@@ -3771,7 +3693,6 @@
       "name": "Southern California",
       "country": "US",
       "timezone": "America/Los_Angeles",
-      "friction_tier": "flight",
       "macro_region": "ca_socal",
       "coords": {
         "lat": 34.236,
@@ -3779,7 +3700,6 @@
       },
       "logistics": {
         "nearest_airport": "ONT",
-        "drive_time_hours": 16.0,
         "drive_notes": "Fly into Ontario (ONT) or LAX. Driving up the mountain roads from LA during a snowstorm is a true nightmare of gridlock and unprepared drivers.",
         "lodging_notes": "Big Bear Lake has plenty of cabins, but books up instantly when snow hits."
       },
@@ -3841,7 +3761,6 @@
       "name": "Northern California (Shasta)",
       "country": "US",
       "timezone": "America/Los_Angeles",
-      "friction_tier": "flight",
       "macro_region": "ca_norcal",
       "coords": {
         "lat": 41.319,
@@ -3849,7 +3768,6 @@
       },
       "logistics": {
         "nearest_airport": "RDD",
-        "drive_time_hours": 19.0,
         "drive_notes": "Fly into Redding (RDD) or Medford, OR (MFR). Very remote section of I-5.",
         "lodging_notes": "The town of Mt. Shasta offers affordable, quiet lodging."
       },
@@ -3887,7 +3805,6 @@
       "name": "Colorado Front Range",
       "country": "US",
       "timezone": "America/Denver",
-      "friction_tier": "local_drive",
       "macro_region": "co_front_range",
       "coords": {
         "lat": 39.938,
@@ -3895,7 +3812,6 @@
       },
       "logistics": {
         "nearest_airport": "DEN",
-        "drive_time_hours": 1.5,
         "drive_notes": "Avoids I-70 entirely! Take Highway 119 through Boulder/Nederland.",
         "lodging_notes": "Boulder or Nederland offer immediate access."
       },
@@ -3933,7 +3849,6 @@
       "name": "British Columbia (Okanagan & Interior)",
       "country": "CA",
       "timezone": "America/Vancouver",
-      "friction_tier": "flight",
       "macro_region": "bc_interior",
       "coords": {
         "lat": 50.45,
@@ -3941,7 +3856,6 @@
       },
       "logistics": {
         "nearest_airport": "YLW",
-        "drive_time_hours": 24.0,
         "drive_notes": "Fly into Kelowna (YLW) or Kamloops (YKA). Extremely remote winter driving.",
         "lodging_notes": "Big White and SilverStar have incredible, massive ski-in/ski-out villages."
       },
@@ -4029,7 +3943,6 @@
       "name": "Alberta (Jasper National Park)",
       "country": "CA",
       "timezone": "America/Edmonton",
-      "friction_tier": "flight",
       "macro_region": "alberta_rockies",
       "coords": {
         "lat": 52.793,
@@ -4037,7 +3950,6 @@
       },
       "logistics": {
         "nearest_airport": "YEG",
-        "drive_time_hours": 22.0,
         "drive_notes": "Fly into Edmonton (YEG) and drive 4 hours west, or drive the Icefields Parkway from Banff (treacherous in winter).",
         "lodging_notes": "Jasper is an incredibly authentic, rustic national park town."
       },
@@ -4073,7 +3985,6 @@
       "name": "New Hampshire (White Mountains)",
       "country": "US",
       "timezone": "America/New_York",
-      "friction_tier": "flight",
       "macro_region": "northeast",
       "coords": {
         "lat": 44.03,
@@ -4081,7 +3992,6 @@
       },
       "logistics": {
         "nearest_airport": "BOS",
-        "drive_time_hours": 30.0,
         "drive_notes": "Fly into Boston (BOS) and drive 2-3 hours north on I-93.",
         "lodging_notes": "Lincoln and North Conway offer massive bed bases and great mountain-town vibes."
       },

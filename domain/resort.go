@@ -46,10 +46,9 @@ type Region struct {
 
 // RegionLogistics captures travel context for LLM evaluation prompts.
 type RegionLogistics struct {
-	NearestAirport string  // IATA code (e.g., "DEN")
-	DriveTimeHours float64 // from user's home base
-	DriveNotes     string  // road conditions, traffic patterns
-	LodgingNotes   string  // price range, availability patterns
+	NearestAirport string // IATA code (e.g., "DEN")
+	DriveNotes     string // road conditions, traffic patterns
+	LodgingNotes   string // price range, availability patterns
 }
 
 // Resort is a ski area within a region. Core stats are typed fields the system
