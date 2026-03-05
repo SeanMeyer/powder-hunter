@@ -419,7 +419,6 @@ func runReplay(ctx context.Context, args []string) int {
 func runSeed(ctx context.Context, args []string) int {
 	fs := flag.NewFlagSet("seed", flag.ContinueOnError)
 	dbPath := fs.String("db", "./powder-hunter.db", "SQLite database path")
-	force := fs.Bool("force", false, "Overwrite existing region/resort data")
 	if err := fs.Parse(args); err != nil {
 		return 1
 	}
@@ -433,27 +432,14 @@ func runSeed(ctx context.Context, args []string) int {
 
 	regions := seed.Regions()
 	for _, r := range regions {
-		if *force {
-			if err := db.UpsertRegion(ctx, r.Region); err != nil {
-				slog.Error("upsert region", "region", r.Region.ID, "error", err)
+		if err := db.UpsertRegion(ctx, r.Region); err != nil {
+			slog.Error("upsert region", "region", r.Region.ID, "error", err)
+			return 1
+		}
+		for _, resort := range r.Resorts {
+			if err := db.UpsertResort(ctx, resort); err != nil {
+				slog.Error("upsert resort", "resort", resort.ID, "error", err)
 				return 1
-			}
-			for _, resort := range r.Resorts {
-				if err := db.UpsertResort(ctx, resort); err != nil {
-					slog.Error("upsert resort", "resort", resort.ID, "error", err)
-					return 1
-				}
-			}
-		} else {
-			if err := db.UpsertRegion(ctx, r.Region); err != nil {
-				slog.Error("upsert region", "region", r.Region.ID, "error", err)
-				return 1
-			}
-			for _, resort := range r.Resorts {
-				if err := db.UpsertResort(ctx, resort); err != nil {
-					slog.Error("upsert resort", "resort", resort.ID, "error", err)
-					return 1
-				}
 			}
 		}
 	}
