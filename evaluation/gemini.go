@@ -51,28 +51,61 @@ type GeminiResult struct {
 	GroundingSources   []string
 }
 
-// EvaluateStorm sends the rendered prompt to Gemini with GoogleSearch grounding
-// and a structured JSON response schema. The response schema constrains output
-// shape at the API layer so we don't need brittle regex extraction.
+// EvaluateStorm performs a two-step evaluation:
+//  1. Call Gemini WITH GoogleSearch grounding but WITHOUT structured output schema.
+//  2. Call Gemini again WITH structured output schema to parse the research into JSON.
+//
+// Why two steps: When GoogleSearch grounding and ResponseSchema are combined in a
+// single call, the grounding search behavior is severely degraded — the model does
+// fewer searches, returns less specific results, and often falls back to training
+// data instead of actually searching. Splitting them lets grounding work at full
+// power (step 1) while still getting clean, schema-validated JSON (step 2).
+// In testing, this reliably surfaced resort-specific info (operating schedules,
+// road conditions, current news) that the single-call approach found inconsistently.
 func (g *GeminiClient) EvaluateStorm(ctx context.Context, prompt string) (GeminiResult, error) {
-	config := &genai.GenerateContentConfig{
+	// Step 1: Grounded research — full Google Search, no schema constraints.
+	researchConfig := &genai.GenerateContentConfig{
 		Tools: []*genai.Tool{
 			{GoogleSearch: &genai.GoogleSearch{}},
 		},
+	}
+
+	researchContents := []*genai.Content{
+		genai.NewContentFromText(prompt, genai.RoleUser),
+	}
+
+	researchResp, err := g.client.Models.GenerateContent(ctx, g.model, researchContents, researchConfig)
+	if err != nil {
+		return GeminiResult{}, fmt.Errorf("gemini research step: %w", err)
+	}
+
+	researchText := researchResp.Text()
+	groundingSources := extractGroundingSources(researchResp)
+
+	// Step 2: Structured extraction — parse the research into JSON schema.
+	structurePrompt := fmt.Sprintf(`You are a JSON extraction assistant. Below is a detailed storm evaluation analysis
+with research findings. Parse it into the required JSON schema exactly. Preserve all specific details,
+numbers, dates, and findings from the research. Do not add information that isn't in the analysis.
+
+## Research Analysis
+
+%s`, researchText)
+
+	structureConfig := &genai.GenerateContentConfig{
 		ResponseMIMEType: "application/json",
 		ResponseSchema:   stormEvalSchema(),
 	}
 
-	contents := []*genai.Content{
-		genai.NewContentFromText(prompt, genai.RoleUser),
+	structureContents := []*genai.Content{
+		genai.NewContentFromText(structurePrompt, genai.RoleUser),
 	}
 
-	resp, err := g.client.Models.GenerateContent(ctx, g.model, contents, config)
+	structureResp, err := g.client.Models.GenerateContent(ctx, g.model, structureContents, structureConfig)
 	if err != nil {
-		return GeminiResult{}, fmt.Errorf("gemini generate content: %w", err)
+		return GeminiResult{}, fmt.Errorf("gemini structure step: %w", err)
 	}
 
-	rawText := resp.Text()
+	rawText := structureResp.Text()
 
 	var structured map[string]any
 	if err := json.Unmarshal([]byte(rawText), &structured); err != nil {
@@ -80,8 +113,9 @@ func (g *GeminiClient) EvaluateStorm(ctx context.Context, prompt string) (Gemini
 	}
 
 	result := GeminiResult{
-		RawResponse:        rawText,
+		RawResponse:        researchText,
 		StructuredResponse: structured,
+		GroundingSources:   groundingSources,
 	}
 
 	result.Tier = domain.Tier(stringField(structured, "tier"))
@@ -109,9 +143,8 @@ func (g *GeminiClient) EvaluateStorm(ctx context.Context, prompt string) (Gemini
 	}
 
 	result.DayByDay = parseDayByDay(structured)
-	result.GroundingSources = extractGroundingSources(resp)
-	// Grounding metadata is empty when structured output is enabled.
-	// Fall back to the research_sources field the model includes in its JSON.
+	// Grounding sources come from step 1 where grounding is fully active.
+	// Fall back to research_sources from JSON if metadata was still empty.
 	if len(result.GroundingSources) == 0 {
 		result.GroundingSources = stringSliceField(structured, "research_sources")
 	}

@@ -22,7 +22,7 @@ func DefaultProfile() domain.UserProfile {
 }
 
 const stormEvalPromptID = "storm_eval"
-const stormEvalPromptVersion = "v2.1.0"
+const stormEvalPromptVersion = "v2.2.0"
 
 // stormEvalPromptTemplate is the v1.0.0 template for LLM storm evaluation.
 // Placeholders are substituted by evaluation.RenderPrompt before each API call.
@@ -101,6 +101,14 @@ determines which factors dominate.
   business decisions. This matters enormously: a storm dumping snow on a day the resort isn't operating
   changes the calculus (powder may sit untracked until they reopen, but grooming and avalanche control
   decisions also shift). Factor current operating schedules into your day-by-day recommendations.
+- Be realistic about how long it takes resorts to open terrain after heavy snowfall. Ski patrol must complete
+  avalanche mitigation before terrain opens, and that work requires lift access. During big storms, resorts
+  often run limited operations — fewer lifts, delayed openings, upper mountain closed — even on days they're
+  technically "open." If a resort was closed or had lifts shut down during the storm (due to wind, scheduled
+  closure days, or operational decisions), patrol couldn't access terrain to mitigate, which means even MORE
+  delay before that terrain opens. A huge dump on Tuesday followed by a Wednesday opening doesn't mean
+  wall-to-wall powder at 9am — it may mean a long wait for avy control with limited terrain trickling open
+  through the day. Factor this into your recommendations honestly; don't just assume "big snow = great day."
 - Research how this specific storm's wind direction, intensity, and snowfall rate will affect lift operations
   at each resort. Consider terrain orientation, wind exposure, and each resort's historical ability to keep
   lifts spinning in similar conditions.
