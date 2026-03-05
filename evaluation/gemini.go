@@ -220,16 +220,16 @@ func stormEvalSchema() *genai.Schema {
 				Type:        genai.TypeString,
 				Description: "A short (under 80 characters) hook: snowfall amount and best day. Punchy preview line.",
 			},
-			"top_resort_picks": {
+			"resort_insights": {
 				Type:        genai.TypeArray,
-				Description: "Top 2-3 resort picks from this region ranked by suitability for this storm. #1 is your primary recommendation.",
+				Description: "Notable findings about specific resorts that affect the storm decision. Not a ranking.",
 				Items: &genai.Schema{
 					Type: genai.TypeObject,
 					Properties: map[string]*genai.Schema{
 						"resort": {Type: genai.TypeString, Description: "Resort name"},
-						"reason": {Type: genai.TypeString, Description: "1-2 sentences explaining why this resort is best for THIS specific storm"},
+						"insight": {Type: genai.TypeString, Description: "A specific finding that matters for this storm (closure creating powder stash, schedule quirk, access advantage, pass coverage)"},
 					},
-					Required: []string{"resort", "reason"},
+					Required: []string{"resort", "insight"},
 				},
 			},
 			"strategy":                 {Type: genai.TypeString},
@@ -279,7 +279,7 @@ func stormEvalSchema() *genai.Schema {
 			},
 		},
 		Required: []string{
-			"tier", "recommendation", "summary", "top_resort_picks", "strategy",
+			"tier", "recommendation", "summary", "resort_insights", "strategy",
 			"snow_quality", "crowd_estimate", "closure_risk",
 			"best_ski_day", "best_ski_day_reason",
 			"key_factors_pros", "key_factors_cons",
@@ -339,7 +339,7 @@ func parseDayByDay(m map[string]any) []domain.DayEvaluation {
 }
 
 func parseResortInsights(m map[string]any) []domain.ResortInsight {
-	raw, ok := m["top_resort_picks"]
+	raw, ok := m["resort_insights"]
 	if !ok {
 		return nil
 	}
@@ -355,7 +355,7 @@ func parseResortInsights(m map[string]any) []domain.ResortInsight {
 		}
 		result = append(result, domain.ResortInsight{
 			Resort:  stringField(entry, "resort"),
-			Insight: stringField(entry, "reason"),
+			Insight: stringField(entry, "insight"),
 		})
 	}
 	return result

@@ -12,7 +12,12 @@ func DefaultProfile() domain.UserProfile {
 		HomeLongitude:     -104.9903,
 		PassesHeld:        []string{"ikon"},
 		SkillLevel:        "expert",
-		Preferences:       "Favorite is moderately steep untouched powder — trees, open bowls, whatever. Steep and deep is fun too. Strong preference for avoiding crowds because the goal is untracked powder, but a big enough resort can let you find it even with crowds, so it's nuanced.",
+		Preferences: "Primary goal is powder strike missions — finding deep, untouched snow. " +
+			"Terrain preference is moderately steep trees and open bowls, but terrain is secondary " +
+			"to powder quality and availability. Strong preference for situations where untouched " +
+			"runs last for hours or days, not minutes. Crowds matter primarily as they affect powder " +
+			"longevity — a big resort with extensive expert terrain can absorb crowds and still have " +
+			"stashes, while a small resort gets tracked out fast.",
 		RemoteWorkCapable: true,
 		TypicalPTODays:    15,
 		MinTierForPing:    domain.TierDropEverything,
@@ -22,7 +27,7 @@ func DefaultProfile() domain.UserProfile {
 }
 
 const stormEvalPromptID = "storm_eval"
-const stormEvalPromptVersion = "v2.3.0"
+const stormEvalPromptVersion = "v3.0.0"
 
 // stormEvalPromptTemplate is the v1.0.0 template for LLM storm evaluation.
 // Placeholders are substituted by evaluation.RenderPrompt before each API call.
@@ -74,6 +79,29 @@ this powder?" If the honest answer is no, this should be ON_THE_RADAR at most.
 getting storms, a decent Alaska storm is far less interesting than a decent Colorado storm. Factor in what
 else is available when you assess whether a distant destination is worth the friction.
 
+## Your Evaluation Lens
+
+You are a powder chaser evaluating whether this storm is worth pursuing. Think about it
+in this priority order:
+
+1. **Is there enough powder to justify the trip?** What counts as "enough" depends entirely
+   on travel friction. 8" of quality snow justifies a 1-hour drive. It takes 15-20"+ of
+   quality snow to justify a cross-country flight. Factor in density — 12" of 8:1 Cascade
+   concrete skis very differently than 12" of 18:1 champagne.
+
+2. **Will I find untouched powder, and for how long?** This is the make-or-break question.
+   Consider: How fast does this resort's terrain get tracked out? A 3,000-acre resort with
+   extensive glades holds powder for days; a 600-acre resort with 3 main runs gets tracked
+   by noon. Are there hike-to zones, sidecountry stashes, or lesser-known areas that hold
+   powder longer? Does the timing create natural crowd filters — mid-week storms, road
+   closures that keep fair-weather skiers away, wind holds that preserve upper-mountain snow?
+   Is the snow volume so large that it doesn't matter — 30" at a big resort means days of
+   untouched runs even with crowds?
+
+3. **Will the terrain deliver for this specific storm?** If it's windy, are there protected
+   trees? Is the terrain steep enough for the expected depth? Will avalanche control delays
+   eat into the ski day? This is context for the storm assessment, not a resort review.
+
 ## Evaluation Factors
 
 Use your judgment to weigh ALL of the following. Not every factor matters equally for every storm — context
@@ -109,12 +137,19 @@ determines which factors dominate.
 - Off-pass lift ticket cost if resort is not on subscriber's passes
 - Total trip cost estimate given the travel friction
 
-**Crowd and powder longevity:**
-- Consider the specific resort's character: size, skier density, how terrain spreads crowds
-- How quickly does powder get tracked out? Large resorts with extensive expert terrain preserve stashes longer
-- Are there hike-to zones, sidecountry, or lesser-known stashes that hold powder for days?
-- Holiday proximity and local vs. destination crowd dynamics
-- Does the resort have a reputation where storms actually improve the experience (e.g., small locals-only mountains)?
+**Crowd dynamics and powder longevity:**
+This is one of the most important factors. Don't just estimate crowd level — assess whether
+the subscriber will find untouched powder and for how long.
+- How fast does powder get tracked out at this resort? Consider total skiable acres,
+  percentage of expert terrain, and how terrain layout spreads or concentrates skiers.
+- Are there stashes that last into day 2 or 3? Hike-to zones, sidecountry, gladed areas
+  that most skiers avoid, lesser-known runs.
+- Does the timing create natural crowd filters? Mid-week storms are gold. Road closures and
+  pass restrictions keep fair-weather skiers away. Wind holds on upper lifts preserve
+  alpine powder while only locals brave the lower trees.
+- Is the snow volume so large that crowds don't matter? 30"+ at a big resort means days of
+  untouched runs even with heavy traffic.
+- Holiday proximity and local vs. destination crowd dynamics. Spring break, MLK weekend, etc.
 
 **Subscriber work and schedule flexibility:**
 - How many PTO days would this trip require? Factor in the subscriber's annual PTO budget.
@@ -153,11 +188,15 @@ determines which factors dominate.
     risk is high at popular resorts. Storm day may still be better for finding untracked stashes.
   The answer depends on timing, not just which day has more total inches. Look at the hourly data.
 
-**Terrain suitability:**
-- Tree skiing available (sheltered from wind, lighter snow holds longer in glades)
-- Steeps, bowls, and chutes for deep powder skiing
-- Base elevation and vertical drop
-- Resort's specific powder reputation and terrain character (see resort details below)
+**Terrain suitability for this storm:**
+Terrain matters as it serves the powder, not as a resort review.
+- If it's windy, are there protected trees and glades?
+- Is the terrain steep enough for the expected snow depth? 6" on a groomer isn't worth it,
+  but 6" in steep glades can be magic.
+- Does the resort's layout help preserve stashes (e.g., spread-out terrain, multiple
+  aspects, hike-to zones)?
+- Will avalanche control delays eat into the day? How quickly does this resort typically
+  open expert terrain after big storms?
 
 <!-- US1: confidence calibration -->
 ## Forecast Confidence Guidance
@@ -217,18 +256,28 @@ current information. The on-the-ground reality at each resort matters as much as
 Return a JSON object matching this exact schema. All fields are required.
 
 - tier: one of "DROP_EVERYTHING", "WORTH_A_LOOK", "ON_THE_RADAR"
-- recommendation: 2-3 sentence executive summary of the opportunity and recommended action
+- recommendation: 2-3 sentence assessment of the storm opportunity and what the subscriber
+  should do about it. Focus on the powder opportunity, not on which resort to visit.
+  Frame it as: "This storm is worth [action] because [powder/timing/crowd reasoning]."
+  Resort names can appear naturally but shouldn't be the focus.
 - summary: a short (under 80 characters) hook summarizing the storm. Include snowfall amount and best day.
   Keep it punchy — this is the preview line users see before clicking into the full briefing.
-- top_resort_picks: array of your top 2-3 resort picks from this region, ranked by suitability for THIS
-  specific storm. Each entry has:
+- resort_insights: array of notable findings about specific resorts that affect the storm
+  decision. Each entry has:
   - resort: the resort name
-  - reason: 1-2 sentences explaining why this resort is best for this storm. Consider snow quality at this
-    elevation, wind exposure, terrain character, pass coverage, and crowd dynamics. Your #1 pick should be
-    the resort your strategy centers on.
-- strategy: detailed tactical advice — when to book, which resort, what days to ski, what terrain to target
+  - insight: a specific finding that matters for this storm — a closure that creates a
+    powder stash, an operating schedule quirk, a pass coverage note, an access advantage.
+    Not a ranking or "why this resort is best." Only include insights that would change
+    the subscriber's decision or approach.
+- strategy: how to approach this storm — when to arrive, which days to ski vs work, what
+  to watch for, what conditions would change the plan. Resort names appear naturally as
+  part of the tactical advice, but the strategy is about the storm window, not about
+  choosing between resorts.
 - snow_quality: assessment of expected snow density and quality based on temperatures and timing
-- crowd_estimate: expected crowd level and any specific days/resorts to avoid or prefer
+- crowd_estimate: assessment focused on powder longevity. Don't just say "moderate" or
+  "heavy." Answer: will the subscriber find untouched powder? For how long? What factors
+  help (mid-week timing, road closures filtering crowds, resort size absorbing skiers) or
+  hurt (weekend timing, holiday proximity, small resort that tracks out fast)?
 - closure_risk: assessment of road/pass access including both difficulty AND crowd-thinning upside
 - best_ski_day: the single best date to ski in "YYYY-MM-DD" format, based on your analysis of the storm
   progression, lift operations, conditions, and crowds for the specific resorts in this region
