@@ -9,36 +9,30 @@ import (
 	genai "google.golang.org/genai"
 )
 
-// comparisonSchema defines the structured output schema for the comparison call.
-func comparisonSchema() *genai.Schema {
+// briefingSchema defines the structured output schema for the storm briefing call.
+func briefingSchema() *genai.Schema {
 	return &genai.Schema{
 		Type: genai.TypeObject,
 		Properties: map[string]*genai.Schema{
-			"top_pick_region_id": {
+			"briefing": {
 				Type:        genai.TypeString,
-				Description: "The region ID of the best pick",
+				Description: "2-4 sentence storm briefing: what's the powder situation, will there be untouched snow, what should the subscriber do. Do NOT rank resorts or pick winners.",
 			},
-			"top_pick_region_name": {
+			"best_day": {
 				Type:        genai.TypeString,
-				Description: "Human-readable name of the best region",
+				Description: "The single best date to ski in YYYY-MM-DD format",
 			},
-			"reasoning": {
+			"best_day_reason": {
 				Type:        genai.TypeString,
-				Description: "Why this region is the best play for this storm",
+				Description: "Why this is the best day",
 			},
-			"runner_up_name": {
+			"action": {
 				Type:        genai.TypeString,
-				Description: "Runner-up region name",
-			},
-			"runner_up_reason": {
-				Type:        genai.TypeString,
-				Description: "Why the runner-up is worth considering",
+				Enum:        []string{"go_now", "book_flexibly", "keep_watching"},
+				Description: "Recommended action: go_now (book immediately), book_flexibly (plan with refundable options), keep_watching (monitor but don't commit)",
 			},
 		},
-		Required: []string{
-			"top_pick_region_id", "top_pick_region_name", "reasoning",
-			"runner_up_name", "runner_up_reason",
-		},
+		Required: []string{"briefing", "best_day", "best_day_reason", "action"},
 	}
 }
 
@@ -49,38 +43,52 @@ func (g *GeminiClient) BriefStorm(ctx context.Context, bc BriefingContext) (Brie
 
 	config := &genai.GenerateContentConfig{
 		ResponseMIMEType: "application/json",
-		ResponseSchema:   comparisonSchema(),
+		ResponseSchema:   briefingSchema(),
 	}
 
 	contents := []*genai.Content{
 		genai.NewContentFromText(prompt, genai.RoleUser),
 	}
 
-	resp, err := g.generateWithRetry(ctx, contents, config, "comparison")
+	resp, err := g.generateWithRetry(ctx, contents, config, "briefing")
 	if err != nil {
-		return BriefingResult{}, fmt.Errorf("gemini comparison: %w", err)
+		return BriefingResult{}, fmt.Errorf("gemini briefing: %w", err)
 	}
 
 	rawText := resp.Text()
 
 	var structured map[string]any
 	if err := json.Unmarshal([]byte(rawText), &structured); err != nil {
-		return BriefingResult{}, fmt.Errorf("parse gemini comparison response: %w", err)
+		return BriefingResult{}, fmt.Errorf("parse gemini briefing response: %w", err)
 	}
 
 	return BriefingResult{
-		Briefing:    stringField(structured, "reasoning"),
-		RawResponse: rawText,
+		Briefing:      stringField(structured, "briefing"),
+		BestDay:       stringField(structured, "best_day"),
+		BestDayReason: stringField(structured, "best_day_reason"),
+		Action:        stringField(structured, "action"),
+		RawResponse:   rawText,
 	}, nil
 }
 
-// buildBriefingPrompt creates the prompt that lists each region side-by-side.
+// buildBriefingPrompt creates the prompt that synthesizes region evaluations into
+// a storm briefing. The prompt focuses on the overall storm opportunity rather than
+// ranking individual resorts.
 func buildBriefingPrompt(bc BriefingContext) string {
 	var b strings.Builder
 
-	fmt.Fprintf(&b, `You are comparing ski regions within the %s macro-region hit by the same storm system.
-Pick the single best region for a ski trip and explain why. Consider: snow totals, snow quality,
-resort terrain, logistics, cost, and crowds.
+	fmt.Fprintf(&b, `You are synthesizing storm evaluation data into a concise briefing for a powder chaser.
+
+Write a 2-4 sentence storm briefing for the %s area that answers:
+- What's the powder situation? (totals, quality, how long is the window)
+- Will there be untouched powder? (crowds, timing, how long do stashes last)
+- What should the subscriber do? (go now, keep watching, take PTO on a specific day, etc.)
+
+Do NOT rank resorts or pick winners. The briefing is about the storm opportunity, not which
+specific resort to visit. Resort-level detail belongs in the individual region briefings below.
+
+If one zone has a notably different picture (e.g., much more snow, or a closure that creates
+an opportunity), mention it naturally -- but don't frame it as a competition.
 
 `, bc.MacroRegionName)
 
@@ -88,13 +96,12 @@ resort terrain, logistics, cost, and crowds.
 		fmt.Fprintf(&b, "## Region %d: %s (%s) [ID: %s]\n", i+1, s.RegionName, s.Tier, s.RegionID)
 		fmt.Fprintf(&b, "- Snowfall: %s\n", s.Snowfall)
 		fmt.Fprintf(&b, "- Snow Quality: %s\n", s.SnowQuality)
-		fmt.Fprintf(&b, "- Crowd Estimate: %s\n", s.CrowdEstimate)
-		fmt.Fprintf(&b, "- Strategy: %s\n", s.Strategy)
+		fmt.Fprintf(&b, "- Crowds/Powder Longevity: %s\n", s.CrowdEstimate)
 		fmt.Fprintf(&b, "- Best Day: %s — %s\n", s.BestDay, s.BestDayReason)
 		fmt.Fprintf(&b, "- Recommendation: %s\n", s.Recommendation)
-		fmt.Fprintf(&b, "- Costs: Lodging %s, Flights %s, Car %s\n\n", s.LodgingCost, s.FlightCost, s.CarRental)
+		fmt.Fprintf(&b, "- Strategy: %s\n\n", s.Strategy)
 	}
 
-	b.WriteString("Pick the best option and a runner-up. Explain your reasoning.\n")
+	b.WriteString("Write a concise storm briefing and recommend an action.\n")
 	return b.String()
 }
