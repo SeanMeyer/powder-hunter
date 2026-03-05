@@ -184,8 +184,16 @@ func scanStorm(s scanner) (domain.Storm, error) {
 	if err != nil {
 		return domain.Storm{}, err
 	}
-	st.State = domain.StormState(state)
-	st.CurrentTier = domain.Tier(tier)
+	st.State, err = domain.ParseStormState(state)
+	if err != nil {
+		return domain.Storm{}, fmt.Errorf("scan storm: %w", err)
+	}
+	if tier != "" {
+		st.CurrentTier, err = domain.ParseTier(tier)
+		if err != nil {
+			return domain.Storm{}, fmt.Errorf("scan storm: %w", err)
+		}
+	}
 	st.WindowStart, _ = time.Parse(time.RFC3339, windowStart)
 	st.WindowEnd, _ = time.Parse(time.RFC3339, windowEnd)
 	st.DetectedAt, _ = time.Parse(time.RFC3339, detectedAt)
@@ -207,8 +215,16 @@ func scanStormRow(row *sql.Row) (domain.Storm, error) {
 	if err != nil {
 		return domain.Storm{}, err
 	}
-	st.State = domain.StormState(state)
-	st.CurrentTier = domain.Tier(tier)
+	st.State, err = domain.ParseStormState(state)
+	if err != nil {
+		return domain.Storm{}, fmt.Errorf("scan storm: %w", err)
+	}
+	if tier != "" {
+		st.CurrentTier, err = domain.ParseTier(tier)
+		if err != nil {
+			return domain.Storm{}, fmt.Errorf("scan storm: %w", err)
+		}
+	}
 	st.WindowStart, _ = time.Parse(time.RFC3339, windowStart)
 	st.WindowEnd, _ = time.Parse(time.RFC3339, windowEnd)
 	st.DetectedAt, _ = time.Parse(time.RFC3339, detectedAt)
