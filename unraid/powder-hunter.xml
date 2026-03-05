@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>powder-hunter</Name>
+  <Repository>powder-hunter</Repository>
+  <Registry/>
+  <Network>bridge</Network>
+  <Privileged>false</Privileged>
+  <Support/>
+  <Project>https://github.com/SeanMeyer/powder-hunter</Project>
+  <Overview>Automated powder day alerts. Monitors weather forecasts across ski regions, uses Gemini AI to evaluate storm opportunities, and sends personalized alerts to Discord.</Overview>
+  <Category>Tools:</Category>
+  <Icon>https://raw.githubusercontent.com/SeanMeyer/powder-hunter/main/unraid/icon.png</Icon>
+  <PostArgs>run --loop</PostArgs>
+  <Description>Automated powder day alerts. Monitors weather forecasts across ski regions, uses Gemini AI to evaluate storm opportunities, and sends personalized alerts to Discord.</Description>
+
+  <!-- Required -->
+  <Config Name="Gemini API Key" Target="GOOGLE_API_KEY" Default="" Type="Variable" Display="always" Required="true" Mask="true" Description="Get a free key at https://aistudio.google.com/apikey"/>
+  <Config Name="Discord Webhook URL" Target="DISCORD_WEBHOOK_URL" Default="" Type="Variable" Display="always" Required="true" Mask="true" Description="Discord webhook URL for storm alerts. Create one in Server Settings &gt; Integrations &gt; Webhooks."/>
+
+  <!-- Profile -->
+  <Config Name="Home City" Target="HOME_BASE" Default="Denver, CO" Type="Variable" Display="always" Required="false" Mask="false" Description="Your home city (used for travel time and cost estimates)"/>
+  <Config Name="Home Latitude" Target="HOME_LATITUDE" Default="39.7392" Type="Variable" Display="always" Required="false" Mask="false" Description="Latitude of your home city"/>
+  <Config Name="Home Longitude" Target="HOME_LONGITUDE" Default="-104.9903" Type="Variable" Display="always" Required="false" Mask="false" Description="Longitude of your home city"/>
+  <Config Name="Ski Passes" Target="PASSES" Default="ikon" Type="Variable" Display="always" Required="false" Mask="false" Description="Comma-separated ski passes you hold: ikon, epic, indy, etc."/>
+  <Config Name="Skill Level" Target="SKILL_LEVEL" Default="expert|beginner|intermediate|advanced|expert" Type="Variable" Display="always" Required="false" Mask="false" Description="Your skiing ability level"/>
+  <Config Name="Preferences" Target="PREFERENCES" Default="Love powder days in the trees and open bowls" Type="Variable" Display="always" Required="false" Mask="false" Description="Freeform description of what you like (fed to the AI for personalization)"/>
+  <Config Name="Remote Work" Target="REMOTE_WORK" Default="true|true|false" Type="Variable" Display="always" Required="false" Mask="false" Description="Can you work remotely from a ski town?"/>
+  <Config Name="PTO Days" Target="PTO_DAYS" Default="15" Type="Variable" Display="always" Required="false" Mask="false" Description="Annual PTO days available for ski trips"/>
+  <Config Name="Min Tier for Ping" Target="MIN_TIER" Default="DROP_EVERYTHING|DROP_EVERYTHING|WORTH_A_LOOK|ON_THE_RADAR" Type="Variable" Display="always" Required="false" Mask="false" Description="Minimum storm tier to get a Discord @here ping"/>
+
+  <!-- Pipeline (advanced) -->
+  <Config Name="Check Interval" Target="LOOP_INTERVAL" Default="12h" Type="Variable" Display="advanced" Required="false" Mask="false" Description="How often to scan for storms (Go duration: 12h, 6h, 1h)"/>
+  <Config Name="Monthly Budget" Target="BUDGET" Default="20" Type="Variable" Display="advanced" Required="false" Mask="false" Description="Monthly Gemini API spend cap in USD (safety valve)"/>
+  <Config Name="Dry Run" Target="DRY_RUN" Default="false|false|true" Type="Variable" Display="advanced" Required="false" Mask="false" Description="Skip Discord posting (useful for testing)"/>
+  <Config Name="Region Filter" Target="REGION_FILTER" Default="" Type="Variable" Display="advanced" Required="false" Mask="false" Description="Only check a specific region ID (leave empty for all)"/>
+  <Config Name="Verbose Logging" Target="VERBOSE" Default="false|false|true" Type="Variable" Display="advanced" Required="false" Mask="false" Description="Enable debug-level logging"/>
+
+  <!-- Data volume -->
+  <Config Name="Data" Target="/data" Default="/mnt/user/appdata/powder-hunter" Type="Path" Mode="rw" Display="always" Required="true" Mask="false" Description="Database and persistent data storage"/>
+</Container>
