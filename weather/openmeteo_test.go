@@ -166,6 +166,42 @@ func TestParseOpenMeteoHourly_SLRAdjusted(t *testing.T) {
 			t.Errorf("expected 0 freezing level when data absent, got %v", daily[0].Day.FreezingLevelMinM)
 		}
 	})
+
+	t.Run("cloud cover tracked per half-day", func(t *testing.T) {
+		times := make([]string, 12)
+		temps := make([]float64, 12)
+		precips := make([]float64, 12)
+		winds := make([]float64, 12)
+		gusts := make([]float64, 12)
+		fzLvls := make([]float64, 12)
+		clouds := make([]float64, 12)
+
+		for i := 0; i < 6; i++ {
+			times[i] = hourTimestamp(0, 6+i)
+			temps[i] = -5.0
+			precips[i] = 1.0
+			clouds[i] = 20.0
+		}
+		for i := 6; i < 12; i++ {
+			times[i] = hourTimestamp(0, 18+i-6)
+			temps[i] = -5.0
+			precips[i] = 1.0
+			clouds[i] = 80.0
+		}
+
+		h := openMeteoHourlyData{
+			Time: times, Temperature2m: temps, Precipitation: precips,
+			WindSpeed10m: winds, WindGusts10m: gusts,
+			FreezingLevelHeight: fzLvls, CloudCover: clouds,
+		}
+
+		daily, err := parseOpenMeteoHourly(h)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		assertApprox(t, "Day.CloudCoverPct", daily[0].Day.CloudCoverPct, 20.0, 0.1)
+		assertApprox(t, "Night.CloudCoverPct", daily[0].Night.CloudCoverPct, 80.0, 0.1)
+	})
 }
 
 // makeHourlyData creates a simple hourly dataset with uniform values starting at hour 6 (daytime).
@@ -193,6 +229,7 @@ func makeHourlyData(hours int, tempC, precipMM, windKmh, gustKmh, fzLvlM float64
 		WindSpeed10m:        winds,
 		WindGusts10m:        gustsArr,
 		FreezingLevelHeight: fzLvls,
+		CloudCover:          make([]float64, hours),
 	}
 }
 

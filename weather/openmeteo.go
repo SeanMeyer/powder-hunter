@@ -20,7 +20,7 @@ const openMeteoEndpoint = "https://api.open-meteo.com/v1/forecast"
 
 // openMeteoHourlyVars lists the hourly variables to request. When multi-model is
 // enabled, Open-Meteo returns these as {variable}_{model} keyed arrays.
-const openMeteoHourlyVars = "temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m,freezing_level_height"
+const openMeteoHourlyVars = "temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m,freezing_level_height,cloud_cover"
 
 // openMeteoModels defines the global weather models queried for all forecasts.
 // GFS and ECMWF are the two primary global models with different biases.
@@ -39,6 +39,7 @@ type openMeteoHourlyData struct {
 	WindSpeed10m        []float64
 	WindGusts10m        []float64
 	FreezingLevelHeight []float64
+	CloudCover          []float64
 }
 
 // openMeteoRawResponse captures the raw JSON with dynamic keys for multi-model parsing.
@@ -193,6 +194,7 @@ func extractMultiModelData(hourly map[string]json.RawMessage, models []string) m
 		wind := decodeFloat64Array(hourly["wind_speed_10m"+suffix])
 		gust := decodeFloat64Array(hourly["wind_gusts_10m"+suffix])
 		fzLvl := decodeFloat64Array(hourly["freezing_level_height"+suffix])
+		cloudCover := decodeFloat64Array(hourly["cloud_cover"+suffix])
 
 		// Skip models with missing essential data.
 		if len(temp) == 0 || len(precip) == 0 {
@@ -225,6 +227,7 @@ func extractMultiModelData(hourly map[string]json.RawMessage, models []string) m
 			WindSpeed10m:        truncFloat64(wind, validLen),
 			WindGusts10m:        truncFloat64(gust, validLen),
 			FreezingLevelHeight: truncFloat64(fzLvl, validLen),
+			CloudCover:          truncFloat64(cloudCover, validLen),
 		}
 	}
 	return result
@@ -244,6 +247,7 @@ func extractSingleModelData(hourly map[string]json.RawMessage) (openMeteoHourlyD
 		WindSpeed10m:        decodeFloat64Array(hourly["wind_speed_10m"]),
 		WindGusts10m:        decodeFloat64Array(hourly["wind_gusts_10m"]),
 		FreezingLevelHeight: decodeFloat64Array(hourly["freezing_level_height"]),
+		CloudCover:          decodeFloat64Array(hourly["cloud_cover"]),
 	}, nil
 }
 
@@ -328,6 +332,7 @@ func parseOpenMeteoHourly(h openMeteoHourlyData) ([]domain.DailyForecast, error)
 	// Wind and freezing level may be absent or shorter; handle gracefully.
 	hasWind := len(h.WindSpeed10m) == n && len(h.WindGusts10m) == n
 	hasFreezingLevel := len(h.FreezingLevelHeight) == n
+	hasCloudCover := len(h.CloudCover) == n
 
 	type dayAccum struct {
 		date               string
@@ -357,9 +362,13 @@ func parseOpenMeteoHourly(h openMeteoHourlyData) ([]domain.DailyForecast, error)
 		nightFzLvlMin      float64
 		nightFzLvlMax      float64
 		nightFzLvlInit     bool
-		dayInit            bool
-		nightInit          bool
-		tempInit           bool
+		dayCloudCoverSum     float64
+		dayCloudCoverCount   int
+		nightCloudCoverSum   float64
+		nightCloudCoverCount int
+		dayInit              bool
+		nightInit            bool
+		tempInit             bool
 	}
 	byDate := make(map[string]*dayAccum)
 
@@ -446,6 +455,10 @@ func parseOpenMeteoHourly(h openMeteoHourlyData) ([]domain.DailyForecast, error)
 					acc.dayFzLvlMax = math.Max(acc.dayFzLvlMax, fzLvl)
 				}
 			}
+			if hasCloudCover {
+				acc.dayCloudCoverSum += h.CloudCover[i]
+				acc.dayCloudCoverCount++
+			}
 		} else {
 			acc.nightSnowCM += snowCM
 			acc.nightPrecipMM += precip
@@ -467,6 +480,10 @@ func parseOpenMeteoHourly(h openMeteoHourlyData) ([]domain.DailyForecast, error)
 					acc.nightFzLvlMin = math.Min(acc.nightFzLvlMin, fzLvl)
 					acc.nightFzLvlMax = math.Max(acc.nightFzLvlMax, fzLvl)
 				}
+			}
+			if hasCloudCover {
+				acc.nightCloudCoverSum += h.CloudCover[i]
+				acc.nightCloudCoverCount++
 			}
 		}
 	}
@@ -505,6 +522,7 @@ func parseOpenMeteoHourly(h openMeteoHourlyData) ([]domain.DailyForecast, error)
 				WindGustKmh:       acc.dayGustMax,
 				FreezingLevelMinM: acc.dayFzLvlMin,
 				FreezingLevelMaxM: acc.dayFzLvlMax,
+				CloudCoverPct:     safeDivide(acc.dayCloudCoverSum, float64(acc.dayCloudCoverCount)),
 			},
 			Night: domain.HalfDay{
 				SnowfallCM:        acc.nightSnowCM,
@@ -514,8 +532,16 @@ func parseOpenMeteoHourly(h openMeteoHourlyData) ([]domain.DailyForecast, error)
 				WindGustKmh:       acc.nightGustMax,
 				FreezingLevelMinM: acc.nightFzLvlMin,
 				FreezingLevelMaxM: acc.nightFzLvlMax,
+				CloudCoverPct:     safeDivide(acc.nightCloudCoverSum, float64(acc.nightCloudCoverCount)),
 			},
 		})
 	}
 	return forecasts, nil
+}
+
+func safeDivide(num, denom float64) float64 {
+	if denom == 0 {
+		return 0
+	}
+	return num / denom
 }
