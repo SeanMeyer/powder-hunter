@@ -22,7 +22,7 @@ func DefaultProfile() domain.UserProfile {
 }
 
 const stormEvalPromptID = "storm_eval"
-const stormEvalPromptVersion = "v2.0.0"
+const stormEvalPromptVersion = "v2.1.0"
 
 // stormEvalPromptTemplate is the v1.0.0 template for LLM storm evaluation.
 // Placeholders are substituted by evaluation.RenderPrompt before each API call.
@@ -96,6 +96,11 @@ determines which factors dominate.
 - Blackout dates — check against the storm window
 
 **Lift operations and mountain access:**
+- Research each resort's CURRENT operating status — are they running a full or reduced schedule? Some resorts
+  cut back to fewer days per week or reduced lift operations mid-season due to staffing, conditions, or
+  business decisions. This matters enormously: a storm dumping snow on a day the resort isn't operating
+  changes the calculus (powder may sit untracked until they reopen, but grooming and avalanche control
+  decisions also shift). Factor current operating schedules into your day-by-day recommendations.
 - Research how this specific storm's wind direction, intensity, and snowfall rate will affect lift operations
   at each resort. Consider terrain orientation, wind exposure, and each resort's historical ability to keep
   lifts spinning in similar conditions.
@@ -155,8 +160,14 @@ daily forecast data to identify the actual best days to ski, and plan travel dat
 
 ## Instructions
 
-Using your search tools, look up current conditions, recent snow reports, road conditions, and any relevant
-news for this region. Verify forecast accuracy with multiple sources where possible.
+Using your search tools, research the following for each resort in this region:
+- Current operating status: days of operation, any reduced schedules, lift closures, or operational changes
+- Recent snow reports and current base depth
+- Road conditions and access alerts
+- Any relevant news that could affect the skiing experience (staffing issues, terrain restrictions, events)
+
+Go beyond the forecast data — the on-the-ground reality at each resort matters as much as the weather.
+Verify forecast accuracy with multiple sources where possible.
 
 Return a JSON object matching this exact schema. All fields are required.
 

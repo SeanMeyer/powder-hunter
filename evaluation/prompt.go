@@ -477,51 +477,42 @@ func FormatConsensusForPrompt(c domain.ModelConsensus) string {
 }
 
 // FormatDiscussionForPrompt converts a NWS forecast discussion into prompt context.
-// When detection windows are provided, it checks whether the AFD's coverage
-// (typically ~7 days from issuance) overlaps with the storm window dates and
-// adds a caveat note if it doesn't.
-func FormatDiscussionForPrompt(d *domain.ForecastDiscussion, detection domain.DetectionResult) string {
+// It checks whether the AFD's coverage (~7 days from issuance) overlaps with
+// days that have significant snowfall. If no significant snow falls within the
+// AFD's horizon, the discussion is omitted entirely to avoid polluting the
+// LLM's context with irrelevant information.
+func FormatDiscussionForPrompt(d *domain.ForecastDiscussion, forecasts []domain.Forecast) string {
 	if d == nil || d.Text == "" {
 		return "No NWS forecast discussion available for this region."
 	}
 
-	var b strings.Builder
-	fmt.Fprintf(&b, "**WFO: %s** (issued %s)\n\n", d.WFO, d.IssuedAt.Format("2006-01-02 15:04 MST"))
-
-	if caveat := afdRelevanceCaveat(d, detection); caveat != "" {
-		fmt.Fprintf(&b, "NOTE: %s\n\n", caveat)
+	if !afdCoversSnowDays(d, forecasts) {
+		return "NWS forecast discussion omitted — significant snow falls beyond the AFD's ~7-day coverage horizon."
 	}
 
+	var b strings.Builder
+	fmt.Fprintf(&b, "**WFO: %s** (issued %s)\n\n", d.WFO, d.IssuedAt.Format("2006-01-02 15:04 MST"))
 	b.WriteString(d.Text)
 	return b.String()
 }
 
-// afdRelevanceCaveat checks whether the AFD likely covers the detected storm
-// window. NWS AFDs typically discuss weather for the next 5-7 days from
-// issuance. If the earliest storm window starts beyond that horizon, the AFD
-// may not contain relevant information about the storm.
-func afdRelevanceCaveat(d *domain.ForecastDiscussion, detection domain.DetectionResult) string {
-	if !detection.Detected || len(detection.Windows) == 0 {
-		return ""
-	}
-
-	const afdHorizonDays = 7
-
-	earliest := detection.Windows[0].StartDate
-	for _, w := range detection.Windows[1:] {
-		if w.StartDate.Before(earliest) {
-			earliest = w.StartDate
-		}
-	}
+// afdCoversSnowDays checks whether any day with significant snowfall (≥2")
+// falls within the AFD's ~7-day coverage from issuance. NWS AFDs are issued
+// 2-4x daily and discuss the next 5-7 days of weather.
+func afdCoversSnowDays(d *domain.ForecastDiscussion, forecasts []domain.Forecast) bool {
+	const (
+		afdHorizonDays     = 7
+		significantSnowIn  = 2.0
+	)
 
 	afdCoverage := d.IssuedAt.AddDate(0, 0, afdHorizonDays)
-	if earliest.After(afdCoverage) {
-		daysOut := int(earliest.Sub(d.IssuedAt).Hours()/24) + 1
-		return fmt.Sprintf("This AFD was issued %d days before the storm window starts. "+
-			"AFDs typically cover ~7 days, so this discussion may not address the detected storm. "+
-			"Weight numerical forecast data more heavily than this discussion for timing beyond day 7.",
-			daysOut)
-	}
 
-	return ""
+	for _, f := range forecasts {
+		for _, day := range f.DailyData {
+			if domain.CMToInches(day.SnowfallCM) >= significantSnowIn && !day.Date.After(afdCoverage) {
+				return true
+			}
+		}
+	}
+	return false
 }

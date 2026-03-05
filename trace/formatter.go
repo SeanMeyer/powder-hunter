@@ -334,9 +334,9 @@ func FormatConsensus(w io.Writer, rc map[string]domain.ModelConsensus, resorts [
 }
 
 // FormatAFD renders the NWS Area Forecast Discussion in the trace output.
-// When detection windows are provided, it notes whether the AFD likely covers
-// the storm window dates (AFDs typically discuss the next ~7 days).
-func FormatAFD(w io.Writer, d *domain.ForecastDiscussion, detection domain.DetectionResult) {
+// It checks whether significant snow days fall within the AFD's ~7-day coverage
+// and omits the discussion text if it doesn't cover the relevant dates.
+func FormatAFD(w io.Writer, d *domain.ForecastDiscussion, forecasts []domain.Forecast) {
 	fmt.Fprintf(w, "═══ NWS FORECAST DISCUSSION ═══\n")
 	if d == nil || d.Text == "" {
 		fmt.Fprintf(w, "Not available (non-US region or fetch failed)\n\n")
@@ -345,21 +345,11 @@ func FormatAFD(w io.Writer, d *domain.ForecastDiscussion, detection domain.Detec
 
 	fmt.Fprintf(w, "WFO: %s (issued %s)\n", d.WFO, d.IssuedAt.Format("2006-01-02 15:04 MST"))
 
-	if detection.Detected && len(detection.Windows) > 0 {
-		earliest := detection.Windows[0].StartDate
-		for _, win := range detection.Windows[1:] {
-			if win.StartDate.Before(earliest) {
-				earliest = win.StartDate
-			}
-		}
-		afdCoverage := d.IssuedAt.AddDate(0, 0, 7)
-		if earliest.After(afdCoverage) {
-			daysOut := int(earliest.Sub(d.IssuedAt).Hours()/24) + 1
-			fmt.Fprintf(w, "⚠ Storm window starts %d days after AFD issuance — may not be covered\n", daysOut)
-		} else {
-			fmt.Fprintf(w, "✓ AFD covers storm window dates\n")
-		}
+	if !afdCoversSnowDays(d, forecasts) {
+		fmt.Fprintf(w, "⚠ Omitted — significant snow falls beyond AFD's ~7-day coverage\n\n")
+		return
 	}
+	fmt.Fprintf(w, "✓ AFD covers significant snow days\n")
 
 	fmt.Fprintln(w)
 	text := d.Text
@@ -368,6 +358,21 @@ func FormatAFD(w io.Writer, d *domain.ForecastDiscussion, detection domain.Detec
 	}
 	fmt.Fprintln(w, text)
 	fmt.Fprintln(w)
+}
+
+// afdCoversSnowDays checks whether any day with significant snowfall (≥2")
+// falls within the AFD's ~7-day coverage from issuance.
+func afdCoversSnowDays(d *domain.ForecastDiscussion, forecasts []domain.Forecast) bool {
+	const afdHorizonDays = 7
+	afdCoverage := d.IssuedAt.AddDate(0, 0, afdHorizonDays)
+	for _, f := range forecasts {
+		for _, day := range f.DailyData {
+			if domain.CMToInches(day.SnowfallCM) >= 2.0 && !day.Date.After(afdCoverage) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func sourceLabel(source string) string {
