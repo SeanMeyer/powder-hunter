@@ -253,11 +253,11 @@ func stormEvalSchema() *genai.Schema {
 			"logistics_car_rental":     {Type: genai.TypeString},
 			"logistics_lodging_cost": {
 				Type:        genai.TypeString,
-				Description: "Estimated lodging cost per night (e.g. '$150-250/night for hotels near resort')",
+				Description: "Estimated lodging cost per night (e.g. '$150-250/night'). Always provide a dollar range estimate even if exact prices aren't available — use your knowledge of the area and season to give a realistic ballpark. Never say 'not specified'.",
 			},
 			"logistics_total_estimated_cost": {
 				Type:        genai.TypeString,
-				Description: "Total estimated trip cost for a 2-3 day trip including flights, car rental, lodging, and lift tickets (e.g. '$1,200-1,800 total for 2 people, 3 nights')",
+				Description: "Total estimated trip cost including flights, car rental, lodging, and lift tickets (e.g. '$1,200-1,800 for 3 nights'). Always calculate a range estimate by summing the individual cost components. Never say 'not specified'.",
 			},
 			"day_by_day": {
 				Type: genai.TypeArray,
