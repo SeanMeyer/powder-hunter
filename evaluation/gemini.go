@@ -149,8 +149,10 @@ numbers, dates, and findings from the research. Do not add information that isn'
 		Lodging:        stringField(structured, "logistics_lodging"),
 		Transportation: stringField(structured, "logistics_transportation"),
 		RoadConditions: stringField(structured, "logistics_road_conditions"),
-		FlightCost:     stringField(structured, "logistics_flight_cost"),
-		CarRental:      stringField(structured, "logistics_car_rental"),
+		FlightCost:         stringField(structured, "logistics_flight_cost"),
+		CarRental:          stringField(structured, "logistics_car_rental"),
+		LodgingCost:        stringField(structured, "logistics_lodging_cost"),
+		TotalEstimatedCost: stringField(structured, "logistics_total_estimated_cost"),
 	}
 
 	result.DayByDay = parseDayByDay(structured)
@@ -249,6 +251,14 @@ func stormEvalSchema() *genai.Schema {
 			"logistics_road_conditions": {Type: genai.TypeString},
 			"logistics_flight_cost":    {Type: genai.TypeString},
 			"logistics_car_rental":     {Type: genai.TypeString},
+			"logistics_lodging_cost": {
+				Type:        genai.TypeString,
+				Description: "Estimated lodging cost per night (e.g. '$150-250/night for hotels near resort')",
+			},
+			"logistics_total_estimated_cost": {
+				Type:        genai.TypeString,
+				Description: "Total estimated trip cost for a 2-3 day trip including flights, car rental, lodging, and lift tickets (e.g. '$1,200-1,800 total for 2 people, 3 nights')",
+			},
 			"day_by_day": {
 				Type: genai.TypeArray,
 				Items: &genai.Schema{
@@ -275,6 +285,7 @@ func stormEvalSchema() *genai.Schema {
 			"key_factors_pros", "key_factors_cons",
 			"logistics_lodging", "logistics_transportation",
 			"logistics_road_conditions", "logistics_flight_cost", "logistics_car_rental",
+			"logistics_lodging_cost", "logistics_total_estimated_cost",
 			"day_by_day", "research_sources",
 		},
 	}

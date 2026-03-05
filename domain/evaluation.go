@@ -68,9 +68,11 @@ type ResortPick struct {
 // rather than structured data because the LLM produces natural-language summaries
 // that vary in specificity depending on available grounding data.
 type LogisticsSummary struct {
-	Lodging        string
-	Transportation string
-	RoadConditions string
-	FlightCost     string
-	CarRental      string
+	Lodging            string
+	Transportation     string
+	RoadConditions     string
+	FlightCost         string
+	CarRental          string
+	LodgingCost        string
+	TotalEstimatedCost string
 }

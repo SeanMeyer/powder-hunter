@@ -175,19 +175,27 @@ func buildFields(eval domain.Evaluation, region domain.Region) []EmbedField {
 	}
 
 	if eval.LogisticsSummary.Lodging != "" {
-		fields = append(fields, EmbedField{Name: "Lodging", Value: eval.LogisticsSummary.Lodging, Inline: false})
+		fields = append(fields, EmbedField{Name: "Lodging Info", Value: eval.LogisticsSummary.Lodging, Inline: false})
 	}
 
 	if eval.LogisticsSummary.Transportation != "" {
 		fields = append(fields, EmbedField{Name: "Getting There", Value: eval.LogisticsSummary.Transportation, Inline: false})
 	}
 
+	if eval.LogisticsSummary.LodgingCost != "" && eval.LogisticsSummary.LodgingCost != "N/A" {
+		fields = append(fields, EmbedField{Name: "Lodging", Value: eval.LogisticsSummary.LodgingCost, Inline: true})
+	}
+
 	if eval.LogisticsSummary.FlightCost != "" && eval.LogisticsSummary.FlightCost != "N/A" {
-		fields = append(fields, EmbedField{Name: "Flight Cost", Value: eval.LogisticsSummary.FlightCost, Inline: true})
+		fields = append(fields, EmbedField{Name: "Flights", Value: eval.LogisticsSummary.FlightCost, Inline: true})
 	}
 
 	if eval.LogisticsSummary.CarRental != "" && eval.LogisticsSummary.CarRental != "N/A" {
 		fields = append(fields, EmbedField{Name: "Car Rental", Value: eval.LogisticsSummary.CarRental, Inline: true})
+	}
+
+	if eval.LogisticsSummary.TotalEstimatedCost != "" && eval.LogisticsSummary.TotalEstimatedCost != "N/A" {
+		fields = append(fields, EmbedField{Name: "Total Est. Cost", Value: eval.LogisticsSummary.TotalEstimatedCost, Inline: false})
 	}
 
 	if region.Logistics.DriveTimeHours > 0 && region.FrictionTier != domain.FrictionFlight {
