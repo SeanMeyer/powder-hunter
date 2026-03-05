@@ -42,6 +42,7 @@ type HalfDay struct {
 	WindGustKmh     float64
 	FreezingLevelMinM float64 // minimum freezing level altitude during period (meters)
 	FreezingLevelMaxM float64 // maximum freezing level altitude during period (meters)
+	CloudCoverPct     float64 // average cloud cover during period (0-100%)
 }
 
 // SnowfallWindow summarizes accumulated snowfall over a date range. The near/extended

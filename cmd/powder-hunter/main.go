@@ -639,6 +639,33 @@ func runTrace(ctx context.Context, args []string) int {
 
 	trace.FormatWeather(w, found.Region, found.Resorts, forecasts)
 
+	// ── Ride Quality Notes ──────────────────────────────────────────────────
+	for _, resort := range found.Resorts {
+		var resortForecasts []domain.Forecast
+		for _, f := range forecasts {
+			if f.ResortID == resort.ID {
+				resortForecasts = append(resortForecasts, f)
+			}
+		}
+		if len(resortForecasts) == 0 {
+			continue
+		}
+		templateF := resortForecasts[0]
+		qualities := domain.AssessRideQuality(templateF.DailyData, nil, resort.Latitude, time.Now())
+		hasNotes := false
+		for _, q := range qualities {
+			if len(q.RideQualityNotes) > 0 {
+				hasNotes = true
+				break
+			}
+		}
+		if hasNotes {
+			fmt.Fprintf(w, "═══ RIDE QUALITY: %s ═══\n", resort.Name)
+			trace.FormatRideQualityNotes(w, qualities, templateF.DailyData)
+			fmt.Fprintln(w)
+		}
+	}
+
 	// ── Per-Resort Multi-Model Consensus ────────────────────────────────────
 	resortModels := make(map[string][]domain.Forecast)
 	for _, f := range forecasts {
@@ -764,8 +791,13 @@ func buildPrompt(region domain.Region, resorts []domain.Resort, forecasts []doma
 
 	detection := domain.Detect(region, forecasts)
 
+	weatherData := evaluation.FormatWeatherForPrompt(forecasts)
+	if rideQuality := evaluation.FormatRideQualityForPrompt(forecasts, resorts); rideQuality != "" {
+		weatherData += "\n" + rideQuality
+	}
+
 	return evaluation.RenderPrompt(promptTemplate, evaluation.PromptData{
-		WeatherData:       evaluation.FormatWeatherForPrompt(forecasts),
+		WeatherData:       weatherData,
 		RegionName:        region.Name,
 		Resorts:           evaluation.FormatResortsForPrompt(resorts),
 		UserProfile:       evaluation.FormatProfileForPrompt(profile),

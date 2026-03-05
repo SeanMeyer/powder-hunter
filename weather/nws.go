@@ -177,6 +177,8 @@ func parseGridpointForecast(body []byte, loc *time.Location) ([]domain.DailyFore
 		nightSnowCM, nightPrecipMM             float64
 		nightTempMin, nightWindMax, nightGustMax float64
 		nightInit                              bool
+		dayCloudCoverSum, nightCloudCoverSum   float64
+		dayCloudCoverCount, nightCloudCoverCount int
 	}
 	byDate := make(map[string]*dayAccum)
 	getAcc := func(dateKey string) *dayAccum {
@@ -362,6 +364,17 @@ func parseGridpointForecast(body []byte, loc *time.Location) ([]domain.DailyFore
 		}
 	})
 
+	// Step 4: Cloud cover (sky cover percentage).
+	walkHourly(resp.Properties.SkyCover.Values, func(acc *dayAccum, hour int, pct float64) {
+		if hour >= 6 && hour < 18 {
+			acc.dayCloudCoverSum += pct
+			acc.dayCloudCoverCount++
+		} else {
+			acc.nightCloudCoverSum += pct
+			acc.nightCloudCoverCount++
+		}
+	})
+
 	dates := make([]string, 0, len(byDate))
 	for d := range byDate {
 		dates = append(dates, d)
@@ -396,6 +409,7 @@ func parseGridpointForecast(body []byte, loc *time.Location) ([]domain.DailyFore
 				PrecipitationMM: acc.dayPrecipMM,
 				WindSpeedKmh:    acc.dayWindMax,
 				WindGustKmh:     acc.dayGustMax,
+				CloudCoverPct:   safeDivide(acc.dayCloudCoverSum, float64(acc.dayCloudCoverCount)),
 			},
 			Night: domain.HalfDay{
 				SnowfallCM:      acc.nightSnowCM,
@@ -403,6 +417,7 @@ func parseGridpointForecast(body []byte, loc *time.Location) ([]domain.DailyFore
 				PrecipitationMM: acc.nightPrecipMM,
 				WindSpeedKmh:    acc.nightWindMax,
 				WindGustKmh:     acc.nightGustMax,
+				CloudCoverPct:   safeDivide(acc.nightCloudCoverSum, float64(acc.nightCloudCoverCount)),
 			},
 		})
 	}
@@ -580,6 +595,7 @@ type nwsGridpointResponse struct {
 		QuantitativePrecipitation nwsTimeSeries `json:"quantitativePrecipitation"`
 		WindSpeed                 nwsTimeSeries `json:"windSpeed"`
 		WindGust                  nwsTimeSeries `json:"windGust"`
+		SkyCover                  nwsTimeSeries `json:"skyCover"`
 	} `json:"properties"`
 }
 
