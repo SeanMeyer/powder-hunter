@@ -146,6 +146,11 @@ func runPipeline(ctx context.Context, args []string) int {
 	}
 	defer db.Close()
 
+	if err := autoSeed(ctx, db); err != nil {
+		slog.Error("auto-seed failed", "error", err)
+		return 1
+	}
+
 	httpClient := &http.Client{Timeout: 30 * time.Second}
 	omClient := weather.NewOpenMeteoClient(httpClient)
 	nwsClient := weather.NewNWSClient(httpClient)
@@ -201,6 +206,46 @@ func runPipeline(ctx context.Context, args []string) int {
 		"comparisons", summary.Comparisons,
 	)
 	return 0
+}
+
+// autoSeed detects a fresh database (no regions) and seeds regions, resorts,
+// and the initial prompt template. It always upserts the user profile from
+// environment variables so config changes take effect on restart.
+func autoSeed(ctx context.Context, db *storage.DB) error {
+	count, err := db.CountRegions(ctx)
+	if err != nil {
+		return fmt.Errorf("count regions: %w", err)
+	}
+
+	if count == 0 {
+		slog.Info("first run detected, seeding database")
+		regions := seed.Regions()
+		for _, r := range regions {
+			if err := db.UpsertRegion(ctx, r.Region); err != nil {
+				return fmt.Errorf("upsert region %s: %w", r.Region.ID, err)
+			}
+			for _, resort := range r.Resorts {
+				if err := db.UpsertResort(ctx, resort); err != nil {
+					return fmt.Errorf("upsert resort %s: %w", resort.ID, err)
+				}
+			}
+		}
+		slog.Info("seeded regions", "count", len(regions))
+
+		promptID, promptVersion, promptTemplate := seed.InitialPromptTemplate()
+		if err := db.SavePromptTemplate(ctx, promptID, promptVersion, promptTemplate); err != nil {
+			return fmt.Errorf("seed prompt template: %w", err)
+		}
+		slog.Info("seeded prompt template", "version", promptVersion)
+	}
+
+	// Always upsert profile from env vars so changes take effect on restart.
+	profile := config.ProfileFromEnv(os.Getenv)
+	if err := db.SaveProfile(ctx, profile); err != nil {
+		return fmt.Errorf("save profile: %w", err)
+	}
+
+	return nil
 }
 
 func runLoop(ctx context.Context, p *pipeline.Pipeline, region string, interval time.Duration) int {

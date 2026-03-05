@@ -10,6 +10,13 @@ import (
 	"github.com/seanmeyer/powder-hunter/domain"
 )
 
+// CountRegions returns the number of region rows in the database.
+func (d *DB) CountRegions(ctx context.Context) (int, error) {
+	var count int
+	err := d.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM regions`).Scan(&count)
+	return count, err
+}
+
 // UpsertRegion inserts or replaces a region row. Used during seed and config reload.
 func (d *DB) UpsertRegion(ctx context.Context, r domain.Region) error {
 	_, err := d.db.ExecContext(ctx, `
