@@ -51,15 +51,14 @@ All settings are controlled via environment variables in `.env`. See `.env.examp
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `HOME_BASE` | Denver, CO | Your home city (for travel estimates) |
-| `HOME_LATITUDE` | 39.7392 | Home latitude |
-| `HOME_LONGITUDE` | -104.9903 | Home longitude |
-| `PASSES` | ikon | Comma-separated ski passes (ikon, epic, indy) |
-| `SKILL_LEVEL` | expert | beginner, intermediate, advanced, expert |
-| `PREFERENCES` | _(see .env.example)_ | Freeform skiing preferences for AI personalization |
-| `REMOTE_WORK` | true | Can you work remotely from a ski town? |
-| `PTO_DAYS` | 15 | Annual PTO days for ski trips |
-| `MIN_TIER` | DROP_EVERYTHING | Minimum tier for Discord ping |
+| `HOME_BASE` | _(required)_ | Your home city (for LLM travel context) |
+| `HOME_LATITUDE` | _(required)_ | Home latitude (for friction tier calculation) |
+| `HOME_LONGITUDE` | _(required)_ | Home longitude (for friction tier calculation) |
+| `PASSES` | | Comma-separated ski passes (ikon, epic, indy) |
+| `SKILL_LEVEL` | intermediate | beginner, intermediate, advanced, expert |
+| `PREFERENCES` | | Freeform skiing preferences for AI personalization |
+| `REMOTE_WORK` | false | Can you work remotely from a ski town? |
+| `PTO_DAYS` | 10 | Annual PTO days for ski trips |
 
 ### Pipeline Settings
 
@@ -102,20 +101,13 @@ An Unraid Docker template is included. See [docs/unraid.md](docs/unraid.md) for 
 ### Docker Compose
 
 ```bash
-docker compose down
-git pull
-docker compose up -d --build
+docker compose pull
+docker compose up -d
 ```
 
 ### Unraid
 
-```bash
-cd /mnt/user/appdata/powder-hunter
-git pull
-docker build -t powder-hunter .
-```
-
-Then restart the container from the Unraid Docker UI.
+Click the container icon in the Docker tab and select **Update**. Unraid will pull the latest image automatically.
 
 ## Limitations
 
