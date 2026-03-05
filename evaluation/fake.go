@@ -2,6 +2,7 @@ package evaluation
 
 import (
 	"context"
+	"sync"
 
 	"github.com/seanmeyer/powder-hunter/domain"
 )
@@ -14,6 +15,8 @@ type FakeEvaluator struct {
 	Errors map[string]error
 	// EvaluateCalls records calls for assertions.
 	EvaluateCalls []EvaluateCall
+
+	mu sync.Mutex
 }
 
 // EvaluateCall captures the arguments of a single Evaluate invocation.
@@ -24,11 +27,13 @@ type EvaluateCall struct {
 }
 
 func (f *FakeEvaluator) Evaluate(ctx context.Context, ec EvalContext) (domain.Evaluation, error) {
+	f.mu.Lock()
 	f.EvaluateCalls = append(f.EvaluateCalls, EvaluateCall{
 		RegionID:        ec.Region.ID,
 		Forecasts:       ec.Forecasts,
 		ResortConsensus: ec.ResortConsensus,
 	})
+	f.mu.Unlock()
 	if err, ok := f.Errors[ec.Region.ID]; ok {
 		return domain.Evaluation{}, err
 	}

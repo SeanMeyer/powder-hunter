@@ -157,6 +157,7 @@ func runPipeline(ctx context.Context, args []string) int {
 
 	p := pipeline.New(weatherSvc, db, evaluator, slog.Default())
 	p.WithDryRun(*dryRun)
+	p.WithComparer(evaluator)
 	p.WithCostTracker(db)
 	if *budget > 0 {
 		p.WithBudgetConfig(pipeline.BudgetConfig{
@@ -195,6 +196,8 @@ func runPipeline(ctx context.Context, args []string) int {
 		"skipped_cooldown", summary.SkippedCooldown,
 		"skipped_budget", summary.SkippedBudget,
 		"eval_failed", summary.EvalFailed,
+		"grouped", summary.Grouped,
+		"comparisons", summary.Comparisons,
 	)
 	return 0
 }
@@ -217,6 +220,9 @@ func runLoop(ctx context.Context, p *pipeline.Pipeline, region string, interval 
 				"skipped_unchanged", summary.SkippedUnchanged,
 				"skipped_cooldown", summary.SkippedCooldown,
 				"skipped_budget", summary.SkippedBudget,
+				"eval_failed", summary.EvalFailed,
+				"grouped", summary.Grouped,
+				"comparisons", summary.Comparisons,
 				"next_run", time.Now().Add(interval).Format(time.RFC3339),
 			)
 		}
