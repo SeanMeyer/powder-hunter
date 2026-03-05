@@ -21,30 +21,17 @@ type DB struct {
 // Open connects to the SQLite database at path, enables WAL mode and foreign keys,
 // and runs schema.sql to create tables if they don't exist.
 func Open(path string) (*DB, error) {
-	db, err := sql.Open("sqlite", path)
+	// Pragmas in the connection string apply to every connection in the pool.
+	// busy_timeout prevents SQLITE_BUSY during concurrent storm persistence.
+	dsn := path + "?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)"
+	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("open sqlite: %w", err)
 	}
 
-	// WAL mode allows concurrent readers while a writer is active, which matters
-	// when the pipeline and the Discord bot access the DB simultaneously.
-	if _, err := db.ExecContext(context.Background(), `PRAGMA journal_mode=WAL`); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("set WAL mode: %w", err)
-	}
-
-	// Wait up to 5 seconds for a write lock instead of failing immediately
-	// with SQLITE_BUSY. This handles concurrent storm persistence during
-	// parallel weather fetches.
-	if _, err := db.ExecContext(context.Background(), `PRAGMA busy_timeout=5000`); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("set busy timeout: %w", err)
-	}
-
-	if _, err := db.ExecContext(context.Background(), `PRAGMA foreign_keys=ON`); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("enable foreign keys: %w", err)
-	}
+	// Limit to one writer connection — SQLite only supports one writer at a
+	// time, so a single connection avoids pool-level contention entirely.
+	db.SetMaxOpenConns(1)
 
 	if _, err := db.ExecContext(context.Background(), schemaSQL); err != nil {
 		db.Close()
