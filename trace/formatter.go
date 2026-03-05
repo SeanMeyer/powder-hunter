@@ -21,8 +21,23 @@ func FormatWeather(w io.Writer, region domain.Region, resorts []domain.Resort, f
 	}
 	fmt.Fprintf(w, "Resorts: %s\n", strings.Join(resortNames, ", "))
 
+	// Build resort name lookup.
+	resortName := make(map[string]string)
+	for _, r := range resorts {
+		resortName[r.ID] = r.Name
+	}
+
 	for _, f := range forecasts {
-		fmt.Fprintf(w, "\n%s forecast:\n", sourceLabel(f.Source))
+		label := sourceLabel(f.Source)
+		if f.Model != "" {
+			label += " [" + f.Model + "]"
+		}
+		if f.ResortID != "" {
+			if name, ok := resortName[f.ResortID]; ok {
+				label += " @ " + name
+			}
+		}
+		fmt.Fprintf(w, "\n%s forecast:\n", label)
 
 		hasHalfDay := false
 		for _, d := range f.DailyData {
@@ -37,17 +52,37 @@ func FormatWeather(w io.Writer, region domain.Region, resorts []domain.Resort, f
 				totalIn := domain.CMToInches(d.SnowfallCM)
 				dayIn := domain.CMToInches(d.Day.SnowfallCM)
 				nightIn := domain.CMToInches(d.Night.SnowfallCM)
+				daySLR := halfDaySLR(d.Day)
+				nightSLR := halfDaySLR(d.Night)
 				marker := ""
 				if totalIn >= 4.0 {
 					marker = "  ← notable"
 				}
-				fmt.Fprintf(w, "  %s: %4.1f\" total (day: %.1f\" / night: %.1f\")    %3.0f°F / %3.0f°F",
-					d.Date.Format("Jan 02"), totalIn, dayIn, nightIn,
+				fmt.Fprintf(w, "  %s: %4.1f\" total (day: %.1f\"%s / night: %.1f\"%s)    %3.0f°F / %3.0f°F",
+					d.Date.Format("Jan 02"), totalIn,
+					dayIn, fmtSLRInline(daySLR),
+					nightIn, fmtSLRInline(nightSLR),
 					cToF(d.TemperatureMinC), cToF(d.TemperatureMaxC))
 				if d.Day.WindGustKmh > 0 {
 					fmt.Fprintf(w, "    gusts: %.0f mph", d.Day.WindGustKmh*0.621371)
 				}
-				fmt.Fprintf(w, "%s\n", marker)
+				fmt.Fprintf(w, "%s", marker)
+
+				// Context annotations (rain/mixed hours, freezing level).
+				var notes []string
+				if d.RainHours > 0 {
+					notes = append(notes, fmt.Sprintf("%dh rain", d.RainHours))
+				}
+				if d.MixedHours > 0 {
+					notes = append(notes, fmt.Sprintf("%dh mixed", d.MixedHours))
+				}
+				if d.FreezingLevelM > 0 {
+					notes = append(notes, fmt.Sprintf("fz lvl ~%.0f'", d.FreezingLevelM*3.28084))
+				}
+				if len(notes) > 0 {
+					fmt.Fprintf(w, "  [%s]", strings.Join(notes, ", "))
+				}
+				fmt.Fprintln(w)
 			}
 		} else {
 			for _, d := range f.DailyData {
@@ -62,6 +97,23 @@ func FormatWeather(w io.Writer, region domain.Region, resorts []domain.Resort, f
 		}
 	}
 	fmt.Fprintln(w)
+}
+
+// halfDaySLR computes the effective SLR for a half-day period from its snow and precip.
+// Returns 0 if no snow or no precip (can't determine SLR).
+func halfDaySLR(hd domain.HalfDay) float64 {
+	if hd.SnowfallCM <= 0 || hd.PrecipitationMM <= 0 {
+		return 0
+	}
+	return hd.SnowfallCM / (hd.PrecipitationMM / 10.0)
+}
+
+// fmtSLRInline returns " @Nx:1" suffix for non-zero SLR, empty string otherwise.
+func fmtSLRInline(slr float64) string {
+	if slr <= 0 {
+		return ""
+	}
+	return fmt.Sprintf(" @%.0f:1", slr)
 }
 
 // FormatDetection renders storm detection results.
@@ -204,7 +256,6 @@ func FormatDiscordPreview(w io.Writer, eval domain.Evaluation, region domain.Reg
 			fmt.Fprintf(w, "  Title: %s\n", embed.Title)
 		}
 		if embed.Description != "" {
-			// Indent each line of the description
 			lines := strings.Split(embed.Description, "\n")
 			fmt.Fprintf(w, "  Description:\n")
 			for _, line := range lines {
@@ -235,7 +286,6 @@ func FormatRegionsTable(w io.Writer, regions []RegionRow) {
 		return
 	}
 
-	// Column widths.
 	idW, nameW, tierW := 26, 34, 22
 	fmt.Fprintf(w, "%-*s %-*s %-*s %s\n", idW, "ID", nameW, "Name", tierW, "Tier", "Resorts")
 	fmt.Fprintf(w, "%-*s %-*s %-*s %s\n", idW, strings.Repeat("─", idW-1), nameW, strings.Repeat("─", nameW-1), tierW, strings.Repeat("─", tierW-1), strings.Repeat("─", 7))
@@ -250,6 +300,54 @@ type RegionRow struct {
 	Name        string
 	Tier        string
 	ResortCount int
+}
+
+// FormatConsensus renders per-resort model consensus data in the trace output.
+func FormatConsensus(w io.Writer, rc map[string]domain.ModelConsensus, resorts []domain.Resort) {
+	fmt.Fprintf(w, "═══ MODEL CONSENSUS ═══\n")
+
+	if len(rc) == 0 {
+		fmt.Fprintf(w, "Single model — no consensus available\n\n")
+		return
+	}
+
+	for _, resort := range resorts {
+		c, ok := rc[resort.ID]
+		if !ok || len(c.DailyConsensus) == 0 {
+			continue
+		}
+
+		fmt.Fprintf(w, "\n%s (models: %s)\n", resort.Name, strings.Join(c.Models, ", "))
+
+		for _, d := range c.DailyConsensus {
+			minIn := domain.CMToInches(d.SnowfallMinCM)
+			maxIn := domain.CMToInches(d.SnowfallMaxCM)
+			meanIn := domain.CMToInches(d.SnowfallMeanCM)
+			if meanIn < 0.1 && minIn < 0.1 {
+				continue
+			}
+			fmt.Fprintf(w, "  %s: %.1f\"–%.1f\" (mean %.1f\", spread %.2f, %s)\n",
+				d.Date.Format("Jan 02"), minIn, maxIn, meanIn, d.SpreadToMean, d.Confidence)
+		}
+	}
+	fmt.Fprintln(w)
+}
+
+// FormatAFD renders the NWS Area Forecast Discussion in the trace output.
+func FormatAFD(w io.Writer, d *domain.ForecastDiscussion) {
+	fmt.Fprintf(w, "═══ NWS FORECAST DISCUSSION ═══\n")
+	if d == nil || d.Text == "" {
+		fmt.Fprintf(w, "Not available (non-US region or fetch failed)\n\n")
+		return
+	}
+
+	fmt.Fprintf(w, "WFO: %s (issued %s)\n\n", d.WFO, d.IssuedAt.Format("2006-01-02 15:04 MST"))
+	text := d.Text
+	if len(text) > 2000 {
+		text = text[:2000] + "\n... [truncated]"
+	}
+	fmt.Fprintln(w, text)
+	fmt.Fprintln(w)
 }
 
 func sourceLabel(source string) string {

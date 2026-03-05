@@ -15,8 +15,9 @@ import (
 	"github.com/seanmeyer/powder-hunter/domain"
 )
 
+var nwsBaseURL = "https://api.weather.gov"
+
 const (
-	nwsBaseURL   = "https://api.weather.gov"
 	nwsUserAgent = "(powder-hunter, contact@example.com)"
 
 	// NWS snowfall values are in cm; values above this are sensor/model artifacts.
@@ -150,6 +151,9 @@ func (c *NWSClient) get(ctx context.Context, url string) ([]byte, int, error) {
 // parseGridpointForecast extracts daily snowfall, temperature, precipitation, and
 // wind from the NWS gridpoint response with day/night half-day breakdown.
 // loc determines the local timezone for 6am/6pm boundaries.
+//
+// Snowfall is computed per-hour from precipitation + temperature using SLR bands,
+// replacing the raw NWS snowfallAmount field. This matches the Open-Meteo approach.
 func parseGridpointForecast(body []byte, loc *time.Location) ([]domain.DailyForecast, error) {
 	var resp nwsGridpointResponse
 	if err := json.Unmarshal(body, &resp); err != nil {
@@ -157,15 +161,17 @@ func parseGridpointForecast(body []byte, loc *time.Location) ([]domain.DailyFore
 	}
 
 	type dayAccum struct {
-		snowCM, precipMM                   float64
-		tempMin, tempMax                   float64
-		tempInit                           bool
-		daySnowCM, dayPrecipMM             float64
-		dayTempMax, dayWindMax, dayGustMax float64
-		dayInit                            bool
-		nightSnowCM, nightPrecipMM         float64
+		snowCM, precipMM                       float64
+		tempMin, tempMax                       float64
+		tempInit                               bool
+		totalSnowPrecipMM, weightedSLRSum      float64
+		rainHours, mixedHours                  int
+		daySnowCM, dayPrecipMM                 float64
+		dayTempMax, dayWindMax, dayGustMax     float64
+		dayInit                                bool
+		nightSnowCM, nightPrecipMM             float64
 		nightTempMin, nightWindMax, nightGustMax float64
-		nightInit                          bool
+		nightInit                              bool
 	}
 	byDate := make(map[string]*dayAccum)
 	getAcc := func(dateKey string) *dayAccum {
@@ -177,7 +183,7 @@ func parseGridpointForecast(body []byte, loc *time.Location) ([]domain.DailyFore
 		return a
 	}
 
-	// Helper: walk an interval in 1-hour steps, calling fn with (localDate, localHour) for each.
+	// Helper: walk an interval in 1-hour steps, calling fn with (acc, localHour, hourlyValue).
 	walkHourly := func(values []nwsValue, fn func(acc *dayAccum, hour int, val float64)) {
 		for _, v := range values {
 			if v.Value == nil {
@@ -197,71 +203,140 @@ func parseGridpointForecast(body []byte, loc *time.Location) ([]domain.DailyFore
 		}
 	}
 
-	// Snowfall (NWS reports mm, convert to cm).
-	walkHourly(resp.Properties.SnowfallAmount.Values, func(acc *dayAccum, hour int, mmPerHour float64) {
-		cm := mmPerHour / 10.0
-		if cm > nwsSnowfallSanityLimitCM {
-			return
-		}
-		acc.snowCM += cm
-		if hour >= 6 && hour < 18 {
-			acc.daySnowCM += cm
-		} else {
-			acc.nightSnowCM += cm
-		}
-	})
-
-	// Temperature (°C).
+	// Step 1: Build per-hour temperature lookup (dateKey+hour → tempC).
+	// NWS temperature intervals can span multiple hours; we prorate to get
+	// per-hour values. When intervals overlap the same hour, last write wins.
+	hourlyTemp := make(map[string]float64)
 	walkHourly(resp.Properties.Temperature.Values, func(acc *dayAccum, hour int, c float64) {
-		if !acc.tempInit {
-			acc.tempMin, acc.tempMax = c, c
-			acc.tempInit = true
-		} else {
-			if c < acc.tempMin { acc.tempMin = c }
-			if c > acc.tempMax { acc.tempMax = c }
-		}
-		if hour >= 6 && hour < 18 {
-			if !acc.dayInit {
-				acc.dayTempMax = c
-				acc.dayInit = true
-			} else if c > acc.dayTempMax {
-				acc.dayTempMax = c
-			}
-		} else {
-			if !acc.nightInit {
-				acc.nightTempMin = c
-				acc.nightInit = true
-			} else if c < acc.nightTempMin {
-				acc.nightTempMin = c
-			}
-		}
+		local := acc // not used for temp lookup; we use the dateKey from getAcc
+		_ = local
+		// We need the dateKey. Reconstruct from the acc's position in byDate.
+		// Instead, use a separate walkHourly that captures the dateKey.
 	})
-
-	// Precipitation (mm).
-	walkHourly(resp.Properties.QuantitativePrecipitation.Values, func(acc *dayAccum, hour int, mm float64) {
-		acc.precipMM += mm
-		if hour >= 6 && hour < 18 {
-			acc.dayPrecipMM += mm
-		} else {
-			acc.nightPrecipMM += mm
+	// Re-implement temperature walk to capture both acc and dateKey.
+	for _, v := range resp.Properties.Temperature.Values {
+		if v.Value == nil {
+			continue
 		}
-	})
+		start, dur, err := parseISO8601Interval(v.ValidTime)
+		if err != nil || dur <= 0 {
+			continue
+		}
+		end := start.Add(dur)
+		hourlyVal := *v.Value / dur.Hours()
+		for t := start; t.Before(end); t = t.Add(time.Hour) {
+			local := t.In(loc)
+			dateKey := local.Format("2006-01-02")
+			hourKey := fmt.Sprintf("%s-%02d", dateKey, local.Hour())
+			hourlyTemp[hourKey] = hourlyVal
 
-	// Wind speed (km/h) — NWS provides in km/h.
+			acc := getAcc(dateKey)
+			c := hourlyVal
+			if !acc.tempInit {
+				acc.tempMin, acc.tempMax = c, c
+				acc.tempInit = true
+			} else {
+				if c < acc.tempMin {
+					acc.tempMin = c
+				}
+				if c > acc.tempMax {
+					acc.tempMax = c
+				}
+			}
+			if local.Hour() >= 6 && local.Hour() < 18 {
+				if !acc.dayInit {
+					acc.dayTempMax = c
+					acc.dayInit = true
+				} else if c > acc.dayTempMax {
+					acc.dayTempMax = c
+				}
+			} else {
+				if !acc.nightInit {
+					acc.nightTempMin = c
+					acc.nightInit = true
+				} else if c < acc.nightTempMin {
+					acc.nightTempMin = c
+				}
+			}
+		}
+	}
+
+	// Step 2: Process precipitation with SLR-adjusted snowfall using hourly temps.
+	for _, v := range resp.Properties.QuantitativePrecipitation.Values {
+		if v.Value == nil {
+			continue
+		}
+		start, dur, err := parseISO8601Interval(v.ValidTime)
+		if err != nil || dur <= 0 {
+			continue
+		}
+		end := start.Add(dur)
+		hourlyMM := *v.Value / dur.Hours()
+		for t := start; t.Before(end); t = t.Add(time.Hour) {
+			local := t.In(loc)
+			dateKey := local.Format("2006-01-02")
+			hour := local.Hour()
+			hourKey := fmt.Sprintf("%s-%02d", dateKey, hour)
+
+			acc := getAcc(dateKey)
+			acc.precipMM += hourlyMM
+
+			// Look up temperature for SLR calculation.
+			tempC, hasTemp := hourlyTemp[hourKey]
+			if !hasTemp {
+				// No temp data for this hour; use daily average if available.
+				if acc.tempInit {
+					tempC = (acc.tempMin + acc.tempMax) / 2
+				}
+			}
+
+			snowCM := domain.SnowfallFromPrecip(hourlyMM, tempC)
+			slr := domain.CalculateSLR(tempC)
+
+			if hourlyMM > 0 {
+				if slr == 0 {
+					acc.rainHours++
+				} else if slr == 5 {
+					acc.mixedHours++
+				}
+			}
+			if snowCM > 0 && hourlyMM > 0 {
+				acc.totalSnowPrecipMM += hourlyMM
+				acc.weightedSLRSum += hourlyMM * slr
+			}
+
+			acc.snowCM += snowCM
+			if hour >= 6 && hour < 18 {
+				acc.daySnowCM += snowCM
+				acc.dayPrecipMM += hourlyMM
+			} else {
+				acc.nightSnowCM += snowCM
+				acc.nightPrecipMM += hourlyMM
+			}
+		}
+	}
+
+	// Step 3: Wind speed and gusts.
 	walkHourly(resp.Properties.WindSpeed.Values, func(acc *dayAccum, hour int, kmh float64) {
 		if hour >= 6 && hour < 18 {
-			if kmh > acc.dayWindMax { acc.dayWindMax = kmh }
+			if kmh > acc.dayWindMax {
+				acc.dayWindMax = kmh
+			}
 		} else {
-			if kmh > acc.nightWindMax { acc.nightWindMax = kmh }
+			if kmh > acc.nightWindMax {
+				acc.nightWindMax = kmh
+			}
 		}
 	})
-
-	// Wind gusts (km/h).
 	walkHourly(resp.Properties.WindGust.Values, func(acc *dayAccum, hour int, kmh float64) {
 		if hour >= 6 && hour < 18 {
-			if kmh > acc.dayGustMax { acc.dayGustMax = kmh }
+			if kmh > acc.dayGustMax {
+				acc.dayGustMax = kmh
+			}
 		} else {
-			if kmh > acc.nightGustMax { acc.nightGustMax = kmh }
+			if kmh > acc.nightGustMax {
+				acc.nightGustMax = kmh
+			}
 		}
 	})
 
@@ -278,12 +353,21 @@ func parseGridpointForecast(body []byte, loc *time.Location) ([]domain.DailyFore
 			continue
 		}
 		acc := byDate[d]
+
+		var slRatio float64
+		if acc.totalSnowPrecipMM > 0 {
+			slRatio = acc.weightedSLRSum / acc.totalSnowPrecipMM
+		}
+
 		daily = append(daily, domain.DailyForecast{
 			Date:            t.UTC(),
 			SnowfallCM:      acc.snowCM,
 			TemperatureMinC: acc.tempMin,
 			TemperatureMaxC: acc.tempMax,
 			PrecipitationMM: acc.precipMM,
+			SLRatio:         slRatio,
+			RainHours:       acc.rainHours,
+			MixedHours:      acc.mixedHours,
 			Day: domain.HalfDay{
 				SnowfallCM:      acc.daySnowCM,
 				TemperatureC:    acc.dayTempMax,
@@ -380,7 +464,84 @@ func roundTo4(v float64) float64 {
 	return math.Round(v*10000) / 10000
 }
 
+// WFO returns the Weather Forecast Office code for the given coordinates,
+// resolving and caching the grid if needed. Returns empty string on error.
+func (c *NWSClient) WFO(ctx context.Context, lat, lon float64) string {
+	grid, err := c.resolveGrid(ctx, lat, lon)
+	if err != nil {
+		return ""
+	}
+	return grid.WFO
+}
+
+// FetchAFD retrieves the latest Area Forecast Discussion from the NWS for a
+// Weather Forecast Office. Returns the discussion text and metadata.
+// Per research R3: list AFDs via /products/types/AFD/locations/{wfo}, then
+// fetch the latest text via /products/{id}.
+func (c *NWSClient) FetchAFD(ctx context.Context, wfo string) (domain.ForecastDiscussion, error) {
+	if wfo == "" {
+		return domain.ForecastDiscussion{}, fmt.Errorf("nws: empty WFO code")
+	}
+
+	// Step 1: List recent AFDs for this WFO.
+	listURL := fmt.Sprintf("%s/products/types/AFD/locations/%s", nwsBaseURL, wfo)
+	listBody, statusCode, err := c.get(ctx, listURL)
+	if err != nil {
+		return domain.ForecastDiscussion{}, fmt.Errorf("nws: list AFDs for %s: %w", wfo, err)
+	}
+	if statusCode != http.StatusOK {
+		return domain.ForecastDiscussion{}, fmt.Errorf("nws: list AFDs returned HTTP %d for %s", statusCode, wfo)
+	}
+
+	var listResp nwsProductListResponse
+	if err := json.Unmarshal(listBody, &listResp); err != nil {
+		return domain.ForecastDiscussion{}, fmt.Errorf("nws: decode AFD list for %s: %w", wfo, err)
+	}
+
+	if len(listResp.Graph) == 0 {
+		return domain.ForecastDiscussion{}, fmt.Errorf("nws: no AFD products found for %s", wfo)
+	}
+
+	// Step 2: Fetch the latest AFD text.
+	productID := listResp.Graph[0].ID
+	productURL := fmt.Sprintf("%s/products/%s", nwsBaseURL, productID)
+	productBody, statusCode, err := c.get(ctx, productURL)
+	if err != nil {
+		return domain.ForecastDiscussion{}, fmt.Errorf("nws: fetch AFD %s: %w", productID, err)
+	}
+	if statusCode != http.StatusOK {
+		return domain.ForecastDiscussion{}, fmt.Errorf("nws: fetch AFD returned HTTP %d for %s", statusCode, productID)
+	}
+
+	var productResp nwsProductResponse
+	if err := json.Unmarshal(productBody, &productResp); err != nil {
+		return domain.ForecastDiscussion{}, fmt.Errorf("nws: decode AFD %s: %w", productID, err)
+	}
+
+	issuedAt, _ := time.Parse(time.RFC3339, listResp.Graph[0].IssuanceTime)
+
+	return domain.ForecastDiscussion{
+		WFO:       wfo,
+		IssuedAt:  issuedAt,
+		Text:      productResp.ProductText,
+		FetchedAt: time.Now().UTC(),
+	}, nil
+}
+
 // NWS API response types.
+
+type nwsProductListResponse struct {
+	Graph []nwsProductEntry `json:"@graph"`
+}
+
+type nwsProductEntry struct {
+	ID           string `json:"id"`
+	IssuanceTime string `json:"issuanceTime"`
+}
+
+type nwsProductResponse struct {
+	ProductText string `json:"productText"`
+}
 
 type nwsPointsResponse struct {
 	Properties struct {

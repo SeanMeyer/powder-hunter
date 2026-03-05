@@ -67,3 +67,11 @@ type Resort struct {
 	PassAffiliations []string         // ["ikon"], ["epic"], ["ikon", "indy"], etc.
 	Metadata         map[string]string // LLM-facing context (see seed data JSON)
 }
+
+// MidMountainElevationM returns the mid-mountain elevation in meters,
+// used as the query elevation for weather APIs. Mid-mountain best represents
+// the typical skiing experience (lifts, glades, bowls).
+func (r Resort) MidMountainElevationM() int {
+	midFt := (r.BaseElevationFt + r.SummitElevationFt) / 2
+	return int(float64(midFt) * 0.3048)
+}

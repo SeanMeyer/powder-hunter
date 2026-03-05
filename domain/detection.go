@@ -9,11 +9,6 @@ type DetectionResult struct {
 	Windows  []SnowfallWindow // windows that exceeded thresholds
 }
 
-// Source preference order for near-range detection. NWS has higher spatial
-// resolution for US locations; Open-Meteo is the fallback and sole source for
-// extended-range and non-US regions.
-var nearRangeSourcePreference = []string{"nws", "open_meteo"}
-
 // Detect checks forecasts against the region's friction-tier thresholds.
 // Returns which snowfall windows (if any) exceeded detection thresholds.
 //
@@ -97,48 +92,18 @@ func Detect(region Region, forecasts []Forecast) DetectionResult {
 }
 
 // preferredDailySnowfall builds a per-day snowfall map using the best available
-// source for each day. NWS is preferred for days 1-7 (higher resolution near-range),
-// with Open-Meteo as fallback. Extended range uses whatever source has data.
+// forecast for each day. With per-resort multi-model forecasts, each forecast
+// represents a unique (resort, source, model) combination. For detection we want
+// the best signal: for each day, take the max snowfall across all forecasts.
+// This ensures that if any resort in the region is getting significant snow
+// from any model, it triggers detection.
 func preferredDailySnowfall(today time.Time, forecasts []Forecast) map[string]float64 {
-	// Aggregate per source per day.
-	bySource := make(map[string]map[string]float64)
+	preferred := make(map[string]float64)
 	for _, f := range forecasts {
-		sd, ok := bySource[f.Source]
-		if !ok {
-			sd = make(map[string]float64)
-			bySource[f.Source] = sd
-		}
 		for _, d := range f.DailyData {
 			key := d.Date.UTC().Format("2006-01-02")
-			sd[key] += d.SnowfallCM
-		}
-	}
-
-	preferred := make(map[string]float64)
-	for dayOffset := 1; dayOffset <= 16; dayOffset++ {
-		key := today.AddDate(0, 0, dayOffset).Format("2006-01-02")
-
-		if dayOffset <= 7 {
-			// Near-range: try preferred sources in order.
-			found := false
-			for _, src := range nearRangeSourcePreference {
-				if sd, ok := bySource[src]; ok {
-					if v := sd[key]; v > 0 {
-						preferred[key] = v
-						found = true
-						break
-					}
-				}
-			}
-			if found {
-				continue
-			}
-		}
-
-		// Extended range or near-range fallback: use best available.
-		for _, sd := range bySource {
-			if v := sd[key]; v > preferred[key] {
-				preferred[key] = v
+			if d.SnowfallCM > preferred[key] {
+				preferred[key] = d.SnowfallCM
 			}
 		}
 	}

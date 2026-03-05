@@ -270,14 +270,12 @@ func NewGeminiEvaluator(gemini *GeminiClient, store *storage.DB) *GeminiEvaluato
 
 // Evaluate loads the active prompt, renders it with context data, calls Gemini,
 // and returns a domain.Evaluation ready for persistence.
-func (e *GeminiEvaluator) Evaluate(
-	ctx context.Context,
-	forecasts []domain.Forecast,
-	region domain.Region,
-	resorts []domain.Resort,
-	profile domain.UserProfile,
-	history []domain.Evaluation,
-) (domain.Evaluation, error) {
+func (e *GeminiEvaluator) Evaluate(ctx context.Context, ec EvalContext) (domain.Evaluation, error) {
+	forecasts := ec.Forecasts
+	region := ec.Region
+	resorts := ec.Resorts
+	profile := ec.Profile
+	history := ec.History
 	promptVersion, promptTemplate, err := e.store.GetActivePrompt(ctx, "storm_eval")
 	if err != nil {
 		return domain.Evaluation{}, fmt.Errorf("load active prompt: %w", err)
@@ -294,14 +292,21 @@ func (e *GeminiEvaluator) Evaluate(
 
 	detection := domain.Detect(region, forecasts)
 
+	weatherData := FormatConsolidatedWeatherForPrompt(forecasts, resorts)
+	if rainRisk := FormatRainLineRisk(forecasts, resorts); rainRisk != "" {
+		weatherData += "\n" + rainRisk
+	}
+
 	renderedPrompt := RenderPrompt(promptTemplate, PromptData{
-		WeatherData:       FormatWeatherForPrompt(forecasts),
-		RegionName:        region.Name,
-		Resorts:           FormatResortsForPrompt(resorts),
-		UserProfile:       FormatProfileForPrompt(profile),
-		StormWindow:       FormatDetectionForPrompt(detection),
-		EvaluationHistory: historyStr,
-		PromptVersion:     promptVersion,
+		WeatherData:        weatherData,
+		RegionName:         region.Name,
+		Resorts:            FormatResortsForPrompt(resorts),
+		UserProfile:        FormatProfileForPrompt(profile),
+		StormWindow:        FormatDetectionForPrompt(detection),
+		EvaluationHistory:  historyStr,
+		PromptVersion:      promptVersion,
+		ModelConsensus:     FormatResortConsensusForPrompt(ec.ResortConsensus, resorts),
+		ForecastDiscussion: FormatDiscussionForPrompt(ec.Discussion),
 	})
 
 	gemResult, err := e.gemini.EvaluateStorm(ctx, renderedPrompt)

@@ -175,7 +175,7 @@ func TestDetect_SourcePreference(t *testing.T) {
 		wantNearIn   float64 // approximate expected near-range total; 0 = don't check
 	}{
 		{
-			name:   "NWS preferred over Open-Meteo for near-range",
+			name:   "max across sources used for detection (OM higher)",
 			region: regionWithFriction("sp-1", FrictionLocalDrive), // 6" near threshold
 			forecasts: []Forecast{
 				sourceForecast("sp-1", "open_meteo", []DailyForecast{
@@ -186,10 +186,10 @@ func TestDetect_SourcePreference(t *testing.T) {
 				}),
 			},
 			wantDetected: true,
-			wantNearIn:   7.0, // NWS value used, not Open-Meteo's 10"
+			wantNearIn:   10.0, // max across sources
 		},
 		{
-			name:   "NWS below threshold, Open-Meteo above → not detected (NWS preferred)",
+			name:   "max across sources — both above threshold",
 			region: regionWithFriction("sp-2", FrictionLocalDrive), // 6" near threshold
 			forecasts: []Forecast{
 				sourceForecast("sp-2", "open_meteo", []DailyForecast{
@@ -199,7 +199,8 @@ func TestDetect_SourcePreference(t *testing.T) {
 					{Date: nearDay(2), SnowfallCM: inchesToCM(4)},
 				}),
 			},
-			wantDetected: false,
+			wantDetected: true, // OM's 8" exceeds 6" threshold
+			wantNearIn:   8.0,
 		},
 		{
 			name:   "no NWS data → falls back to Open-Meteo for near-range",

@@ -533,3 +533,98 @@ func TestPipeline_DryRun(t *testing.T) {
 		t.Errorf("dry-run should not call PostNew, got %d calls", len(fakePoster.PostedNew))
 	}
 }
+
+func TestPipeline_MultiModelConsensusAndAFD(t *testing.T) {
+	ctx := context.Background()
+	db := setupDB(t)
+	seedProfile(t, ctx, db)
+
+	regionA := testRegion("region-a")
+	seedRegion(t, ctx, db, regionA)
+
+	now := time.Now().UTC()
+	tomorrow := now.AddDate(0, 0, 1)
+
+	stormID, err := db.CreateStorm(ctx, domain.Storm{
+		RegionID: regionA.ID, WindowStart: tomorrow,
+		WindowEnd: tomorrow.AddDate(0, 0, 6), State: domain.StormDetected, DetectedAt: now,
+	})
+	if err != nil {
+		t.Fatalf("create storm: %v", err)
+	}
+
+	// Build multi-model forecasts: GFS and ECMWF with different snowfall for a resort.
+	resortID := "resort-1"
+	gfsForecast := domain.Forecast{
+		RegionID: regionA.ID, ResortID: resortID, FetchedAt: now, Source: "open_meteo", Model: "gfs_seamless",
+		DailyData: []domain.DailyForecast{
+			{Date: tomorrow, SnowfallCM: 30.0, TemperatureMinC: -10, TemperatureMaxC: -5, SLRatio: 15},
+		},
+	}
+	ecmwfForecast := domain.Forecast{
+		RegionID: regionA.ID, ResortID: resortID, FetchedAt: now, Source: "open_meteo", Model: "ecmwf_ifs025",
+		DailyData: []domain.DailyForecast{
+			{Date: tomorrow, SnowfallCM: 20.0, TemperatureMinC: -8, TemperatureMaxC: -3, SLRatio: 12},
+		},
+	}
+
+	// Compute per-resort consensus.
+	resortConsensus := map[string]domain.ModelConsensus{
+		resortID: domain.ComputeConsensus([]domain.Forecast{gfsForecast, ecmwfForecast}),
+	}
+
+	// Build AFD.
+	afd := &domain.ForecastDiscussion{
+		WFO: "SLC", IssuedAt: now, Text: "Heavy snow expected.", FetchedAt: now,
+	}
+
+	scans := []pipeline.ScanResult{
+		{
+			Region:          regionA,
+			Storm:           domain.Storm{ID: stormID, RegionID: regionA.ID, State: domain.StormDetected, WindowStart: tomorrow, WindowEnd: tomorrow.AddDate(0, 0, 6), DetectedAt: now},
+			Forecasts:       []domain.Forecast{gfsForecast, ecmwfForecast},
+			ResortConsensus: resortConsensus,
+			Discussion:      afd,
+			IsNew:           true,
+		},
+	}
+
+	fakeEval := &evaluation.FakeEvaluator{
+		Results: map[string]domain.Evaluation{
+			regionA.ID: {Tier: domain.TierDropEverything, Recommendation: "Book it."},
+		},
+	}
+
+	p := pipeline.New(nil, db, fakeEval, discardLogger())
+	p.WithDryRun(true)
+
+	evals, err := p.Evaluate(ctx, scans)
+	if err != nil {
+		t.Fatalf("evaluate: %v", err)
+	}
+	if len(evals) != 1 {
+		t.Fatalf("expected 1 eval, got %d", len(evals))
+	}
+
+	// Verify the evaluator received consensus and discussion data.
+	if len(fakeEval.EvaluateCalls) != 1 {
+		t.Fatalf("expected 1 evaluate call, got %d", len(fakeEval.EvaluateCalls))
+	}
+	call := fakeEval.EvaluateCalls[0]
+	rc, ok := call.ResortConsensus[resortID]
+	if !ok {
+		t.Fatalf("expected consensus for resort %s", resortID)
+	}
+	if len(rc.Models) != 2 {
+		t.Errorf("expected 2 consensus models, got %d", len(rc.Models))
+	}
+	if len(rc.DailyConsensus) != 1 {
+		t.Errorf("expected 1 consensus day, got %d", len(rc.DailyConsensus))
+	}
+	if rc.DailyConsensus[0].Confidence != "high" {
+		t.Errorf("expected high confidence (models close), got %q", rc.DailyConsensus[0].Confidence)
+	}
+	if len(call.Forecasts) != 2 {
+		t.Errorf("expected 2 forecasts passed to evaluator, got %d", len(call.Forecasts))
+	}
+}

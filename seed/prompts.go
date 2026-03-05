@@ -22,7 +22,7 @@ func DefaultProfile() domain.UserProfile {
 }
 
 const stormEvalPromptID = "storm_eval"
-const stormEvalPromptVersion = "v1.0.0"
+const stormEvalPromptVersion = "v2.0.0"
 
 // stormEvalPromptTemplate is the v1.0.0 template for LLM storm evaluation.
 // Placeholders are substituted by evaluation.RenderPrompt before each API call.
@@ -109,6 +109,19 @@ determines which factors dominate.
 - Base elevation and vertical drop
 - Resort's specific powder reputation and terrain character (see resort details below)
 
+<!-- US1: confidence calibration -->
+## Forecast Confidence Guidance
+
+Examine the daily forecast data below and identify when the significant snowfall actually occurs. Then calibrate
+your recommendation confidence based on how far out that snowfall is:
+- **1-2 days out**: High confidence — models are converging. Give decisive recommendations (commit now, book it).
+- **3-5 days out**: Moderate confidence — pattern is established but details will shift. Suggest refundable bookings and tentative plans.
+- **6-7 days out**: Lower confidence — general pattern visible but specifics are unreliable. Worth watching, no commitments yet.
+- **8-16 days out**: Pattern-level only — extended range signals. Awareness only, no action items.
+
+Your tier and recommendation language MUST reflect this lead time. A 2-day-out storm with 12" deserves more
+decisive language than a 7-day-out storm with 18", because the near-term forecast is far more reliable.
+
 ## Detected Storm Signal
 
 Our automated detection system flagged significant snowfall in this region. The detection window below is the
@@ -123,6 +136,12 @@ daily forecast data to identify the actual best days to ski, and plan travel dat
 
 **Weather Forecast Data:**
 {{.WeatherData}}
+
+**Multi-Model Consensus:**
+{{.ModelConsensus}}
+
+**NWS Forecast Discussion:**
+{{.ForecastDiscussion}}
 
 **Resort Details:**
 {{.Resorts}}

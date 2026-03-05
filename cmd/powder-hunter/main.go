@@ -491,13 +491,30 @@ func runTrace(ctx context.Context, args []string) int {
 	nwsClient := weather.NewNWSClient(httpClient)
 	weatherSvc := weather.NewService(omClient, nwsClient)
 
-	forecasts, err := weatherSvc.FetchAll(ctx, found.Region)
+	fetchResult, err := weatherSvc.FetchAll(ctx, found.Region, found.Resorts)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: weather fetch failed: %v\n", err)
 		return 1
 	}
+	forecasts := fetchResult.Forecasts
 
 	trace.FormatWeather(w, found.Region, found.Resorts, forecasts)
+
+	// ── Per-Resort Multi-Model Consensus ────────────────────────────────────
+	resortModels := make(map[string][]domain.Forecast)
+	for _, f := range forecasts {
+		if f.Source == "open_meteo" && f.Model != "" && f.ResortID != "" {
+			resortModels[f.ResortID] = append(resortModels[f.ResortID], f)
+		}
+	}
+	resortConsensus := make(map[string]domain.ModelConsensus, len(resortModels))
+	for resortID, mf := range resortModels {
+		resortConsensus[resortID] = domain.ComputeConsensus(mf)
+	}
+	trace.FormatConsensus(w, resortConsensus, found.Resorts)
+
+	// ── NWS Forecast Discussion ─────────────────────────────────────────────
+	trace.FormatAFD(w, fetchResult.Discussion)
 
 	// ── Detection ────────────────────────────────────────────────────────────
 	detection := domain.Detect(found.Region, forecasts)
@@ -581,7 +598,12 @@ func runTrace(ctx context.Context, args []string) int {
 	}
 	evaluator := evaluation.NewGeminiEvaluator(geminiClient, db)
 
-	eval, err := evaluator.Evaluate(ctx, forecasts, found.Region, found.Resorts, *profile, nil)
+	eval, err := evaluator.Evaluate(ctx, evaluation.EvalContext{
+		Forecasts: forecasts,
+		Region:    found.Region,
+		Resorts:   found.Resorts,
+		Profile:   *profile,
+	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: LLM evaluation failed: %v\n", err)
 		return 1

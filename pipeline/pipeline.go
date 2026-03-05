@@ -49,10 +49,12 @@ func (p *Pipeline) WithDryRun(dryRun bool) *Pipeline {
 // produced (or refreshed) the detection. Downstream stages use this to evaluate
 // and post without re-fetching.
 type ScanResult struct {
-	Region    domain.Region
-	Storm     domain.Storm
-	Forecasts []domain.Forecast
-	IsNew     bool // true if storm was just created, false if existing
+	Region           domain.Region
+	Storm            domain.Storm
+	Forecasts        []domain.Forecast
+	ResortConsensus  map[string]domain.ModelConsensus // per-resort consensus keyed by resort ID
+	Discussion       *domain.ForecastDiscussion       // NWS AFD (nil for non-US or fetch failure)
+	IsNew            bool                             // true if storm was just created, false if existing
 }
 
 // RunSummary holds per-stage counts from a completed pipeline execution.
@@ -141,13 +143,33 @@ func (p *Pipeline) Scan(ctx context.Context) ([]ScanResult, error) {
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			forecasts, fetchErr := p.weather.FetchAll(gctx, region)
+			_, resorts, resortErr := p.store.GetRegionWithResorts(gctx, region.ID)
+			if resortErr != nil {
+				p.logger.WarnContext(gctx, "load resorts failed, skipping region",
+					"region_id", region.ID, "error", resortErr)
+				return nil
+			}
+
+			fetchResult, fetchErr := p.weather.FetchAll(gctx, region, resorts)
 			if fetchErr != nil {
 				p.logger.WarnContext(gctx, "weather fetch failed, skipping region",
 					"region_id", region.ID,
 					"error", fetchErr,
 				)
 				return nil
+			}
+			forecasts := fetchResult.Forecasts
+
+			// Compute per-resort consensus from Open-Meteo model forecasts.
+			resortModels := make(map[string][]domain.Forecast)
+			for _, f := range forecasts {
+				if f.Source == "open_meteo" && f.Model != "" && f.ResortID != "" {
+					resortModels[f.ResortID] = append(resortModels[f.ResortID], f)
+				}
+			}
+			resortConsensus := make(map[string]domain.ModelConsensus, len(resortModels))
+			for resortID, mf := range resortModels {
+				resortConsensus[resortID] = domain.ComputeConsensus(mf)
 			}
 
 			detection := domain.Detect(region, forecasts)
@@ -167,10 +189,12 @@ func (p *Pipeline) Scan(ctx context.Context) ([]ScanResult, error) {
 				mu.Lock()
 				results[i] = regionResult{
 					result: ScanResult{
-						Region:    region,
-						Storm:     storm,
-						Forecasts: forecasts,
-						IsNew:     isNew,
+						Region:     region,
+						Storm:      storm,
+						Forecasts:  forecasts,
+						ResortConsensus: resortConsensus,
+						Discussion: fetchResult.Discussion,
+						IsNew:      isNew,
 					},
 					ok: true,
 				}
@@ -185,10 +209,12 @@ func (p *Pipeline) Scan(ctx context.Context) ([]ScanResult, error) {
 				mu.Lock()
 				results[i] = regionResult{
 					result: ScanResult{
-						Region:    region,
-						Storm:     activeStorms[0],
-						Forecasts: forecasts,
-						IsNew:     false,
+						Region:     region,
+						Storm:      activeStorms[0],
+						Forecasts:  forecasts,
+						ResortConsensus: resortConsensus,
+						Discussion: fetchResult.Discussion,
+						IsNew:      false,
 					},
 					ok: true,
 				}
@@ -329,7 +355,15 @@ func (p *Pipeline) Evaluate(ctx context.Context, scans []ScanResult) ([]EvalResu
 				return nil
 			}
 
-			eval, evalErr := p.evaluator.Evaluate(gctx, scan.Forecasts, scan.Region, resorts, *profile, history)
+			eval, evalErr := p.evaluator.Evaluate(gctx, evaluation.EvalContext{
+				Forecasts:       scan.Forecasts,
+				Region:          scan.Region,
+				Resorts:         resorts,
+				Profile:         *profile,
+				History:         history,
+				ResortConsensus: scan.ResortConsensus,
+				Discussion:      scan.Discussion,
+			})
 			if evalErr != nil {
 				p.logger.WarnContext(gctx, "evaluation failed, skipping region",
 					"region_id", scan.Region.ID,

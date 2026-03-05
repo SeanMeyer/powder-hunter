@@ -18,16 +18,21 @@ type FakeEvaluator struct {
 
 // EvaluateCall captures the arguments of a single Evaluate invocation.
 type EvaluateCall struct {
-	RegionID  string
-	Forecasts []domain.Forecast
+	RegionID        string
+	Forecasts       []domain.Forecast
+	ResortConsensus map[string]domain.ModelConsensus
 }
 
-func (f *FakeEvaluator) Evaluate(ctx context.Context, forecasts []domain.Forecast, region domain.Region, resorts []domain.Resort, profile domain.UserProfile, history []domain.Evaluation) (domain.Evaluation, error) {
-	f.EvaluateCalls = append(f.EvaluateCalls, EvaluateCall{RegionID: region.ID, Forecasts: forecasts})
-	if err, ok := f.Errors[region.ID]; ok {
+func (f *FakeEvaluator) Evaluate(ctx context.Context, ec EvalContext) (domain.Evaluation, error) {
+	f.EvaluateCalls = append(f.EvaluateCalls, EvaluateCall{
+		RegionID:        ec.Region.ID,
+		Forecasts:       ec.Forecasts,
+		ResortConsensus: ec.ResortConsensus,
+	})
+	if err, ok := f.Errors[ec.Region.ID]; ok {
 		return domain.Evaluation{}, err
 	}
-	if result, ok := f.Results[region.ID]; ok {
+	if result, ok := f.Results[ec.Region.ID]; ok {
 		return result, nil
 	}
 	return domain.Evaluation{Tier: domain.TierOnTheRadar}, nil
