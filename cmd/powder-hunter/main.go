@@ -26,6 +26,8 @@ import (
 	"github.com/seanmeyer/powder-hunter/weather"
 )
 
+var version = "dev"
+
 func main() {
 	loadEnvFile(".env")
 	os.Exit(run(context.Background(), os.Args[1:]))
@@ -89,6 +91,9 @@ func run(ctx context.Context, args []string) int {
 		return runTrace(ctx, args[1:])
 	case "reset":
 		return runReset(ctx, args[1:])
+	case "version":
+		fmt.Println(version)
+		return 0
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n", args[0])
 		printUsage()
@@ -106,7 +111,8 @@ Commands:
   profile   View or update user profile
   regions   List all regions from seed data
   trace     Run pipeline for one region with human-readable debug output
-  reset     Delete all storms and evaluations (keeps regions, profiles, prompts)`)
+  reset     Delete all storms and evaluations (keeps regions, profiles, prompts)
+  version   Print the version and exit`)
 }
 
 func runPipeline(ctx context.Context, args []string) int {
