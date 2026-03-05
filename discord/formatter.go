@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/seanmeyer/powder-hunter/domain"
+	"github.com/seanmeyer/powder-hunter/evaluation"
 )
 
 const (
@@ -47,6 +48,102 @@ type WebhookPayload struct {
 // AllowedMentions controls which @mention types Discord will resolve.
 type AllowedMentions struct {
 	Parse []string `json:"parse"`
+}
+
+// GroupedPost holds everything needed to post a grouped storm alert.
+type GroupedPost struct {
+	MacroRegionName string
+	FrictionTier    domain.FrictionTier
+	Comparison      evaluation.ComparisonResult
+	Evaluations     []EvalWithRegion // individual evaluations in tier-descending order
+}
+
+// EvalWithRegion pairs an evaluation with its region for formatting.
+type EvalWithRegion struct {
+	Evaluation domain.Evaluation
+	Region     domain.Region
+}
+
+// FormatGroupedStorm creates a webhook payload for a grouped storm alert spanning
+// multiple regions. The first embed summarises the cross-region comparison; subsequent
+// embeds show each region's individual evaluation (capped at Discord's 10-embed limit).
+func FormatGroupedStorm(group GroupedPost) WebhookPayload {
+	highestTier := highestTier(group.Evaluations)
+	emoji := tierEmoji(highestTier)
+
+	// --- comparison summary embed ---
+	summaryEmbed := Embed{
+		Title:       fmt.Sprintf("%s %s", emoji, group.MacroRegionName),
+		Color:       tierColor(highestTier),
+		Description: group.Comparison.Reasoning,
+	}
+
+	summaryFields := []EmbedField{
+		{Name: "Top Pick", Value: fmt.Sprintf("**%s** — %s", group.Comparison.TopPickName, group.Comparison.Reasoning), Inline: false},
+	}
+	if group.Comparison.RunnerUp != "" {
+		summaryFields = append(summaryFields, EmbedField{
+			Name:   "Runner Up",
+			Value:  fmt.Sprintf("**%s** — %s", group.Comparison.RunnerUp, group.Comparison.RunnerUpReason),
+			Inline: false,
+		})
+	}
+	summaryEmbed.Fields = summaryFields
+
+	embeds := []Embed{summaryEmbed}
+
+	// --- per-region embeds (reuse buildEmbed, cap at 10 total) ---
+	maxRegionEmbeds := 10 - len(embeds) // Discord allows at most 10 embeds
+	for i, ew := range group.Evaluations {
+		if i >= maxRegionEmbeds {
+			break
+		}
+		regionEmbed := buildEmbed(ew.Evaluation, ew.Region)
+		regionEmbed.Title = fmt.Sprintf("%s %s", tierEmoji(ew.Evaluation.Tier), ew.Region.Name)
+		embeds = append(embeds, regionEmbed)
+	}
+
+	// --- thread name ---
+	dateRange := ""
+	if len(group.Evaluations) > 0 {
+		dateRange = formatWindowDates(group.Evaluations[0].Evaluation)
+	}
+	threadName := fmt.Sprintf("%s %s — %s", emoji, group.MacroRegionName, dateRange)
+
+	payload := WebhookPayload{
+		Content:    group.Comparison.Reasoning,
+		Embeds:     embeds,
+		ThreadName: threadName,
+	}
+
+	if highestTier == domain.TierDropEverything {
+		payload.Content = "@here\n" + group.Comparison.Reasoning
+		payload.AllowedMentions = &AllowedMentions{Parse: []string{"everyone"}}
+	}
+
+	return payload
+}
+
+// highestTier returns the most severe tier among the evaluations.
+func highestTier(evals []EvalWithRegion) domain.Tier {
+	best := domain.TierOnTheRadar
+	for _, ew := range evals {
+		if tierRank(ew.Evaluation.Tier) > tierRank(best) {
+			best = ew.Evaluation.Tier
+		}
+	}
+	return best
+}
+
+func tierRank(t domain.Tier) int {
+	switch t {
+	case domain.TierDropEverything:
+		return 3
+	case domain.TierWorthALook:
+		return 2
+	default:
+		return 1
+	}
 }
 
 // FormatNewStorm creates a webhook payload for a new storm alert.

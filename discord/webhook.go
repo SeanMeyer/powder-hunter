@@ -14,10 +14,12 @@ import (
 )
 
 // Poster publishes storm evaluations to Discord. PostNew opens a new thread and
-// returns its ID; PostUpdate appends to an existing thread.
+// returns its ID; PostUpdate appends to an existing thread; PostGrouped opens a
+// thread for a grouped multi-region storm alert.
 type Poster interface {
 	PostNew(ctx context.Context, eval domain.Evaluation, region domain.Region) (threadID string, err error)
 	PostUpdate(ctx context.Context, eval domain.Evaluation, region domain.Region, threadID string) error
+	PostGrouped(ctx context.Context, group GroupedPost) (threadID string, err error)
 }
 
 // WebhookClient sends payloads to a Discord forum-channel webhook.
@@ -80,6 +82,25 @@ func (w *WebhookClient) PostUpdate(ctx context.Context, eval domain.Evaluation, 
 		return fmt.Errorf("post update for region %s thread %s: %w", region.ID, threadID, err)
 	}
 	return nil
+}
+
+// PostGrouped formats and posts a grouped storm alert covering multiple regions,
+// opening a forum thread. Returns the thread ID for later updates.
+func (w *WebhookClient) PostGrouped(ctx context.Context, group GroupedPost) (string, error) {
+	payload := FormatGroupedStorm(group)
+	url := w.webhookURL + "?wait=true"
+	body, err := w.postWithRetry(ctx, url, payload)
+	if err != nil {
+		return "", fmt.Errorf("post grouped storm for %s: %w", group.MacroRegionName, err)
+	}
+	var resp threadResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return "", fmt.Errorf("parse discord response for grouped %s: %w", group.MacroRegionName, err)
+	}
+	if resp.ChannelID == "" {
+		return "", fmt.Errorf("discord response missing channel_id for grouped %s", group.MacroRegionName)
+	}
+	return resp.ChannelID, nil
 }
 
 // postWithRetry serializes payload and POST it to url, retrying on 429 and 5xx responses.

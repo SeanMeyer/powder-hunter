@@ -13,9 +13,11 @@ type FakePoster struct {
 	PostedNew []PostNewCall
 	// PostedUpdates records all PostUpdate calls.
 	PostedUpdates []PostUpdateCall
-	// NextThreadID is returned by PostNew.
+	// PostedGrouped records all PostGrouped calls.
+	PostedGrouped []PostGroupedCall
+	// NextThreadID is returned by PostNew and PostGrouped.
 	NextThreadID string
-	// PostNewError is returned by PostNew if set.
+	// PostNewError is returned by PostNew and PostGrouped if set.
 	PostNewError error
 	// PostUpdateError is returned by PostUpdate if set.
 	PostUpdateError error
@@ -25,6 +27,11 @@ type FakePoster struct {
 type PostNewCall struct {
 	Evaluation domain.Evaluation
 	Region     domain.Region
+}
+
+// PostGroupedCall captures the arguments of a single PostGrouped invocation.
+type PostGroupedCall struct {
+	Group GroupedPost
 }
 
 // PostUpdateCall captures the arguments of a single PostUpdate invocation.
@@ -42,6 +49,18 @@ func (f *FakePoster) PostNew(ctx context.Context, eval domain.Evaluation, region
 	tid := f.NextThreadID
 	if tid == "" {
 		tid = fmt.Sprintf("thread-%d", len(f.PostedNew))
+	}
+	return tid, nil
+}
+
+func (f *FakePoster) PostGrouped(ctx context.Context, group GroupedPost) (string, error) {
+	f.PostedGrouped = append(f.PostedGrouped, PostGroupedCall{Group: group})
+	if f.PostNewError != nil {
+		return "", f.PostNewError
+	}
+	tid := f.NextThreadID
+	if tid == "" {
+		tid = fmt.Sprintf("grouped-thread-%d", len(f.PostedGrouped))
 	}
 	return tid, nil
 }
