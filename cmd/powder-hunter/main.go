@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/seanmeyer/powder-hunter/config"
 	"github.com/seanmeyer/powder-hunter/discord"
 	"github.com/seanmeyer/powder-hunter/domain"
 	"github.com/seanmeyer/powder-hunter/evaluation"
@@ -106,14 +107,16 @@ Commands:
 }
 
 func runPipeline(ctx context.Context, args []string) int {
+	envCfg := config.PipelineConfigFromEnv(os.Getenv)
+
 	fs := flag.NewFlagSet("run", flag.ContinueOnError)
-	dbPath := fs.String("db", "./powder-hunter.db", "SQLite database path")
-	dryRun := fs.Bool("dry-run", false, "Run pipeline but skip Discord posting")
-	regionFilter := fs.String("region", "", "Evaluate only this region (for debugging)")
-	verbose := fs.Bool("verbose", false, "Enable debug-level logging")
+	dbPath := fs.String("db", envCfg.DBPath, "SQLite database path")
+	dryRun := fs.Bool("dry-run", envCfg.DryRun, "Run pipeline but skip Discord posting")
+	regionFilter := fs.String("region", envCfg.RegionFilter, "Evaluate only this region (for debugging)")
+	verbose := fs.Bool("verbose", envCfg.Verbose, "Enable debug-level logging")
 	loop := fs.Bool("loop", false, "Run pipeline repeatedly on an interval")
-	interval := fs.Duration("interval", 12*time.Hour, "Time between pipeline runs (requires --loop)")
-	budget := fs.Float64("budget", 0, "Monthly budget limit in USD (0 = disabled)")
+	interval := fs.Duration("interval", envCfg.LoopInterval, "Time between pipeline runs (requires --loop)")
+	budget := fs.Float64("budget", envCfg.Budget, "Monthly budget limit in USD")
 	if err := fs.Parse(args); err != nil {
 		return 1
 	}
@@ -159,12 +162,10 @@ func runPipeline(ctx context.Context, args []string) int {
 	p.WithDryRun(*dryRun)
 	p.WithComparer(evaluator)
 	p.WithCostTracker(db)
-	if *budget > 0 {
-		p.WithBudgetConfig(pipeline.BudgetConfig{
-			MonthlyLimitUSD:  *budget,
-			WarningThreshold: 0.8,
-		})
-	}
+	p.WithBudgetConfig(pipeline.BudgetConfig{
+		MonthlyLimitUSD:  *budget,
+		WarningThreshold: 0.8,
+	})
 
 	if !*dryRun && webhookURL != "" {
 		poster := discord.NewWebhookClient(webhookURL, &http.Client{})
