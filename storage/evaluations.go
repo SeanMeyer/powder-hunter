@@ -100,7 +100,7 @@ func (d *DB) GetLatestEvaluation(ctx context.Context, stormID int64) (*domain.Ev
 		LIMIT 1`,
 		stormID,
 	)
-	e, err := scanEvaluationRow(row)
+	e, err := scanEvaluation(row)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -171,7 +171,7 @@ func (d *DB) GetEvaluation(ctx context.Context, evalID int64) (*domain.Evaluatio
 		WHERE id = ?`,
 		evalID,
 	)
-	e, err := scanEvaluationRow(row)
+	e, err := scanEvaluation(row)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -236,56 +236,3 @@ func scanEvaluation(s scanner) (domain.Evaluation, error) {
 	return e, nil
 }
 
-func scanEvaluationRow(row *sql.Row) (domain.Evaluation, error) {
-	var e domain.Evaluation
-	var evaluatedAt, tier, changeClass string
-	var dayByDay, keyFactors, logistics, weatherSnap, structured, grounding, resortPicks string
-	var delivered int
-
-	err := row.Scan(
-		&e.ID, &e.StormID, &evaluatedAt, &e.PromptVersion, &tier, &e.Recommendation,
-		&dayByDay, &keyFactors, &logistics, &e.Strategy, &e.SnowQuality,
-		&e.CrowdEstimate, &e.ClosureRisk, &weatherSnap, &e.RawLLMResponse,
-		&structured, &grounding, &changeClass, &delivered,
-		&e.Summary, &resortPicks,
-	)
-	if err != nil {
-		return domain.Evaluation{}, err
-	}
-
-	if e.EvaluatedAt, err = time.Parse(time.RFC3339, evaluatedAt); err != nil {
-		return domain.Evaluation{}, fmt.Errorf("scan evaluation: parse evaluated_at: %w", err)
-	}
-	if tier != "" {
-		e.Tier, err = domain.ParseTier(tier)
-		if err != nil {
-			return domain.Evaluation{}, fmt.Errorf("scan evaluation: %w", err)
-		}
-	}
-	e.ChangeClass = domain.ChangeClass(changeClass)
-	e.Delivered = delivered != 0
-
-	if err := json.Unmarshal([]byte(dayByDay), &e.DayByDay); err != nil {
-		return domain.Evaluation{}, fmt.Errorf("unmarshal day_by_day: %w", err)
-	}
-	if err := json.Unmarshal([]byte(keyFactors), &e.KeyFactors); err != nil {
-		return domain.Evaluation{}, fmt.Errorf("unmarshal key_factors: %w", err)
-	}
-	if err := json.Unmarshal([]byte(logistics), &e.LogisticsSummary); err != nil {
-		return domain.Evaluation{}, fmt.Errorf("unmarshal logistics_summary: %w", err)
-	}
-	if err := json.Unmarshal([]byte(weatherSnap), &e.WeatherSnapshot); err != nil {
-		return domain.Evaluation{}, fmt.Errorf("unmarshal weather_snapshot: %w", err)
-	}
-	if err := json.Unmarshal([]byte(structured), &e.StructuredResponse); err != nil {
-		return domain.Evaluation{}, fmt.Errorf("unmarshal structured_response: %w", err)
-	}
-	if err := json.Unmarshal([]byte(grounding), &e.GroundingSources); err != nil {
-		return domain.Evaluation{}, fmt.Errorf("unmarshal grounding_sources: %w", err)
-	}
-	if err := json.Unmarshal([]byte(resortPicks), &e.ResortInsights); err != nil {
-		return domain.Evaluation{}, fmt.Errorf("unmarshal top_resort_picks: %w", err)
-	}
-
-	return e, nil
-}

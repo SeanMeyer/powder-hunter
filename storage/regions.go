@@ -95,7 +95,7 @@ func (d *DB) GetRegionWithResorts(ctx context.Context, regionID string) (domain.
 		       nearest_airport, drive_notes, lodging_notes, macro_region
 		FROM regions WHERE id = ?`, regionID)
 
-	region, err := scanRegionRow(row)
+	region, err := scanRegion(row)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.Region{}, nil, fmt.Errorf("region %s not found: %w", regionID, err)
@@ -138,23 +138,6 @@ func scanRegion(s scanner) (domain.Region, error) {
 	var r domain.Region
 	var ft string
 	err := s.Scan(
-		&r.ID, &r.Name, &r.Latitude, &r.Longitude,
-		&ft, &r.NearThresholdIn, &r.ExtendedThresholdIn, &r.Country,
-		&r.Logistics.NearestAirport,
-		&r.Logistics.DriveNotes, &r.Logistics.LodgingNotes,
-		&r.StormGroup,
-	)
-	if err != nil {
-		return domain.Region{}, err
-	}
-	r.FrictionTier = domain.FrictionTier(ft)
-	return r, nil
-}
-
-func scanRegionRow(row *sql.Row) (domain.Region, error) {
-	var r domain.Region
-	var ft string
-	err := row.Scan(
 		&r.ID, &r.Name, &r.Latitude, &r.Longitude,
 		&ft, &r.NearThresholdIn, &r.ExtendedThresholdIn, &r.Country,
 		&r.Logistics.NearestAirport,

@@ -129,7 +129,7 @@ func (d *DB) FindOverlappingStorm(ctx context.Context, regionID string, start, e
 		end.UTC().Format(time.RFC3339),
 	)
 
-	s, err := scanStormRow(row)
+	s, err := scanStorm(row)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -215,43 +215,3 @@ func scanStorm(s scanner) (domain.Storm, error) {
 	return st, nil
 }
 
-func scanStormRow(row *sql.Row) (domain.Storm, error) {
-	var st domain.Storm
-	var state, tier, windowStart, windowEnd, detectedAt, lastEval, lastPosted string
-	err := row.Scan(
-		&st.ID, &st.RegionID,
-		&windowStart, &windowEnd,
-		&state, &tier,
-		&st.DiscordThreadID,
-		&detectedAt, &lastEval, &lastPosted,
-	)
-	if err != nil {
-		return domain.Storm{}, err
-	}
-	st.State, err = domain.ParseStormState(state)
-	if err != nil {
-		return domain.Storm{}, fmt.Errorf("scan storm: %w", err)
-	}
-	if tier != "" {
-		st.CurrentTier, err = domain.ParseTier(tier)
-		if err != nil {
-			return domain.Storm{}, fmt.Errorf("scan storm: %w", err)
-		}
-	}
-	if st.WindowStart, err = time.Parse(time.RFC3339, windowStart); err != nil {
-		return domain.Storm{}, fmt.Errorf("scan storm: parse window_start: %w", err)
-	}
-	if st.WindowEnd, err = time.Parse(time.RFC3339, windowEnd); err != nil {
-		return domain.Storm{}, fmt.Errorf("scan storm: parse window_end: %w", err)
-	}
-	if st.DetectedAt, err = time.Parse(time.RFC3339, detectedAt); err != nil {
-		return domain.Storm{}, fmt.Errorf("scan storm: parse detected_at: %w", err)
-	}
-	if st.LastEvaluatedAt, err = parseOptionalTime(lastEval); err != nil {
-		return domain.Storm{}, fmt.Errorf("scan storm: %w", err)
-	}
-	if st.LastPostedAt, err = parseOptionalTime(lastPosted); err != nil {
-		return domain.Storm{}, fmt.Errorf("scan storm: %w", err)
-	}
-	return st, nil
-}
