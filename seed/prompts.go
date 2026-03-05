@@ -20,9 +20,6 @@ func DefaultProfile() domain.UserProfile {
 			"stashes, while a small resort gets tracked out fast.",
 		RemoteWorkCapable: true,
 		TypicalPTODays:    15,
-		MinTierForPing:    domain.TierDropEverything,
-		QuietHoursStart:   "22:00",
-		QuietHoursEnd:     "07:00",
 	}
 }
 

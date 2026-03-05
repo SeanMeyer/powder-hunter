@@ -45,16 +45,6 @@ func ProfileFromEnv(lookup func(string) string) domain.UserProfile {
 			p.TypicalPTODays = n
 		}
 	}
-	if v := lookup("MIN_TIER"); v != "" {
-		switch v {
-		case "DROP_EVERYTHING":
-			p.MinTierForPing = domain.TierDropEverything
-		case "WORTH_A_LOOK":
-			p.MinTierForPing = domain.TierWorthALook
-		case "ON_THE_RADAR":
-			p.MinTierForPing = domain.TierOnTheRadar
-		}
-	}
 
 	return p
 }

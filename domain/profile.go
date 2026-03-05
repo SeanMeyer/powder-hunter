@@ -15,9 +15,6 @@ type UserProfile struct {
 	RemoteWorkCapable bool
 	TypicalPTODays    int
 	BlackoutDates     []DateRange
-	MinTierForPing    Tier   // alerts below this tier are delivered silently
-	QuietHoursStart   string // "22:00" local time
-	QuietHoursEnd     string // "07:00" local time
 }
 
 // DateRange is an inclusive date interval used for blackout periods.

@@ -539,7 +539,6 @@ func runProfile(ctx context.Context, args []string) int {
 		fmt.Printf("Passes: %s\n", strings.Join(profile.PassesHeld, ", "))
 		fmt.Printf("Remote work: %v\n", profile.RemoteWorkCapable)
 		fmt.Printf("PTO days: %d\n", profile.TypicalPTODays)
-		fmt.Printf("Min tier for ping: %s\n", profile.MinTierForPing)
 	}
 
 	return 0

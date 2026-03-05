@@ -3,7 +3,6 @@ package config
 import (
 	"testing"
 
-	"github.com/seanmeyer/powder-hunter/domain"
 	"github.com/seanmeyer/powder-hunter/seed"
 )
 
@@ -42,9 +41,6 @@ func TestProfileFromEnv_AllDefaults(t *testing.T) {
 	if p.TypicalPTODays != d.TypicalPTODays {
 		t.Errorf("TypicalPTODays = %d, want %d", p.TypicalPTODays, d.TypicalPTODays)
 	}
-	if p.MinTierForPing != d.MinTierForPing {
-		t.Errorf("MinTierForPing = %q, want %q", p.MinTierForPing, d.MinTierForPing)
-	}
 }
 
 func TestProfileFromEnv_AllOverrides(t *testing.T) {
@@ -57,7 +53,6 @@ func TestProfileFromEnv_AllOverrides(t *testing.T) {
 		"PREFERENCES":    "Love groomers and gentle trees",
 		"REMOTE_WORK":    "false",
 		"PTO_DAYS":       "10",
-		"MIN_TIER":       "WORTH_A_LOOK",
 	}
 	p := ProfileFromEnv(mapLookup(env))
 
@@ -85,16 +80,12 @@ func TestProfileFromEnv_AllOverrides(t *testing.T) {
 	if p.TypicalPTODays != 10 {
 		t.Errorf("TypicalPTODays = %d, want 10", p.TypicalPTODays)
 	}
-	if p.MinTierForPing != domain.TierWorthALook {
-		t.Errorf("MinTierForPing = %q, want %q", p.MinTierForPing, domain.TierWorthALook)
-	}
 }
 
 func TestProfileFromEnv_PartialOverride(t *testing.T) {
 	env := map[string]string{
 		"HOME_BASE": "Boulder, CO",
 		"PTO_DAYS":  "20",
-		"MIN_TIER":  "ON_THE_RADAR",
 	}
 	p := ProfileFromEnv(mapLookup(env))
 	d := seed.DefaultProfile()
@@ -105,9 +96,6 @@ func TestProfileFromEnv_PartialOverride(t *testing.T) {
 	}
 	if p.TypicalPTODays != 20 {
 		t.Errorf("TypicalPTODays = %d, want 20", p.TypicalPTODays)
-	}
-	if p.MinTierForPing != domain.TierOnTheRadar {
-		t.Errorf("MinTierForPing = %q, want %q", p.MinTierForPing, domain.TierOnTheRadar)
 	}
 
 	// Non-overridden fields keep defaults

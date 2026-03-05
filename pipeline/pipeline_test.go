@@ -53,7 +53,6 @@ func seedProfile(t *testing.T, ctx context.Context, db *storage.DB) {
 		PassesHeld:        []string{"ikon"},
 		RemoteWorkCapable: true,
 		TypicalPTODays:    15,
-		MinTierForPing:    domain.TierDropEverything,
 	}
 	if err := db.SaveProfile(ctx, p); err != nil {
 		t.Fatalf("save profile: %v", err)
