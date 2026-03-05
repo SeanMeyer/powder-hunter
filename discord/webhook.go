@@ -13,13 +13,13 @@ import (
 	"github.com/seanmeyer/powder-hunter/domain"
 )
 
-// Poster publishes storm evaluations to Discord. PostNew opens a new thread and
-// returns its ID; PostUpdate appends to an existing thread; PostGrouped opens a
-// thread for a grouped multi-region storm alert.
+// Poster publishes storm evaluations to Discord. PostBriefing opens a new thread
+// with the briefing summary and returns its ID; PostDetail adds a per-region
+// detail message to an existing thread; PostUpdate appends a re-evaluation update.
 type Poster interface {
-	PostNew(ctx context.Context, eval domain.Evaluation, region domain.Region) (threadID string, err error)
+	PostBriefing(ctx context.Context, bp BriefingPost) (threadID string, err error)
+	PostDetail(ctx context.Context, eval domain.Evaluation, region domain.Region, threadID string) error
 	PostUpdate(ctx context.Context, eval domain.Evaluation, region domain.Region, threadID string) error
-	PostGrouped(ctx context.Context, group GroupedPost) (threadID string, err error)
 }
 
 // WebhookClient sends payloads to a Discord forum-channel webhook.
@@ -48,25 +48,21 @@ type threadResponse struct {
 	ChannelID string `json:"channel_id"`
 }
 
-// PostNew formats and posts a new storm alert, opening a forum thread.
+// PostBriefing formats and posts a storm briefing, opening a forum thread.
 // Returns the thread ID (Discord channel_id) so the pipeline can store it for updates.
-func (w *WebhookClient) PostNew(ctx context.Context, eval domain.Evaluation, region domain.Region) (string, error) {
-	payload := FormatNewStorm(eval, region)
-
-	// ?wait=true makes Discord return the created message so we can extract the thread ID.
+func (w *WebhookClient) PostBriefing(ctx context.Context, bp BriefingPost) (string, error) {
+	payload := FormatBriefing(bp)
 	url := w.webhookURL + "?wait=true"
-
 	body, err := w.postWithRetry(ctx, url, payload)
 	if err != nil {
-		return "", fmt.Errorf("post new storm for region %s: %w", region.ID, err)
+		return "", fmt.Errorf("post storm briefing for %s: %w", bp.MacroRegionName, err)
 	}
-
 	var resp threadResponse
 	if err := json.Unmarshal(body, &resp); err != nil {
-		return "", fmt.Errorf("parse discord response for region %s: %w", region.ID, err)
+		return "", fmt.Errorf("parse discord response for briefing %s: %w", bp.MacroRegionName, err)
 	}
 	if resp.ChannelID == "" {
-		return "", fmt.Errorf("discord response missing channel_id for region %s", region.ID)
+		return "", fmt.Errorf("discord response missing channel_id for briefing %s", bp.MacroRegionName)
 	}
 	return resp.ChannelID, nil
 }
@@ -84,23 +80,14 @@ func (w *WebhookClient) PostUpdate(ctx context.Context, eval domain.Evaluation, 
 	return nil
 }
 
-// PostGrouped formats and posts a grouped storm alert covering multiple regions,
-// opening a forum thread. Returns the thread ID for later updates.
-func (w *WebhookClient) PostGrouped(ctx context.Context, group GroupedPost) (string, error) {
-	payload := FormatGroupedStorm(group)
-	url := w.webhookURL + "?wait=true"
-	body, err := w.postWithRetry(ctx, url, payload)
-	if err != nil {
-		return "", fmt.Errorf("post grouped storm for %s: %w", group.MacroRegionName, err)
+// PostDetail posts a per-region detail message into an existing forum thread.
+func (w *WebhookClient) PostDetail(ctx context.Context, eval domain.Evaluation, region domain.Region, threadID string) error {
+	payload := FormatDetail(eval, region)
+	url := fmt.Sprintf("%s?thread_id=%s", w.webhookURL, threadID)
+	if _, err := w.postWithRetry(ctx, url, payload); err != nil {
+		return fmt.Errorf("post detail for region %s thread %s: %w", region.ID, threadID, err)
 	}
-	var resp threadResponse
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return "", fmt.Errorf("parse discord response for grouped %s: %w", group.MacroRegionName, err)
-	}
-	if resp.ChannelID == "" {
-		return "", fmt.Errorf("discord response missing channel_id for grouped %s", group.MacroRegionName)
-	}
-	return resp.ChannelID, nil
+	return nil
 }
 
 // postWithRetry serializes payload and POST it to url, retrying on 429 and 5xx responses.

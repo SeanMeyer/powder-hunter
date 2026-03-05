@@ -50,12 +50,11 @@ type AllowedMentions struct {
 	Parse []string `json:"parse"`
 }
 
-// GroupedPost holds everything needed to post a grouped storm alert.
-type GroupedPost struct {
+// BriefingPost holds everything needed for the opening storm thread post.
+type BriefingPost struct {
 	MacroRegionName string
-	FrictionTier    domain.FrictionTier
 	Briefing        evaluation.BriefingResult
-	Evaluations     []EvalWithRegion // individual evaluations in tier-descending order
+	Evaluations     []EvalWithRegion
 }
 
 // EvalWithRegion pairs an evaluation with its region for formatting.
@@ -64,67 +63,55 @@ type EvalWithRegion struct {
 	Region     domain.Region
 }
 
-// FormatGroupedStorm creates a webhook payload for a grouped storm alert spanning
-// multiple regions. The first embed summarises the cross-region comparison; subsequent
-// embeds show each region's individual evaluation (capped at Discord's 10-embed limit).
-func FormatGroupedStorm(group GroupedPost) WebhookPayload {
-	highestTier := highestTier(group.Evaluations)
+// FormatBriefing creates a webhook payload for the opening storm thread post.
+// It produces a single embed with the briefing summary — per-region details are
+// posted as follow-up messages via FormatDetail.
+func FormatBriefing(bp BriefingPost) WebhookPayload {
+	highestTier := highestTier(bp.Evaluations)
 	emoji := tierEmoji(highestTier)
 
-	// --- briefing summary embed ---
-	summaryEmbed := Embed{
-		Title:       fmt.Sprintf("%s %s", emoji, group.MacroRegionName),
+	embed := Embed{
+		Title:       fmt.Sprintf("%s %s", emoji, bp.MacroRegionName),
+		Description: bp.Briefing.Briefing,
 		Color:       tierColor(highestTier),
-		Description: group.Briefing.Briefing,
 	}
 
-	var summaryFields []EmbedField
-	if group.Briefing.BestDay != "" {
-		summaryFields = append(summaryFields, EmbedField{
-			Name:   "Best Day",
-			Value:  fmt.Sprintf("**%s** — %s", group.Briefing.BestDay, group.Briefing.BestDayReason),
-			Inline: false,
-		})
-	}
-	if group.Briefing.Action != "" {
-		summaryFields = append(summaryFields, EmbedField{
-			Name:   "Action",
-			Value:  group.Briefing.Action,
-			Inline: true,
-		})
-	}
-	summaryEmbed.Fields = summaryFields
-
-	embeds := []Embed{summaryEmbed}
-
-	// --- per-region embeds (compact to stay under Discord's 6000-char total) ---
-	maxRegionEmbeds := 10 - len(embeds) // Discord allows at most 10 embeds
-	for i, ew := range group.Evaluations {
-		if i >= maxRegionEmbeds {
-			break
+	if bp.Briefing.BestDay != "" {
+		bestDay, _ := time.Parse("2006-01-02", bp.Briefing.BestDay)
+		if !bestDay.IsZero() {
+			text := bestDay.Format("Mon Jan 2")
+			if bp.Briefing.BestDayReason != "" {
+				text += " — " + bp.Briefing.BestDayReason
+			}
+			embed.Fields = append(embed.Fields, EmbedField{
+				Name: "Best Day", Value: text, Inline: true,
+			})
 		}
-		embeds = append(embeds, buildCompactEmbed(ew.Evaluation, ew.Region))
 	}
 
-	// --- thread name ---
-	dateRange := ""
-	if len(group.Evaluations) > 0 {
-		dateRange = formatWindowDates(group.Evaluations[0].Evaluation)
-	}
-	threadName := fmt.Sprintf("%s %s — %s", emoji, group.MacroRegionName, dateRange)
+	dateRange := formatWindowDatesFromEvals(bp.Evaluations)
+	threadName := fmt.Sprintf("%s %s — %s", emoji, bp.MacroRegionName, dateRange)
 
 	payload := WebhookPayload{
-		Content:    group.Briefing.Briefing,
-		Embeds:     embeds,
+		Content:    bp.Briefing.Briefing,
+		Embeds:     []Embed{embed},
 		ThreadName: threadName,
 	}
 
 	if highestTier == domain.TierDropEverything {
-		payload.Content = "@here\n" + group.Briefing.Briefing
+		payload.Content = "@here\n" + bp.Briefing.Briefing
 		payload.AllowedMentions = &AllowedMentions{Parse: []string{"everyone"}}
 	}
 
 	return payload
+}
+
+// formatWindowDatesFromEvals extracts window dates from the first evaluation in a slice.
+func formatWindowDatesFromEvals(evals []EvalWithRegion) string {
+	if len(evals) == 0 {
+		return ""
+	}
+	return formatWindowDates(evals[0].Evaluation)
 }
 
 // highestTier returns the most severe tier among the evaluations.
@@ -149,25 +136,17 @@ func tierRank(t domain.Tier) int {
 	}
 }
 
-// FormatNewStorm creates a webhook payload for a new storm alert.
-// DROP_EVERYTHING storms get an @here ping so the alert cuts through channel noise.
-func FormatNewStorm(eval domain.Evaluation, region domain.Region) WebhookPayload {
+// FormatDetail creates a detail post for a single region within a thread.
+// It uses the full embed with all fields (recommendation, strategy, resort insights, etc.).
+func FormatDetail(eval domain.Evaluation, region domain.Region) WebhookPayload {
 	embed := buildEmbed(eval, region)
 	embed.Title = fmt.Sprintf("%s %s", tierEmoji(eval.Tier), region.Name)
 	embed.Footer = &EmbedFooter{Text: fmt.Sprintf("powder-hunter · %s", eval.Tier)}
 
-	payload := WebhookPayload{
-		Content:    eval.Summary,
-		Embeds:     []Embed{embed},
-		ThreadName: fmt.Sprintf("%s %s — %s", tierEmoji(eval.Tier), region.Name, formatWindowDates(eval)),
+	return WebhookPayload{
+		Content: eval.Summary,
+		Embeds:  []Embed{embed},
 	}
-
-	if eval.Tier == domain.TierDropEverything {
-		payload.Content = "@here\n" + eval.Summary
-		payload.AllowedMentions = &AllowedMentions{Parse: []string{"everyone"}}
-	}
-
-	return payload
 }
 
 // FormatUpdate creates a webhook payload for a storm update posted to an existing thread.
@@ -176,7 +155,7 @@ func FormatUpdate(eval domain.Evaluation, region domain.Region) WebhookPayload {
 	embed := buildEmbed(eval, region)
 	embed.Title = fmt.Sprintf("%s Update: %s", tierEmoji(eval.Tier), region.Name)
 
-	if eval.ChangeClass != "" {
+	if eval.ChangeClass != "" && eval.ChangeClass != domain.ChangeNew {
 		embed.Fields = append([]EmbedField{changeField(eval)}, embed.Fields...)
 	}
 
@@ -329,14 +308,15 @@ func changeLabel(cc domain.ChangeClass) string {
 }
 
 // totalSnowfallLine pulls the total snowfall from the first DayEvaluation if available.
+// Days with zero or trace snowfall are filtered out to keep the display concise.
 func totalSnowfallLine(eval domain.Evaluation) string {
 	if len(eval.DayByDay) == 0 {
 		return ""
 	}
-	// Accumulate all per-day snowfall labels into a single summary line.
 	var parts []string
 	for _, d := range eval.DayByDay {
-		if d.Snowfall != "" {
+		if d.Snowfall != "" && d.Snowfall != "0\"" && d.Snowfall != "0.0\"" &&
+			d.Snowfall != "Trace" && d.Snowfall != "0" && !strings.HasPrefix(d.Snowfall, "0.0") {
 			parts = append(parts, fmt.Sprintf("%s: %s", d.Date.Format("Jan 2"), d.Snowfall))
 		}
 	}
@@ -380,34 +360,6 @@ func formatResortInsights(insights []domain.ResortInsight) string {
 		}
 	}
 	return sb.String()
-}
-
-// buildCompactEmbed creates a short embed for grouped posts — just the tier,
-// recommendation, best day, and top resort pick. Full details live in the
-// individual storm threads. This keeps grouped payloads under Discord's
-// 6000-character embed limit.
-func buildCompactEmbed(eval domain.Evaluation, region domain.Region) Embed {
-	embed := Embed{
-		Title:       fmt.Sprintf("%s %s", tierEmoji(eval.Tier), region.Name),
-		Description: eval.Recommendation,
-		Color:       tierColor(eval.Tier),
-	}
-
-	bestDay := bestDayLine(eval)
-	if bestDay != "" {
-		embed.Fields = append(embed.Fields, EmbedField{Name: "Best Day", Value: bestDay, Inline: true})
-	}
-
-	if len(eval.ResortInsights) > 0 {
-		insight := eval.ResortInsights[0]
-		embed.Fields = append(embed.Fields, EmbedField{
-			Name:   "Resort Insight",
-			Value:  fmt.Sprintf("**%s** — %s", insight.Resort, insight.Insight),
-			Inline: false,
-		})
-	}
-
-	return embed
 }
 
 func tierColor(t domain.Tier) int {

@@ -691,7 +691,7 @@ func (p *Pipeline) Group(ctx context.Context, results []CompareResult, summary *
 
 		var briefing evaluation.BriefingResult
 
-		if len(members) >= 2 && p.briefer != nil {
+		if p.briefer != nil {
 			summaries := make([]evaluation.RegionSummary, len(members))
 			for i, r := range members {
 				// Build snowfall summary from day-by-day data.
@@ -754,8 +754,8 @@ func (p *Pipeline) Group(ctx context.Context, results []CompareResult, summary *
 }
 
 // PostGrouped delivers Discord briefings for grouped storm results.
-// Singleton groups use the existing per-region posting path.
-// Multi-member groups use the grouped posting path with comparison.
+// All groups (singleton and multi-member) follow the same posting pattern:
+// briefing post (creates thread) followed by detail post(s) per region.
 // Returns the number of individual results posted and any error.
 func (p *Pipeline) PostGrouped(ctx context.Context, groups []GroupedResult) (int, error) {
 	if p.dryRun || p.poster == nil {
@@ -776,27 +776,7 @@ func (p *Pipeline) PostGrouped(ctx context.Context, groups []GroupedResult) (int
 
 	posted := 0
 	for _, g := range groups {
-		if len(g.Results) == 1 {
-			// Singleton group: use existing per-region posting.
-			if err := p.postOne(ctx, g.Results[0]); err != nil {
-				p.logger.WarnContext(ctx, "discord post failed, marking undelivered",
-					"region_id", g.Results[0].Region.ID,
-					"storm_id", g.Results[0].Storm.ID,
-					"eval_id", g.Results[0].Evaluation.ID,
-					"error", err,
-				)
-				if markErr := p.store.MarkEvaluationDelivered(ctx, g.Results[0].Evaluation.ID, false); markErr != nil {
-					p.logger.WarnContext(ctx, "mark evaluation undelivered failed",
-						"eval_id", g.Results[0].Evaluation.ID,
-						"error", markErr,
-					)
-				}
-			}
-			posted++
-			continue
-		}
-
-		// Multi-member group: build and post a grouped Discord message.
+		// Build briefing post data.
 		evals := make([]discord.EvalWithRegion, len(g.Results))
 		for i, r := range g.Results {
 			evals[i] = discord.EvalWithRegion{
@@ -805,16 +785,15 @@ func (p *Pipeline) PostGrouped(ctx context.Context, groups []GroupedResult) (int
 			}
 		}
 
-		gp := discord.GroupedPost{
+		bp := discord.BriefingPost{
 			MacroRegionName: domain.MacroRegionDisplayNameFromKey(g.Group.Key),
-			FrictionTier:    g.Results[0].Region.FrictionTier,
 			Briefing:        g.Briefing,
 			Evaluations:     evals,
 		}
 
-		threadID, err := p.poster.PostGrouped(ctx, gp)
+		threadID, err := p.poster.PostBriefing(ctx, bp)
 		if err != nil {
-			p.logger.WarnContext(ctx, "grouped discord post failed",
+			p.logger.WarnContext(ctx, "briefing post failed",
 				"group_key", g.Group.Key,
 				"members", len(g.Results),
 				"error", err,
@@ -822,182 +801,43 @@ func (p *Pipeline) PostGrouped(ctx context.Context, groups []GroupedResult) (int
 			for _, r := range g.Results {
 				if markErr := p.store.MarkEvaluationDelivered(ctx, r.Evaluation.ID, false); markErr != nil {
 					p.logger.WarnContext(ctx, "mark evaluation undelivered failed",
-						"eval_id", r.Evaluation.ID,
-						"error", markErr,
-					)
+						"eval_id", r.Evaluation.ID, "error", markErr)
 				}
 			}
 			posted += len(g.Results)
 			continue
 		}
 
-		// Post full detail for each region as follow-up messages in the thread.
+		// Post full detail for each region as follow-up in the thread.
 		for _, r := range g.Results {
-			if err := p.poster.PostUpdate(ctx, r.Evaluation, r.Region, threadID); err != nil {
-				p.logger.WarnContext(ctx, "grouped detail post failed",
-					"region_id", r.Region.ID,
-					"storm_id", r.Storm.ID,
-					"thread_id", threadID,
-					"error", err,
-				)
+			if err := p.poster.PostDetail(ctx, r.Evaluation, r.Region, threadID); err != nil {
+				p.logger.WarnContext(ctx, "detail post failed",
+					"region_id", r.Region.ID, "storm_id", r.Storm.ID,
+					"thread_id", threadID, "error", err)
 			}
 		}
 
-		// Update all storms in the group with the shared thread ID.
+		// Update all storms with shared thread ID + mark delivered.
 		for _, r := range g.Results {
 			updatedStorm := r.Storm
 			updatedStorm.State = domain.StormBriefed
 			updatedStorm.DiscordThreadID = threadID
 			updatedStorm.LastPostedAt = time.Now().UTC()
 			if updateErr := p.store.UpdateStorm(ctx, updatedStorm); updateErr != nil {
-				p.logger.WarnContext(ctx, "update storm to briefed failed after grouped post",
-					"storm_id", r.Storm.ID,
-					"thread_id", threadID,
-					"error", updateErr,
-				)
+				p.logger.WarnContext(ctx, "update storm to briefed failed",
+					"storm_id", r.Storm.ID, "thread_id", threadID, "error", updateErr)
 			}
-
 			if markErr := p.store.MarkEvaluationDelivered(ctx, r.Evaluation.ID, true); markErr != nil {
 				p.logger.WarnContext(ctx, "mark evaluation delivered failed",
-					"eval_id", r.Evaluation.ID,
-					"error", markErr,
-				)
+					"eval_id", r.Evaluation.ID, "error", markErr)
 			}
 		}
 
-		p.logger.InfoContext(ctx, "group posted",
-			"group_key", g.Group.Key,
-			"members", len(g.Results),
-			"thread_id", threadID,
-		)
+		p.logger.InfoContext(ctx, "storm briefed",
+			"group_key", g.Group.Key, "members", len(g.Results), "thread_id", threadID)
 		posted += len(g.Results)
 	}
 
 	return posted, nil
 }
 
-// Post delivers Discord briefings for each CompareResult. For new storms it opens a
-// forum thread; for updates it posts into the existing thread. Failures from Discord
-// are logged and the evaluation is marked undelivered so operators can diagnose
-// without blocking other regions. Returns nil even when individual posts fail —
-// the caller inspects logs or the DB delivered flag to detect partial failures.
-func (p *Pipeline) Post(ctx context.Context, results []CompareResult) error {
-	if p.dryRun || p.poster == nil {
-		for _, r := range results {
-			p.logger.InfoContext(ctx, "dry-run: skip discord post",
-				"region_id", r.Region.ID,
-				"storm_id", r.Storm.ID,
-				"change_class", string(r.ChangeClass),
-			)
-		}
-		return nil
-	}
-
-	for _, r := range results {
-		if err := p.postOne(ctx, r); err != nil {
-			p.logger.WarnContext(ctx, "discord post failed, marking undelivered",
-				"region_id", r.Region.ID,
-				"storm_id", r.Storm.ID,
-				"eval_id", r.Evaluation.ID,
-				"change_class", string(r.ChangeClass),
-				"error", err,
-			)
-			if markErr := p.store.MarkEvaluationDelivered(ctx, r.Evaluation.ID, false); markErr != nil {
-				p.logger.WarnContext(ctx, "mark evaluation undelivered failed",
-					"eval_id", r.Evaluation.ID,
-					"error", markErr,
-				)
-			}
-		}
-	}
-	return nil
-}
-
-// postOne handles the Discord delivery for a single CompareResult, updating storm
-// state and marking the evaluation delivered on success.
-func (p *Pipeline) postOne(ctx context.Context, r CompareResult) error {
-	switch r.ChangeClass {
-	case domain.ChangeNew:
-		return p.postNew(ctx, r)
-	case domain.ChangeMaterial, domain.ChangeMinor, domain.ChangeDowngrade:
-		return p.postUpdate(ctx, r)
-	default:
-		// Unknown change classes are not posted; log for observability.
-		p.logger.InfoContext(ctx, "skip post for unknown change class",
-			"region_id", r.Region.ID,
-			"change_class", string(r.ChangeClass),
-		)
-		return nil
-	}
-}
-
-func (p *Pipeline) postNew(ctx context.Context, r CompareResult) error {
-	threadID, err := p.poster.PostNew(ctx, r.Evaluation, r.Region)
-	if err != nil {
-		return err
-	}
-
-	updatedStorm := r.Storm
-	updatedStorm.State = domain.StormBriefed
-	updatedStorm.DiscordThreadID = threadID
-	updatedStorm.LastPostedAt = time.Now().UTC()
-	if err := p.store.UpdateStorm(ctx, updatedStorm); err != nil {
-		// Storm state update failure is logged but doesn't invalidate the post.
-		p.logger.WarnContext(ctx, "update storm to briefed failed after discord post",
-			"storm_id", r.Storm.ID,
-			"thread_id", threadID,
-			"error", err,
-		)
-	}
-
-	if err := p.store.MarkEvaluationDelivered(ctx, r.Evaluation.ID, true); err != nil {
-		p.logger.WarnContext(ctx, "mark evaluation delivered failed",
-			"eval_id", r.Evaluation.ID,
-			"error", err,
-		)
-	}
-
-	p.logger.InfoContext(ctx, "storm briefed",
-		"region_id", r.Region.ID,
-		"storm_id", r.Storm.ID,
-		"eval_id", r.Evaluation.ID,
-		"thread_id", threadID,
-	)
-	return nil
-}
-
-func (p *Pipeline) postUpdate(ctx context.Context, r CompareResult) error {
-	if r.Storm.DiscordThreadID == "" {
-		return fmt.Errorf("storm %d has no discord_thread_id for update post", r.Storm.ID)
-	}
-
-	if err := p.poster.PostUpdate(ctx, r.Evaluation, r.Region, r.Storm.DiscordThreadID); err != nil {
-		return err
-	}
-
-	updatedStorm := r.Storm
-	updatedStorm.State = domain.StormUpdated
-	updatedStorm.LastPostedAt = time.Now().UTC()
-	if err := p.store.UpdateStorm(ctx, updatedStorm); err != nil {
-		p.logger.WarnContext(ctx, "update storm to updated failed after discord post",
-			"storm_id", r.Storm.ID,
-			"error", err,
-		)
-	}
-
-	if err := p.store.MarkEvaluationDelivered(ctx, r.Evaluation.ID, true); err != nil {
-		p.logger.WarnContext(ctx, "mark evaluation delivered failed",
-			"eval_id", r.Evaluation.ID,
-			"error", err,
-		)
-	}
-
-	p.logger.InfoContext(ctx, "storm updated",
-		"region_id", r.Region.ID,
-		"storm_id", r.Storm.ID,
-		"eval_id", r.Evaluation.ID,
-		"thread_id", r.Storm.DiscordThreadID,
-		"change_class", string(r.ChangeClass),
-	)
-	return nil
-}

@@ -191,15 +191,20 @@ func TestPipeline_HappyPath(t *testing.T) {
 		t.Errorf("expected ChangeNew, got %s", compared[0].ChangeClass)
 	}
 
-	if err := p.Post(ctx, compared); err != nil {
+	var summary pipeline.RunSummary
+	grouped := p.Group(ctx, compared, &summary)
+	if _, err := p.PostGrouped(ctx, grouped); err != nil {
 		t.Fatalf("post: %v", err)
 	}
 
-	if len(fakePoster.PostedNew) != 1 {
-		t.Fatalf("expected 1 new post, got %d", len(fakePoster.PostedNew))
+	if len(fakePoster.PostedBriefings) != 1 {
+		t.Fatalf("expected 1 briefing post, got %d", len(fakePoster.PostedBriefings))
 	}
-	if fakePoster.PostedNew[0].Evaluation.Tier != domain.TierDropEverything {
-		t.Errorf("expected DROP_EVERYTHING tier in post, got %s", fakePoster.PostedNew[0].Evaluation.Tier)
+	if len(fakePoster.PostedDetails) != 1 {
+		t.Fatalf("expected 1 detail post, got %d", len(fakePoster.PostedDetails))
+	}
+	if fakePoster.PostedDetails[0].Evaluation.Tier != domain.TierDropEverything {
+		t.Errorf("expected DROP_EVERYTHING tier in post, got %s", fakePoster.PostedDetails[0].Evaluation.Tier)
 	}
 
 	// Verify the evaluation was persisted with ChangeNew class.
@@ -250,11 +255,13 @@ func TestPipeline_ThresholdFiltering(t *testing.T) {
 		t.Errorf("expected 0 compare results, got %d", len(compared))
 	}
 
-	if err := p.Post(ctx, compared); err != nil {
+	var summary pipeline.RunSummary
+	grouped := p.Group(ctx, compared, &summary)
+	if _, err := p.PostGrouped(ctx, grouped); err != nil {
 		t.Fatalf("post: %v", err)
 	}
-	if len(fakePoster.PostedNew) != 0 {
-		t.Errorf("expected 0 posts for empty results, got %d", len(fakePoster.PostedNew))
+	if len(fakePoster.PostedBriefings) != 0 {
+		t.Errorf("expected 0 briefing posts for empty results, got %d", len(fakePoster.PostedBriefings))
 	}
 
 	if len(fakeEval.EvaluateCalls) != 0 {
@@ -337,11 +344,13 @@ func TestPipeline_ErrorIsolation(t *testing.T) {
 		t.Fatalf("expected 1 compare result, got %d", len(compared))
 	}
 
-	if err := p.Post(ctx, compared); err != nil {
+	var summary pipeline.RunSummary
+	grouped := p.Group(ctx, compared, &summary)
+	if _, err := p.PostGrouped(ctx, grouped); err != nil {
 		t.Fatalf("post: %v", err)
 	}
-	if len(fakePoster.PostedNew) != 1 {
-		t.Errorf("expected 1 post (region B), got %d", len(fakePoster.PostedNew))
+	if len(fakePoster.PostedBriefings) != 1 {
+		t.Errorf("expected 1 briefing post (region B), got %d", len(fakePoster.PostedBriefings))
 	}
 }
 
@@ -427,15 +436,17 @@ func TestPipeline_StormLifecycle(t *testing.T) {
 		t.Errorf("expected ChangeMinor for same-tier update, got %s", compared[0].ChangeClass)
 	}
 
-	// Post sends an update (not a new post) because storm already has a thread.
-	if err := p.Post(ctx, compared); err != nil {
+	// Post sends a briefing + detail (unified path for all storms).
+	var summary pipeline.RunSummary
+	grouped := p.Group(ctx, compared, &summary)
+	if _, err := p.PostGrouped(ctx, grouped); err != nil {
 		t.Fatalf("post: %v", err)
 	}
-	if len(fakePoster.PostedNew) != 0 {
-		t.Errorf("expected 0 new posts for existing storm, got %d", len(fakePoster.PostedNew))
+	if len(fakePoster.PostedBriefings) != 1 {
+		t.Errorf("expected 1 briefing post, got %d", len(fakePoster.PostedBriefings))
 	}
-	if len(fakePoster.PostedUpdates) != 1 {
-		t.Errorf("expected 1 update post, got %d", len(fakePoster.PostedUpdates))
+	if len(fakePoster.PostedDetails) != 1 {
+		t.Errorf("expected 1 detail post, got %d", len(fakePoster.PostedDetails))
 	}
 }
 
@@ -522,15 +533,17 @@ func TestPipeline_DryRun(t *testing.T) {
 	p.WithDryRun(true)
 	p.WithPoster(fakePoster)
 
-	evals, _ := p.Evaluate(ctx, scans, &pipeline.RunSummary{})
+	var summary pipeline.RunSummary
+	evals, _ := p.Evaluate(ctx, scans, &summary)
 	compared, _ := p.Compare(ctx, evals)
-	if err := p.Post(ctx, compared); err != nil {
+	grouped := p.Group(ctx, compared, &summary)
+	if _, err := p.PostGrouped(ctx, grouped); err != nil {
 		t.Fatalf("post: %v", err)
 	}
 
 	// Dry-run: Discord poster must not be called.
-	if len(fakePoster.PostedNew) != 0 {
-		t.Errorf("dry-run should not call PostNew, got %d calls", len(fakePoster.PostedNew))
+	if len(fakePoster.PostedBriefings) != 0 {
+		t.Errorf("dry-run should not call PostBriefing, got %d calls", len(fakePoster.PostedBriefings))
 	}
 }
 
@@ -1281,18 +1294,15 @@ func TestPipeline_GroupSingletonPassthrough(t *testing.T) {
 		t.Fatalf("post grouped: %v", err)
 	}
 
-	// Singleton group uses PostNew, not PostGrouped.
-	if len(fakePoster.PostedNew) != 1 {
-		t.Errorf("expected 1 PostNew call for singleton, got %d", len(fakePoster.PostedNew))
+	// Singleton group: unified path uses PostBriefing + PostDetail.
+	if len(fakePoster.PostedBriefings) != 1 {
+		t.Errorf("expected 1 PostBriefing call for singleton, got %d", len(fakePoster.PostedBriefings))
 	}
-	if len(fakePoster.PostedGrouped) != 0 {
-		t.Errorf("expected 0 PostGrouped calls for singleton, got %d", len(fakePoster.PostedGrouped))
+	if len(fakePoster.PostedDetails) != 1 {
+		t.Errorf("expected 1 PostDetail call for singleton, got %d", len(fakePoster.PostedDetails))
 	}
 	if summary.Grouped != 1 {
 		t.Errorf("expected summary.Grouped == 1, got %d", summary.Grouped)
-	}
-	if summary.Comparisons != 0 {
-		t.Errorf("expected summary.Comparisons == 0, got %d", summary.Comparisons)
 	}
 	if posted != 1 {
 		t.Errorf("expected 1 posted, got %d", posted)
@@ -1375,12 +1385,12 @@ func TestPipeline_GroupMultiRegion(t *testing.T) {
 		t.Fatalf("post grouped: %v", err)
 	}
 
-	// All 3 in one group → PostGrouped, not PostNew.
-	if len(fakePoster.PostedGrouped) != 1 {
-		t.Errorf("expected 1 PostGrouped call, got %d", len(fakePoster.PostedGrouped))
+	// All 3 in one group → 1 PostBriefing + 3 PostDetail calls.
+	if len(fakePoster.PostedBriefings) != 1 {
+		t.Errorf("expected 1 PostBriefing call, got %d", len(fakePoster.PostedBriefings))
 	}
-	if len(fakePoster.PostedNew) != 0 {
-		t.Errorf("expected 0 PostNew calls for multi-region group, got %d", len(fakePoster.PostedNew))
+	if len(fakePoster.PostedDetails) != 3 {
+		t.Errorf("expected 3 PostDetail calls for multi-region group, got %d", len(fakePoster.PostedDetails))
 	}
 	if summary.Grouped != 1 {
 		t.Errorf("expected summary.Grouped == 1, got %d", summary.Grouped)
@@ -1392,11 +1402,11 @@ func TestPipeline_GroupMultiRegion(t *testing.T) {
 		t.Errorf("expected 3 posted (all members), got %d", posted)
 	}
 
-	// Verify the grouped post contains all 3 evaluations.
-	if len(fakePoster.PostedGrouped) == 1 {
-		gp := fakePoster.PostedGrouped[0].Group
-		if len(gp.Evaluations) != 3 {
-			t.Errorf("expected 3 evaluations in grouped post, got %d", len(gp.Evaluations))
+	// Verify the briefing post contains all 3 evaluations.
+	if len(fakePoster.PostedBriefings) == 1 {
+		bp := fakePoster.PostedBriefings[0].BriefingPost
+		if len(bp.Evaluations) != 3 {
+			t.Errorf("expected 3 evaluations in briefing post, got %d", len(bp.Evaluations))
 		}
 	}
 
@@ -1472,18 +1482,15 @@ func TestPipeline_GroupFrictionSplit(t *testing.T) {
 		t.Fatalf("post grouped: %v", err)
 	}
 
-	// Different friction tiers → 2 singleton groups, each uses PostNew.
-	if len(fakePoster.PostedNew) != 2 {
-		t.Errorf("expected 2 PostNew calls (friction split), got %d", len(fakePoster.PostedNew))
+	// Different friction tiers → 2 singleton groups, each uses PostBriefing + PostDetail.
+	if len(fakePoster.PostedBriefings) != 2 {
+		t.Errorf("expected 2 PostBriefing calls (friction split), got %d", len(fakePoster.PostedBriefings))
 	}
-	if len(fakePoster.PostedGrouped) != 0 {
-		t.Errorf("expected 0 PostGrouped calls (friction split), got %d", len(fakePoster.PostedGrouped))
+	if len(fakePoster.PostedDetails) != 2 {
+		t.Errorf("expected 2 PostDetail calls (friction split), got %d", len(fakePoster.PostedDetails))
 	}
 	if summary.Grouped != 2 {
 		t.Errorf("expected summary.Grouped == 2, got %d", summary.Grouped)
-	}
-	if summary.Comparisons != 0 {
-		t.Errorf("expected summary.Comparisons == 0, got %d", summary.Comparisons)
 	}
 }
 
@@ -1571,17 +1578,14 @@ func TestPipeline_GroupNonOverlappingWindows(t *testing.T) {
 		t.Fatalf("post grouped: %v", err)
 	}
 
-	// Non-overlapping windows → 2 singleton groups, each uses PostNew.
-	if len(fakePoster.PostedNew) != 2 {
-		t.Errorf("expected 2 PostNew calls (window split), got %d", len(fakePoster.PostedNew))
+	// Non-overlapping windows → 2 singleton groups, each uses PostBriefing + PostDetail.
+	if len(fakePoster.PostedBriefings) != 2 {
+		t.Errorf("expected 2 PostBriefing calls (window split), got %d", len(fakePoster.PostedBriefings))
 	}
-	if len(fakePoster.PostedGrouped) != 0 {
-		t.Errorf("expected 0 PostGrouped calls (window split), got %d", len(fakePoster.PostedGrouped))
+	if len(fakePoster.PostedDetails) != 2 {
+		t.Errorf("expected 2 PostDetail calls (window split), got %d", len(fakePoster.PostedDetails))
 	}
 	if summary.Grouped != 2 {
 		t.Errorf("expected summary.Grouped == 2, got %d", summary.Grouped)
-	}
-	if summary.Comparisons != 0 {
-		t.Errorf("expected summary.Comparisons == 0, got %d", summary.Comparisons)
 	}
 }

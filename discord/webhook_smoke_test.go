@@ -51,12 +51,16 @@ func TestSmoke_Discord_PostAndUpdate(t *testing.T) {
 		Name: "[SMOKE TEST] Test Region",
 	}
 
-	threadID, err := client.PostNew(context.Background(), eval, region)
+	bp := BriefingPost{
+		MacroRegionName: region.Name,
+		Evaluations:     []EvalWithRegion{{Evaluation: eval, Region: region}},
+	}
+	threadID, err := client.PostBriefing(context.Background(), bp)
 	if err != nil {
-		t.Fatalf("PostNew failed: %v", err)
+		t.Fatalf("PostBriefing failed: %v", err)
 	}
 	if threadID == "" {
-		t.Fatal("PostNew returned empty thread ID")
+		t.Fatal("PostBriefing returned empty thread ID")
 	}
 	t.Logf("Created forum thread: %s", threadID)
 

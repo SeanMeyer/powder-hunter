@@ -243,7 +243,7 @@ func FormatComparison(w io.Writer, changeClass domain.ChangeClass, prevTier doma
 func FormatDiscordPreview(w io.Writer, eval domain.Evaluation, region domain.Region) {
 	fmt.Fprintf(w, "═══ DISCORD OUTPUT (dry-run) ═══\n")
 
-	payload := discord.FormatNewStorm(eval, region)
+	payload := discord.FormatDetail(eval, region)
 	fmt.Fprintf(w, "Thread name: %q\n", payload.ThreadName)
 
 	hasPing := payload.Content == "@here"

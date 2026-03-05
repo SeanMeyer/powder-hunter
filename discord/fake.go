@@ -9,29 +9,25 @@ import (
 
 // FakePoster records posted embeds for testing assertions.
 type FakePoster struct {
-	// PostedNew records all PostNew calls.
-	PostedNew []PostNewCall
-	// PostedUpdates records all PostUpdate calls.
-	PostedUpdates []PostUpdateCall
-	// PostedGrouped records all PostGrouped calls.
-	PostedGrouped []PostGroupedCall
-	// NextThreadID is returned by PostNew and PostGrouped.
-	NextThreadID string
-	// PostNewError is returned by PostNew and PostGrouped if set.
-	PostNewError error
-	// PostUpdateError is returned by PostUpdate if set.
-	PostUpdateError error
+	PostedBriefings []PostBriefingCall
+	PostedDetails   []PostDetailCall
+	PostedUpdates   []PostUpdateCall
+	NextThreadID    string
+	PostBriefingError error
+	PostDetailError   error
+	PostUpdateError   error
 }
 
-// PostNewCall captures the arguments of a single PostNew invocation.
-type PostNewCall struct {
+// PostBriefingCall captures the arguments of a single PostBriefing invocation.
+type PostBriefingCall struct {
+	BriefingPost BriefingPost
+}
+
+// PostDetailCall captures the arguments of a single PostDetail invocation.
+type PostDetailCall struct {
 	Evaluation domain.Evaluation
 	Region     domain.Region
-}
-
-// PostGroupedCall captures the arguments of a single PostGrouped invocation.
-type PostGroupedCall struct {
-	Group GroupedPost
+	ThreadID   string
 }
 
 // PostUpdateCall captures the arguments of a single PostUpdate invocation.
@@ -41,28 +37,21 @@ type PostUpdateCall struct {
 	ThreadID   string
 }
 
-func (f *FakePoster) PostNew(ctx context.Context, eval domain.Evaluation, region domain.Region) (string, error) {
-	f.PostedNew = append(f.PostedNew, PostNewCall{Evaluation: eval, Region: region})
-	if f.PostNewError != nil {
-		return "", f.PostNewError
+func (f *FakePoster) PostBriefing(ctx context.Context, bp BriefingPost) (string, error) {
+	f.PostedBriefings = append(f.PostedBriefings, PostBriefingCall{BriefingPost: bp})
+	if f.PostBriefingError != nil {
+		return "", f.PostBriefingError
 	}
 	tid := f.NextThreadID
 	if tid == "" {
-		tid = fmt.Sprintf("thread-%d", len(f.PostedNew))
+		tid = fmt.Sprintf("thread-%d", len(f.PostedBriefings))
 	}
 	return tid, nil
 }
 
-func (f *FakePoster) PostGrouped(ctx context.Context, group GroupedPost) (string, error) {
-	f.PostedGrouped = append(f.PostedGrouped, PostGroupedCall{Group: group})
-	if f.PostNewError != nil {
-		return "", f.PostNewError
-	}
-	tid := f.NextThreadID
-	if tid == "" {
-		tid = fmt.Sprintf("grouped-thread-%d", len(f.PostedGrouped))
-	}
-	return tid, nil
+func (f *FakePoster) PostDetail(ctx context.Context, eval domain.Evaluation, region domain.Region, threadID string) error {
+	f.PostedDetails = append(f.PostedDetails, PostDetailCall{Evaluation: eval, Region: region, ThreadID: threadID})
+	return f.PostDetailError
 }
 
 func (f *FakePoster) PostUpdate(ctx context.Context, eval domain.Evaluation, region domain.Region, threadID string) error {
