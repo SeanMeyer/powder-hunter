@@ -98,8 +98,6 @@ func ForecastsChanged(previous, current []Forecast) WeatherChangeSummary {
 		if tempDelta > maxTempDelta {
 			maxTempDelta = tempDelta
 		}
-
-		_ = dateKey
 	}
 
 	totalDelta := math.Abs(totalSnowCurr - totalSnowPrev)

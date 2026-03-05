@@ -452,30 +452,6 @@ func FormatResortConsensusForPrompt(rc map[string]domain.ModelConsensus, resorts
 	return b.String()
 }
 
-// FormatConsensusForPrompt converts model consensus data into a human-readable
-// summary showing per-day model agreement and confidence levels.
-func FormatConsensusForPrompt(c domain.ModelConsensus) string {
-	if len(c.Models) == 0 || len(c.DailyConsensus) == 0 {
-		return "Single model forecast — no multi-model consensus available."
-	}
-
-	var b strings.Builder
-	fmt.Fprintf(&b, "Models compared: %s\n\n", strings.Join(c.Models, ", "))
-	fmt.Fprintf(&b, "%-12s %10s %10s %10s %10s %10s\n",
-		"Date", "Min(in)", "Max(in)", "Mean(in)", "Spread", "Confidence")
-	fmt.Fprintf(&b, "%-12s %10s %10s %10s %10s %10s\n",
-		"----------", "---------", "---------", "---------", "---------", "----------")
-
-	for _, d := range c.DailyConsensus {
-		minIn := domain.CMToInches(d.SnowfallMinCM)
-		maxIn := domain.CMToInches(d.SnowfallMaxCM)
-		meanIn := domain.CMToInches(d.SnowfallMeanCM)
-		fmt.Fprintf(&b, "%-12s %9.1f\" %9.1f\" %9.1f\" %9.2f %10s\n",
-			d.Date.Format("Jan 02 Mon"), minIn, maxIn, meanIn, d.SpreadToMean, d.Confidence)
-	}
-	return b.String()
-}
-
 // FormatDiscussionForPrompt converts a NWS forecast discussion into prompt context.
 // It checks whether the AFD's coverage (~7 days from issuance) overlaps with
 // days that have significant snowfall. If no significant snow falls within the

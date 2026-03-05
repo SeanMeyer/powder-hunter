@@ -15,11 +15,6 @@ func nearDay(offset int) time.Time {
 	return today.AddDate(0, 0, offset)
 }
 
-// extDay is an alias for nearDay (same math, different semantic context).
-func extDay(offset int) time.Time {
-	return nearDay(offset)
-}
-
 func regionWithFriction(id string, ft FrictionTier) Region {
 	near, ext := ft.Thresholds()
 	return Region{
@@ -81,7 +76,7 @@ func TestDetect(t *testing.T) {
 			name:   "flight tier extended-range at 35in (below 36in threshold) → not detected",
 			region: regionWithFriction("flight-1", FrictionFlight),
 			forecasts: []Forecast{
-				singleDayForecast("flight-1", extDay(10), inchesToCM(35)),
+				singleDayForecast("flight-1", nearDay(10), inchesToCM(35)),
 			},
 			wantDetected:    false,
 			wantWindowCount: 0,
@@ -90,7 +85,7 @@ func TestDetect(t *testing.T) {
 			name:   "flight tier extended-range at 37in (above 36in threshold) → detected",
 			region: regionWithFriction("flight-2", FrictionFlight),
 			forecasts: []Forecast{
-				singleDayForecast("flight-2", extDay(10), inchesToCM(37)),
+				singleDayForecast("flight-2", nearDay(10), inchesToCM(37)),
 			},
 			wantDetected:    true,
 			wantWindowCount: 1,
@@ -102,7 +97,7 @@ func TestDetect(t *testing.T) {
 			// near threshold = 14", ext threshold = 20"
 			forecasts: []Forecast{
 				singleDayForecast("regional-1", nearDay(2), inchesToCM(15)),
-				singleDayForecast("regional-1", extDay(9), inchesToCM(21)),
+				singleDayForecast("regional-1", nearDay(9), inchesToCM(21)),
 			},
 			wantDetected:    true,
 			wantWindowCount: 2,
@@ -124,7 +119,7 @@ func TestDetect(t *testing.T) {
 			// supply exactly 18" near and 24" extended — both should trigger (>=)
 			forecasts: []Forecast{
 				singleDayForecast("hfd-1", nearDay(4), inchesToCM(18)),
-				singleDayForecast("hfd-1", extDay(12), inchesToCM(24)),
+				singleDayForecast("hfd-1", nearDay(12), inchesToCM(24)),
 			},
 			wantDetected:    true,
 			wantWindowCount: 2,
@@ -135,7 +130,7 @@ func TestDetect(t *testing.T) {
 			name:   "only extended-range days → only extended window checked",
 			region: regionWithFriction("flight-3", FrictionFlight),
 			forecasts: []Forecast{
-				singleDayForecast("flight-3", extDay(11), inchesToCM(40)),
+				singleDayForecast("flight-3", nearDay(11), inchesToCM(40)),
 			},
 			wantDetected:    true,
 			wantWindowCount: 1,
@@ -300,9 +295,9 @@ func TestDetect_BridgeWindows(t *testing.T) {
 				singleDayForecast("bridge-1", nearDay(5), inchesToCM(5)),
 				singleDayForecast("bridge-1", nearDay(6), inchesToCM(5)),
 				singleDayForecast("bridge-1", nearDay(7), inchesToCM(5)),
-				singleDayForecast("bridge-1", extDay(8), inchesToCM(5)),
-				singleDayForecast("bridge-1", extDay(9), inchesToCM(5)),
-				singleDayForecast("bridge-1", extDay(10), inchesToCM(5)),
+				singleDayForecast("bridge-1", nearDay(8), inchesToCM(5)),
+				singleDayForecast("bridge-1", nearDay(9), inchesToCM(5)),
+				singleDayForecast("bridge-1", nearDay(10), inchesToCM(5)),
 			},
 			wantDetected: true,
 		},
@@ -315,12 +310,12 @@ func TestDetect_BridgeWindows(t *testing.T) {
 			// Bridge-late [7-13]: days 7-13 = 28" > 24". Yes!
 			forecasts: []Forecast{
 				singleDayForecast("bridge-2", nearDay(7), inchesToCM(4)),
-				singleDayForecast("bridge-2", extDay(8), inchesToCM(4)),
-				singleDayForecast("bridge-2", extDay(9), inchesToCM(4)),
-				singleDayForecast("bridge-2", extDay(10), inchesToCM(4)),
-				singleDayForecast("bridge-2", extDay(11), inchesToCM(4)),
-				singleDayForecast("bridge-2", extDay(12), inchesToCM(4)),
-				singleDayForecast("bridge-2", extDay(13), inchesToCM(4)),
+				singleDayForecast("bridge-2", nearDay(8), inchesToCM(4)),
+				singleDayForecast("bridge-2", nearDay(9), inchesToCM(4)),
+				singleDayForecast("bridge-2", nearDay(10), inchesToCM(4)),
+				singleDayForecast("bridge-2", nearDay(11), inchesToCM(4)),
+				singleDayForecast("bridge-2", nearDay(12), inchesToCM(4)),
+				singleDayForecast("bridge-2", nearDay(13), inchesToCM(4)),
 			},
 			wantDetected: true,
 		},
@@ -340,7 +335,7 @@ func TestDetect_BridgeWindows(t *testing.T) {
 			// Neither bridge window captures both.
 			forecasts: []Forecast{
 				singleDayForecast("bridge-4", nearDay(2), inchesToCM(10)),
-				singleDayForecast("bridge-4", extDay(14), inchesToCM(10)),
+				singleDayForecast("bridge-4", nearDay(14), inchesToCM(10)),
 			},
 			wantDetected: false,
 		},
@@ -353,9 +348,9 @@ func TestDetect_BridgeWindows(t *testing.T) {
 				singleDayForecast("bridge-5", nearDay(5), inchesToCM(3)),
 				singleDayForecast("bridge-5", nearDay(6), inchesToCM(3)),
 				singleDayForecast("bridge-5", nearDay(7), inchesToCM(3)),
-				singleDayForecast("bridge-5", extDay(8), inchesToCM(3)),
-				singleDayForecast("bridge-5", extDay(9), inchesToCM(3)),
-				singleDayForecast("bridge-5", extDay(10), inchesToCM(3)),
+				singleDayForecast("bridge-5", nearDay(8), inchesToCM(3)),
+				singleDayForecast("bridge-5", nearDay(9), inchesToCM(3)),
+				singleDayForecast("bridge-5", nearDay(10), inchesToCM(3)),
 			},
 			wantDetected: false,
 		},

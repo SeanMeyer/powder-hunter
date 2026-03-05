@@ -13,11 +13,6 @@ import (
 	"github.com/seanmeyer/powder-hunter/domain"
 )
 
-// Fetcher retrieves a weather forecast for a region from an external source.
-type Fetcher interface {
-	Fetch(ctx context.Context, region domain.Region) (domain.Forecast, error)
-}
-
 // FetchResult holds all weather data fetched for a region in a single pass.
 type FetchResult struct {
 	Forecasts  []domain.Forecast

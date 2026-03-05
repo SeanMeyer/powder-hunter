@@ -18,12 +18,7 @@ import (
 
 var nwsBaseURL = "https://api.weather.gov"
 
-const (
-	nwsUserAgent = "(powder-hunter, contact@example.com)"
-
-	// NWS snowfall values are in cm; values above this are sensor/model artifacts.
-	nwsSnowfallSanityLimitCM = 500.0
-)
+const nwsUserAgent = "(powder-hunter, contact@example.com)"
 
 // NWSClient fetches near-range forecasts from the National Weather Service API.
 // The NWS two-step API first resolves coordinates to a forecast grid (WFO/x/y),
@@ -217,13 +212,6 @@ func parseGridpointForecast(body []byte, loc *time.Location) ([]domain.DailyFore
 	// NWS temperature intervals can span multiple hours; we prorate to get
 	// per-hour values. When intervals overlap the same hour, last write wins.
 	hourlyTemp := make(map[string]float64)
-	walkHourly(resp.Properties.Temperature.Values, func(acc *dayAccum, hour int, c float64) {
-		local := acc // not used for temp lookup; we use the dateKey from getAcc
-		_ = local
-		// We need the dateKey. Reconstruct from the acc's position in byDate.
-		// Instead, use a separate walkHourly that captures the dateKey.
-	})
-	// Re-implement temperature walk to capture both acc and dateKey.
 	for _, v := range resp.Properties.Temperature.Values {
 		if v.Value == nil {
 			continue
