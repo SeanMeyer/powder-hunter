@@ -83,10 +83,39 @@ docker compose exec powder-hunter powder-hunter profile --show
 docker compose logs -f powder-hunter
 ```
 
+## Unraid
+
+An Unraid Docker template is included at `unraid/powder-hunter.xml`. To install:
+
+1. Build the image: `docker build -t powder-hunter .` (from the repo directory)
+2. Copy the template: `cp unraid/powder-hunter.xml /boot/config/plugins/dockerMan/templates-user/my-powder-hunter.xml`
+3. In the Unraid Docker tab, click **Add Container** and select **powder-hunter**
+4. Fill in your API keys and preferences in the form, then click **Apply**
+
 ## Updating
+
+### Docker Compose
 
 ```bash
 docker compose down
 git pull
 docker compose up -d --build
 ```
+
+### Unraid
+
+```bash
+cd /mnt/user/appdata/powder-hunter
+git pull
+docker build -t powder-hunter .
+```
+
+Then restart the container from the Unraid Docker UI.
+
+## TODO: Published Docker Images
+
+Currently the image must be built from source. Once the repo is public, add a GitHub Actions workflow to publish images to `ghcr.io` on tagged releases. This would enable:
+
+- Unraid auto-update support (no more SSH + rebuild)
+- Users skip building entirely -- just pull and run
+- Template points to `ghcr.io/seanmeyer/powder-hunter:latest` instead of a local build
