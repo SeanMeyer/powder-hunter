@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
 
@@ -41,6 +42,7 @@ type Pipeline struct {
 	logger       *slog.Logger
 	costTracker  CostTracker
 	budgetConfig BudgetConfig
+	comparer     evaluation.Comparer
 }
 
 func New(weather *weather.Service, store *storage.DB, evaluator evaluation.Evaluator, logger *slog.Logger) *Pipeline {
@@ -56,6 +58,12 @@ func (p *Pipeline) WithCostTracker(ct CostTracker) *Pipeline {
 // WithBudgetConfig sets the monthly budget limit.
 func (p *Pipeline) WithBudgetConfig(bc BudgetConfig) *Pipeline {
 	p.budgetConfig = bc
+	return p
+}
+
+// WithComparer attaches an LLM comparer for multi-region storm groups.
+func (p *Pipeline) WithComparer(c evaluation.Comparer) *Pipeline {
+	p.comparer = c
 	return p
 }
 
@@ -93,6 +101,8 @@ type RunSummary struct {
 	SkippedCooldown  int // storms skipped due to tier-based cooldown
 	SkippedBudget    int // storms skipped due to budget limit
 	EvalFailed       int // storms where evaluation errored (Gemini failure, etc.)
+	Grouped          int // number of storm groups formed
+	Comparisons      int // number of LLM comparison calls made (multi-member groups only)
 }
 
 // Run executes the full pipeline: scan → evaluate → compare → post → expire.
@@ -118,8 +128,11 @@ func (p *Pipeline) Run(ctx context.Context, regionFilter string) (RunSummary, er
 		return RunSummary{}, fmt.Errorf("compare: %w", err)
 	}
 
-	if err := p.Post(ctx, compared); err != nil {
-		p.logger.WarnContext(ctx, "post stage error", "error", err)
+	grouped := p.Group(ctx, compared, &summary)
+
+	posted, postErr := p.PostGrouped(ctx, grouped)
+	if postErr != nil {
+		p.logger.WarnContext(ctx, "post stage error", "error", postErr)
 	}
 
 	expiredCount, err := p.ExpireStaleStorms(ctx, scans)
@@ -128,7 +141,7 @@ func (p *Pipeline) Run(ctx context.Context, regionFilter string) (RunSummary, er
 	}
 
 	summary.Evaluated = len(evals)
-	summary.Posted = len(compared)
+	summary.Posted = posted
 	summary.Expired = expiredCount
 	return summary, nil
 }
@@ -524,6 +537,14 @@ type CompareResult struct {
 	PrevTier    domain.Tier // empty string if this is the first evaluation
 }
 
+// GroupedResult wraps a storm group with its optional LLM comparison and the
+// original CompareResults for posting. Singleton groups have an empty Comparison.
+type GroupedResult struct {
+	Group      domain.StormGroup
+	Comparison evaluation.ComparisonResult // empty for singletons
+	Results    []CompareResult             // the individual CompareResults in this group
+}
+
 // Compare classifies the change for each evaluation against the storm's prior
 // evaluation, then saves the evaluation (with change class set) and updates the
 // storm state. This is the single write point for evaluations so change_class is
@@ -640,6 +661,211 @@ func (p *Pipeline) ExpireStaleStorms(ctx context.Context, scans []ScanResult) (i
 		}
 	}
 	return expired, nil
+}
+
+// Group buckets CompareResults by macro-region + friction tier, then runs an LLM
+// comparison for multi-member groups. Singleton groups pass through without a
+// comparison call.
+func (p *Pipeline) Group(ctx context.Context, results []CompareResult, summary *RunSummary) []GroupedResult {
+	inputs := make([]domain.StormGroupInput, len(results))
+	for i, r := range results {
+		inputs[i] = domain.StormGroupInput{
+			RegionID:    r.Region.ID,
+			MacroRegion: r.Region.MacroRegion,
+			Friction:    r.Region.FrictionTier,
+			WindowStart: r.Storm.WindowStart,
+			WindowEnd:   r.Storm.WindowEnd,
+			Tier:        r.Evaluation.Tier,
+			Index:       i,
+		}
+	}
+
+	stormGroups := domain.GroupByMacroRegion(inputs)
+
+	grouped := make([]GroupedResult, 0, len(stormGroups))
+	for _, sg := range stormGroups {
+		members := make([]CompareResult, len(sg.Members))
+		for i, m := range sg.Members {
+			members[i] = results[m.Index]
+		}
+
+		var comparison evaluation.ComparisonResult
+
+		if len(members) >= 2 && p.comparer != nil {
+			summaries := make([]evaluation.RegionSummary, len(members))
+			for i, r := range members {
+				// Build snowfall summary from day-by-day data.
+				var snowParts []string
+				for _, d := range r.Evaluation.DayByDay {
+					if d.Snowfall != "" {
+						snowParts = append(snowParts, fmt.Sprintf("%s: %s", d.Date.Format("Jan 2"), d.Snowfall))
+					}
+				}
+
+				rs := evaluation.RegionSummary{
+					RegionID:       r.Region.ID,
+					RegionName:     r.Region.Name,
+					Tier:           string(r.Evaluation.Tier),
+					Snowfall:       strings.Join(snowParts, ", "),
+					SnowQuality:    r.Evaluation.SnowQuality,
+					Recommendation: r.Evaluation.Recommendation,
+					LodgingCost:    r.Evaluation.LogisticsSummary.LodgingCost,
+					FlightCost:     r.Evaluation.LogisticsSummary.FlightCost,
+					CarRental:      r.Evaluation.LogisticsSummary.CarRental,
+					BestDay:        r.Evaluation.BestSkiDay.Format("Mon Jan 2"),
+					BestDayReason:  r.Evaluation.BestSkiDayReason,
+				}
+				if len(r.Evaluation.TopResortPicks) > 0 {
+					rs.TopPick = r.Evaluation.TopResortPicks[0].Resort
+					rs.TopPickReason = r.Evaluation.TopResortPicks[0].Reason
+				}
+				summaries[i] = rs
+			}
+
+			cc := evaluation.CompareContext{
+				MacroRegionName: sg.Key,
+				FrictionTier:    string(members[0].Region.FrictionTier),
+				Summaries:       summaries,
+			}
+
+			result, err := p.comparer.CompareRegions(ctx, cc)
+			if err != nil {
+				p.logger.WarnContext(ctx, "LLM comparison failed, posting without comparison",
+					"group_key", sg.Key,
+					"members", len(members),
+					"error", err,
+				)
+			} else {
+				comparison = result
+				p.logger.InfoContext(ctx, "group compared",
+					"group_key", sg.Key,
+					"members", len(members),
+					"top_pick", result.TopPickRegion,
+				)
+			}
+			summary.Comparisons++
+		}
+
+		grouped = append(grouped, GroupedResult{
+			Group:      sg,
+			Comparison: comparison,
+			Results:    members,
+		})
+		summary.Grouped++
+	}
+
+	return grouped
+}
+
+// PostGrouped delivers Discord briefings for grouped storm results.
+// Singleton groups use the existing per-region posting path.
+// Multi-member groups use the grouped posting path with comparison.
+// Returns the number of individual results posted and any error.
+func (p *Pipeline) PostGrouped(ctx context.Context, groups []GroupedResult) (int, error) {
+	if p.dryRun || p.poster == nil {
+		total := 0
+		for _, g := range groups {
+			for _, r := range g.Results {
+				p.logger.InfoContext(ctx, "dry-run: skip discord post",
+					"region_id", r.Region.ID,
+					"storm_id", r.Storm.ID,
+					"change_class", string(r.ChangeClass),
+					"group_key", g.Group.Key,
+				)
+			}
+			total += len(g.Results)
+		}
+		return total, nil
+	}
+
+	posted := 0
+	for _, g := range groups {
+		if len(g.Results) == 1 {
+			// Singleton group: use existing per-region posting.
+			if err := p.postOne(ctx, g.Results[0]); err != nil {
+				p.logger.WarnContext(ctx, "discord post failed, marking undelivered",
+					"region_id", g.Results[0].Region.ID,
+					"storm_id", g.Results[0].Storm.ID,
+					"eval_id", g.Results[0].Evaluation.ID,
+					"error", err,
+				)
+				if markErr := p.store.MarkEvaluationDelivered(ctx, g.Results[0].Evaluation.ID, false); markErr != nil {
+					p.logger.WarnContext(ctx, "mark evaluation undelivered failed",
+						"eval_id", g.Results[0].Evaluation.ID,
+						"error", markErr,
+					)
+				}
+			}
+			posted++
+			continue
+		}
+
+		// Multi-member group: build and post a grouped Discord message.
+		evals := make([]discord.EvalWithRegion, len(g.Results))
+		for i, r := range g.Results {
+			evals[i] = discord.EvalWithRegion{
+				Evaluation: r.Evaluation,
+				Region:     r.Region,
+			}
+		}
+
+		gp := discord.GroupedPost{
+			MacroRegionName: g.Group.Key,
+			FrictionTier:    g.Results[0].Region.FrictionTier,
+			Comparison:      g.Comparison,
+			Evaluations:     evals,
+		}
+
+		threadID, err := p.poster.PostGrouped(ctx, gp)
+		if err != nil {
+			p.logger.WarnContext(ctx, "grouped discord post failed",
+				"group_key", g.Group.Key,
+				"members", len(g.Results),
+				"error", err,
+			)
+			for _, r := range g.Results {
+				if markErr := p.store.MarkEvaluationDelivered(ctx, r.Evaluation.ID, false); markErr != nil {
+					p.logger.WarnContext(ctx, "mark evaluation undelivered failed",
+						"eval_id", r.Evaluation.ID,
+						"error", markErr,
+					)
+				}
+			}
+			posted += len(g.Results)
+			continue
+		}
+
+		// Update all storms in the group with the shared thread ID.
+		for _, r := range g.Results {
+			updatedStorm := r.Storm
+			updatedStorm.State = domain.StormBriefed
+			updatedStorm.DiscordThreadID = threadID
+			updatedStorm.LastPostedAt = time.Now().UTC()
+			if updateErr := p.store.UpdateStorm(ctx, updatedStorm); updateErr != nil {
+				p.logger.WarnContext(ctx, "update storm to briefed failed after grouped post",
+					"storm_id", r.Storm.ID,
+					"thread_id", threadID,
+					"error", updateErr,
+				)
+			}
+
+			if markErr := p.store.MarkEvaluationDelivered(ctx, r.Evaluation.ID, true); markErr != nil {
+				p.logger.WarnContext(ctx, "mark evaluation delivered failed",
+					"eval_id", r.Evaluation.ID,
+					"error", markErr,
+				)
+			}
+		}
+
+		p.logger.InfoContext(ctx, "group posted",
+			"group_key", g.Group.Key,
+			"members", len(g.Results),
+			"thread_id", threadID,
+		)
+		posted += len(g.Results)
+	}
+
+	return posted, nil
 }
 
 // Post delivers Discord briefings for each CompareResult. For new storms it opens a
