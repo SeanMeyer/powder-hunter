@@ -80,6 +80,10 @@ func (d *DB) ResetStormData(ctx context.Context) (int64, error) {
 	}
 	defer tx.Rollback() //nolint:errcheck
 
+	if _, err := tx.ExecContext(ctx, `DELETE FROM eval_costs`); err != nil {
+		return 0, fmt.Errorf("delete eval_costs: %w", err)
+	}
+
 	if _, err := tx.ExecContext(ctx, `DELETE FROM evaluations`); err != nil {
 		return 0, fmt.Errorf("delete evaluations: %w", err)
 	}
