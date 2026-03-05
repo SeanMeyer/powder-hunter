@@ -9,8 +9,10 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/seanmeyer/powder-hunter/discord"
@@ -81,6 +83,8 @@ func run(ctx context.Context, args []string) int {
 		return runRegions()
 	case "trace":
 		return runTrace(ctx, args[1:])
+	case "reset":
+		return runReset(ctx, args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n", args[0])
 		printUsage()
@@ -97,7 +101,8 @@ Commands:
   seed      Initialize or update region/resort database
   profile   View or update user profile
   regions   List all regions from seed data
-  trace     Run pipeline for one region with human-readable debug output`)
+  trace     Run pipeline for one region with human-readable debug output
+  reset     Delete all storms and evaluations (keeps regions, profiles, prompts)`)
 }
 
 func runPipeline(ctx context.Context, args []string) int {
@@ -106,6 +111,8 @@ func runPipeline(ctx context.Context, args []string) int {
 	dryRun := fs.Bool("dry-run", false, "Run pipeline but skip Discord posting")
 	regionFilter := fs.String("region", "", "Evaluate only this region (for debugging)")
 	verbose := fs.Bool("verbose", false, "Enable debug-level logging")
+	loop := fs.Bool("loop", false, "Run pipeline repeatedly on an interval")
+	interval := fs.Duration("interval", 12*time.Hour, "Time between pipeline runs (requires --loop)")
 	if err := fs.Parse(args); err != nil {
 		return 1
 	}
@@ -135,8 +142,9 @@ func runPipeline(ctx context.Context, args []string) int {
 	}
 	defer db.Close()
 
-	omClient := weather.NewOpenMeteoClient(nil)
-	nwsClient := weather.NewNWSClient(nil)
+	httpClient := &http.Client{Timeout: 30 * time.Second}
+	omClient := weather.NewOpenMeteoClient(httpClient)
+	nwsClient := weather.NewNWSClient(httpClient)
 	weatherSvc := weather.NewService(omClient, nwsClient)
 
 	geminiClient, err := evaluation.NewGeminiClient(ctx, apiKey)
@@ -158,6 +166,12 @@ func runPipeline(ctx context.Context, args []string) int {
 		slog.Info("region filter active", "region", *regionFilter)
 	}
 
+	if *loop {
+		ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		return runLoop(ctx, p, *regionFilter, *interval)
+	}
+
 	summary, err := p.Run(ctx, *regionFilter)
 	if err != nil {
 		slog.Error("pipeline failed", "error", err)
@@ -171,6 +185,34 @@ func runPipeline(ctx context.Context, args []string) int {
 		"expired", summary.Expired,
 	)
 	return 0
+}
+
+func runLoop(ctx context.Context, p *pipeline.Pipeline, region string, interval time.Duration) int {
+	slog.Info("starting pipeline loop", "interval", interval)
+	run := 0
+	for {
+		run++
+		summary, err := p.Run(ctx, region)
+		if err != nil {
+			slog.Error("pipeline run failed", "run", run, "error", err)
+		} else {
+			slog.Info("pipeline complete",
+				"run", run,
+				"scanned", summary.Scanned,
+				"evaluated", summary.Evaluated,
+				"posted", summary.Posted,
+				"expired", summary.Expired,
+				"next_run", time.Now().Add(interval).Format(time.RFC3339),
+			)
+		}
+
+		select {
+		case <-ctx.Done():
+			slog.Info("shutdown signal received, exiting")
+			return 0
+		case <-time.After(interval):
+		}
+	}
 }
 
 func runReplay(ctx context.Context, args []string) int {
@@ -451,6 +493,30 @@ func runRegions() int {
 	return 0
 }
 
+func runReset(ctx context.Context, args []string) int {
+	fs := flag.NewFlagSet("reset", flag.ContinueOnError)
+	dbPath := fs.String("db", "./powder-hunter.db", "SQLite database path")
+	if err := fs.Parse(args); err != nil {
+		return 1
+	}
+
+	db, err := storage.Open(*dbPath)
+	if err != nil {
+		slog.Error("open database", "error", err)
+		return 1
+	}
+	defer db.Close()
+
+	count, err := db.ResetStormData(ctx)
+	if err != nil {
+		slog.Error("reset failed", "error", err)
+		return 1
+	}
+
+	slog.Info("reset complete", "storms_deleted", count)
+	return 0
+}
+
 func runTrace(ctx context.Context, args []string) int {
 	fs := flag.NewFlagSet("trace", flag.ContinueOnError)
 	regionID := fs.String("region", "", "Region ID to trace (required)")
@@ -486,7 +552,7 @@ func runTrace(ctx context.Context, args []string) int {
 	trace.FormatTimestamp(w, time.Now())
 
 	// ── Weather ──────────────────────────────────────────────────────────────
-	httpClient := &http.Client{}
+	httpClient := &http.Client{Timeout: 30 * time.Second}
 	omClient := weather.NewOpenMeteoClient(httpClient)
 	nwsClient := weather.NewNWSClient(httpClient)
 	weatherSvc := weather.NewService(omClient, nwsClient)

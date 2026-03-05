@@ -37,6 +37,10 @@ func (d *DB) SaveEvaluation(ctx context.Context, e domain.Evaluation) (int64, er
 	if err != nil {
 		return 0, fmt.Errorf("marshal grounding_sources: %w", err)
 	}
+	resortPicks, err := json.Marshal(e.TopResortPicks)
+	if err != nil {
+		return 0, fmt.Errorf("marshal top_resort_picks: %w", err)
+	}
 
 	delivered := 0
 	if e.Delivered {
@@ -48,8 +52,9 @@ func (d *DB) SaveEvaluation(ctx context.Context, e domain.Evaluation) (int64, er
 			(storm_id, evaluated_at, prompt_version, tier, recommendation,
 			 day_by_day, key_factors, logistics_summary, strategy, snow_quality,
 			 crowd_estimate, closure_risk, weather_snapshot, raw_llm_response,
-			 structured_response, grounding_sources, change_class, delivered)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			 structured_response, grounding_sources, change_class, delivered,
+			 summary, top_resort_picks)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		e.StormID,
 		e.EvaluatedAt.UTC().Format(time.RFC3339),
 		e.PromptVersion,
@@ -68,6 +73,8 @@ func (d *DB) SaveEvaluation(ctx context.Context, e domain.Evaluation) (int64, er
 		string(grounding),
 		string(e.ChangeClass),
 		delivered,
+		e.Summary,
+		string(resortPicks),
 	)
 	if err != nil {
 		return 0, fmt.Errorf("save evaluation: %w", err)
@@ -85,7 +92,8 @@ func (d *DB) GetLatestEvaluation(ctx context.Context, stormID int64) (*domain.Ev
 		SELECT id, storm_id, evaluated_at, prompt_version, tier, recommendation,
 		       day_by_day, key_factors, logistics_summary, strategy, snow_quality,
 		       crowd_estimate, closure_risk, weather_snapshot, raw_llm_response,
-		       structured_response, grounding_sources, change_class, delivered
+		       structured_response, grounding_sources, change_class, delivered,
+		       summary, top_resort_picks
 		FROM evaluations
 		WHERE storm_id = ?
 		ORDER BY evaluated_at DESC
@@ -108,7 +116,8 @@ func (d *DB) GetEvaluationHistory(ctx context.Context, stormID int64) ([]domain.
 		SELECT id, storm_id, evaluated_at, prompt_version, tier, recommendation,
 		       day_by_day, key_factors, logistics_summary, strategy, snow_quality,
 		       crowd_estimate, closure_risk, weather_snapshot, raw_llm_response,
-		       structured_response, grounding_sources, change_class, delivered
+		       structured_response, grounding_sources, change_class, delivered,
+		       summary, top_resort_picks
 		FROM evaluations
 		WHERE storm_id = ?
 		ORDER BY evaluated_at ASC`,
@@ -156,7 +165,8 @@ func (d *DB) GetEvaluation(ctx context.Context, evalID int64) (*domain.Evaluatio
 		SELECT id, storm_id, evaluated_at, prompt_version, tier, recommendation,
 		       day_by_day, key_factors, logistics_summary, strategy, snow_quality,
 		       crowd_estimate, closure_risk, weather_snapshot, raw_llm_response,
-		       structured_response, grounding_sources, change_class, delivered
+		       structured_response, grounding_sources, change_class, delivered,
+		       summary, top_resort_picks
 		FROM evaluations
 		WHERE id = ?`,
 		evalID,
@@ -174,7 +184,7 @@ func (d *DB) GetEvaluation(ctx context.Context, evalID int64) (*domain.Evaluatio
 func scanEvaluation(s scanner) (domain.Evaluation, error) {
 	var e domain.Evaluation
 	var evaluatedAt, tier, changeClass string
-	var dayByDay, keyFactors, logistics, weatherSnap, structured, grounding string
+	var dayByDay, keyFactors, logistics, weatherSnap, structured, grounding, resortPicks string
 	var delivered int
 
 	err := s.Scan(
@@ -182,6 +192,7 @@ func scanEvaluation(s scanner) (domain.Evaluation, error) {
 		&dayByDay, &keyFactors, &logistics, &e.Strategy, &e.SnowQuality,
 		&e.CrowdEstimate, &e.ClosureRisk, &weatherSnap, &e.RawLLMResponse,
 		&structured, &grounding, &changeClass, &delivered,
+		&e.Summary, &resortPicks,
 	)
 	if err != nil {
 		return domain.Evaluation{}, err
@@ -209,6 +220,9 @@ func scanEvaluation(s scanner) (domain.Evaluation, error) {
 	}
 	if err := json.Unmarshal([]byte(grounding), &e.GroundingSources); err != nil {
 		return domain.Evaluation{}, fmt.Errorf("unmarshal grounding_sources: %w", err)
+	}
+	if err := json.Unmarshal([]byte(resortPicks), &e.TopResortPicks); err != nil {
+		return domain.Evaluation{}, fmt.Errorf("unmarshal top_resort_picks: %w", err)
 	}
 
 	return e, nil
@@ -217,7 +231,7 @@ func scanEvaluation(s scanner) (domain.Evaluation, error) {
 func scanEvaluationRow(row *sql.Row) (domain.Evaluation, error) {
 	var e domain.Evaluation
 	var evaluatedAt, tier, changeClass string
-	var dayByDay, keyFactors, logistics, weatherSnap, structured, grounding string
+	var dayByDay, keyFactors, logistics, weatherSnap, structured, grounding, resortPicks string
 	var delivered int
 
 	err := row.Scan(
@@ -225,6 +239,7 @@ func scanEvaluationRow(row *sql.Row) (domain.Evaluation, error) {
 		&dayByDay, &keyFactors, &logistics, &e.Strategy, &e.SnowQuality,
 		&e.CrowdEstimate, &e.ClosureRisk, &weatherSnap, &e.RawLLMResponse,
 		&structured, &grounding, &changeClass, &delivered,
+		&e.Summary, &resortPicks,
 	)
 	if err != nil {
 		return domain.Evaluation{}, err
@@ -252,6 +267,9 @@ func scanEvaluationRow(row *sql.Row) (domain.Evaluation, error) {
 	}
 	if err := json.Unmarshal([]byte(grounding), &e.GroundingSources); err != nil {
 		return domain.Evaluation{}, fmt.Errorf("unmarshal grounding_sources: %w", err)
+	}
+	if err := json.Unmarshal([]byte(resortPicks), &e.TopResortPicks); err != nil {
+		return domain.Evaluation{}, fmt.Errorf("unmarshal top_resort_picks: %w", err)
 	}
 
 	return e, nil

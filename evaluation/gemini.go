@@ -37,6 +37,8 @@ func NewGeminiClient(ctx context.Context, apiKey string) (*GeminiClient, error) 
 type GeminiResult struct {
 	Tier               domain.Tier
 	Recommendation     string
+	Summary            string
+	TopResortPicks     []domain.ResortPick
 	DayByDay           []domain.DayEvaluation
 	KeyFactors         domain.KeyFactors
 	LogisticsSummary   domain.LogisticsSummary
@@ -120,6 +122,8 @@ numbers, dates, and findings from the research. Do not add information that isn'
 
 	result.Tier = domain.Tier(stringField(structured, "tier"))
 	result.Recommendation = stringField(structured, "recommendation")
+	result.Summary = stringField(structured, "summary")
+	result.TopResortPicks = parseResortPicks(structured)
 	result.Strategy = stringField(structured, "strategy")
 	result.SnowQuality = stringField(structured, "snow_quality")
 	result.CrowdEstimate = stringField(structured, "crowd_estimate")
@@ -164,6 +168,22 @@ func stormEvalSchema() *genai.Schema {
 				Enum: []string{"DROP_EVERYTHING", "WORTH_A_LOOK", "ON_THE_RADAR"},
 			},
 			"recommendation":           {Type: genai.TypeString},
+			"summary": {
+				Type:        genai.TypeString,
+				Description: "A short (under 80 characters) hook: snowfall amount and best day. Punchy preview line.",
+			},
+			"top_resort_picks": {
+				Type:        genai.TypeArray,
+				Description: "Top 2-3 resort picks from this region ranked by suitability for this storm. #1 is your primary recommendation.",
+				Items: &genai.Schema{
+					Type: genai.TypeObject,
+					Properties: map[string]*genai.Schema{
+						"resort": {Type: genai.TypeString, Description: "Resort name"},
+						"reason": {Type: genai.TypeString, Description: "1-2 sentences explaining why this resort is best for THIS specific storm"},
+					},
+					Required: []string{"resort", "reason"},
+				},
+			},
 			"strategy":                 {Type: genai.TypeString},
 			"snow_quality":             {Type: genai.TypeString},
 			"crowd_estimate":           {Type: genai.TypeString},
@@ -203,7 +223,7 @@ func stormEvalSchema() *genai.Schema {
 			},
 		},
 		Required: []string{
-			"tier", "recommendation", "strategy",
+			"tier", "recommendation", "summary", "top_resort_picks", "strategy",
 			"snow_quality", "crowd_estimate", "closure_risk",
 			"best_ski_day", "best_ski_day_reason",
 			"key_factors_pros", "key_factors_cons",
@@ -256,6 +276,29 @@ func parseDayByDay(m map[string]any) []domain.DayEvaluation {
 			Snowfall:       stringField(entry, "snowfall"),
 			Conditions:     stringField(entry, "conditions"),
 			Recommendation: stringField(entry, "recommendation"),
+		})
+	}
+	return result
+}
+
+func parseResortPicks(m map[string]any) []domain.ResortPick {
+	raw, ok := m["top_resort_picks"]
+	if !ok {
+		return nil
+	}
+	items, ok := raw.([]any)
+	if !ok {
+		return nil
+	}
+	result := make([]domain.ResortPick, 0, len(items))
+	for _, item := range items {
+		entry, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		result = append(result, domain.ResortPick{
+			Resort: stringField(entry, "resort"),
+			Reason: stringField(entry, "reason"),
 		})
 	}
 	return result
@@ -353,6 +396,8 @@ func (e *GeminiEvaluator) Evaluate(ctx context.Context, ec EvalContext) (domain.
 		RenderedPrompt:     renderedPrompt,
 		Tier:               gemResult.Tier,
 		Recommendation:     gemResult.Recommendation,
+		Summary:            gemResult.Summary,
+		TopResortPicks:     gemResult.TopResortPicks,
 		DayByDay:           gemResult.DayByDay,
 		KeyFactors:         gemResult.KeyFactors,
 		LogisticsSummary:   gemResult.LogisticsSummary,

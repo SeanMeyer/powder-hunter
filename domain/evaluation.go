@@ -15,6 +15,8 @@ type Evaluation struct {
 	DayByDay           []DayEvaluation
 	KeyFactors         KeyFactors
 	LogisticsSummary   LogisticsSummary
+	Summary            string
+	TopResortPicks     []ResortPick
 	Strategy           string
 	SnowQuality        string
 	CrowdEstimate      string
@@ -53,6 +55,13 @@ type DayEvaluation struct {
 type KeyFactors struct {
 	Pros []string
 	Cons []string
+}
+
+// ResortPick is a single resort recommendation with reasoning for why it suits
+// this specific storm. The LLM ranks 2-3 picks per evaluation.
+type ResortPick struct {
+	Resort string
+	Reason string
 }
 
 // LogisticsSummary holds the LLM's narrative on trip logistics. Fields are strings

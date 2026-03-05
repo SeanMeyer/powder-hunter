@@ -57,12 +57,13 @@ func FormatNewStorm(eval domain.Evaluation, region domain.Region) WebhookPayload
 	embed.Footer = &EmbedFooter{Text: fmt.Sprintf("powder-hunter · %s", eval.Tier)}
 
 	payload := WebhookPayload{
+		Content:    eval.Summary,
 		Embeds:     []Embed{embed},
-		ThreadName: fmt.Sprintf("%s — %s", region.Name, formatWindowDates(eval)),
+		ThreadName: fmt.Sprintf("%s %s — %s", tierEmoji(eval.Tier), region.Name, formatWindowDates(eval)),
 	}
 
 	if eval.Tier == domain.TierDropEverything {
-		payload.Content = "@here"
+		payload.Content = "@here\n" + eval.Summary
 		payload.AllowedMentions = &AllowedMentions{Parse: []string{"everyone"}}
 	}
 
@@ -82,12 +83,13 @@ func FormatUpdate(eval domain.Evaluation, region domain.Region) WebhookPayload {
 	embed.Footer = &EmbedFooter{Text: fmt.Sprintf("powder-hunter · %s · %s", eval.Tier, string(eval.ChangeClass))}
 
 	payload := WebhookPayload{
-		Embeds: []Embed{embed},
+		Content: eval.Summary,
+		Embeds:  []Embed{embed},
 	}
 
 	// Ping on upgrade to DROP_EVERYTHING so subscribers don't miss an escalation.
 	if eval.Tier == domain.TierDropEverything && eval.ChangeClass == domain.ChangeMaterial {
-		payload.Content = "@here"
+		payload.Content = "@here\n" + eval.Summary
 		payload.AllowedMentions = &AllowedMentions{Parse: []string{"everyone"}}
 	}
 
@@ -144,6 +146,10 @@ func buildFields(eval domain.Evaluation, region domain.Region) []EmbedField {
 
 	if eval.Strategy != "" {
 		fields = append(fields, EmbedField{Name: "Strategy", Value: eval.Strategy, Inline: false})
+	}
+
+	if len(eval.TopResortPicks) > 0 {
+		fields = append(fields, EmbedField{Name: "Top Picks", Value: formatResortPicks(eval.TopResortPicks), Inline: false})
 	}
 
 	bestDay := bestDayLine(eval)
@@ -257,6 +263,17 @@ func formatWindowDates(eval domain.Evaluation) string {
 	return fmt.Sprintf("%s–%s", first.Format("Jan 2"), last.Format("Jan 2"))
 }
 
+func formatResortPicks(picks []domain.ResortPick) string {
+	var sb strings.Builder
+	for i, p := range picks {
+		fmt.Fprintf(&sb, "%d. **%s** — %s", i+1, p.Resort, p.Reason)
+		if i < len(picks)-1 {
+			sb.WriteString("\n")
+		}
+	}
+	return sb.String()
+}
+
 func tierColor(t domain.Tier) int {
 	switch t {
 	case domain.TierDropEverything:
@@ -273,8 +290,8 @@ func tierEmoji(t domain.Tier) string {
 	case domain.TierDropEverything:
 		return "🚨"
 	case domain.TierWorthALook:
-		return "🟠"
+		return "👀"
 	default:
-		return "🔵"
+		return "📡"
 	}
 }

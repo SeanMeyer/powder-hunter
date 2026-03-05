@@ -93,6 +93,9 @@ determines which factors dominate.
   Could they work during the day and ski mornings/afternoons, or do they need full days off?
 - Slopeside or walk-to-lift lodging availability — this dramatically changes the equation for remote workers
   who could sneak in runs before/after or during breaks
+- If the best day is a weekday: explicitly recommend whether PTO or remote work is the better play,
+  and why. Don't assume remote work is always the answer — sometimes a full PTO day is the right call
+  for a storm-day experience.
 - Blackout dates — check against the storm window
 
 **Lift operations and mountain access:**
@@ -181,6 +184,14 @@ Return a JSON object matching this exact schema. All fields are required.
 
 - tier: one of "DROP_EVERYTHING", "WORTH_A_LOOK", "ON_THE_RADAR"
 - recommendation: 2-3 sentence executive summary of the opportunity and recommended action
+- summary: a short (under 80 characters) hook summarizing the storm. Include snowfall amount and best day.
+  Keep it punchy — this is the preview line users see before clicking into the full briefing.
+- top_resort_picks: array of your top 2-3 resort picks from this region, ranked by suitability for THIS
+  specific storm. Each entry has:
+  - resort: the resort name
+  - reason: 1-2 sentences explaining why this resort is best for this storm. Consider snow quality at this
+    elevation, wind exposure, terrain character, pass coverage, and crowd dynamics. Your #1 pick should be
+    the resort your strategy centers on.
 - strategy: detailed tactical advice — when to book, which resort, what days to ski, what terrain to target
 - snow_quality: assessment of expected snow density and quality based on temperatures and timing
 - crowd_estimate: expected crowd level and any specific days/resorts to avoid or prefer

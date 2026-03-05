@@ -70,19 +70,9 @@ type RunSummary struct {
 // Per-region errors are logged and skipped; Run returns nil unless a fatal
 // cross-cutting failure prevents any useful work.
 func (p *Pipeline) Run(ctx context.Context, regionFilter string) (RunSummary, error) {
-	scans, err := p.Scan(ctx)
+	scans, err := p.Scan(ctx, regionFilter)
 	if err != nil {
 		return RunSummary{}, fmt.Errorf("scan: %w", err)
-	}
-
-	if regionFilter != "" {
-		filtered := scans[:0]
-		for _, s := range scans {
-			if s.Region.ID == regionFilter {
-				filtered = append(filtered, s)
-			}
-		}
-		scans = filtered
 	}
 
 	evals, err := p.Evaluate(ctx, scans)
@@ -115,10 +105,21 @@ func (p *Pipeline) Run(ctx context.Context, regionFilter string) (RunSummary, er
 // Scan fetches weather for all regions, detects storms, and persists new/updated storms.
 // Errors in one region do not block processing of other regions.
 // Returns the list of storms that need evaluation (new detections + tracked storms).
-func (p *Pipeline) Scan(ctx context.Context) ([]ScanResult, error) {
+func (p *Pipeline) Scan(ctx context.Context, regionFilter string) ([]ScanResult, error) {
 	regions, err := p.store.ListRegions(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	if regionFilter != "" {
+		filtered := regions[:0]
+		for _, r := range regions {
+			if r.ID == regionFilter {
+				filtered = append(filtered, r)
+				break
+			}
+		}
+		regions = filtered
 	}
 
 	activeByRegion, err := p.store.GetActiveStormsByRegion(ctx)

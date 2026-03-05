@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	_ "embed"
 	"fmt"
+	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -42,7 +43,57 @@ func Open(path string) (*DB, error) {
 		return nil, fmt.Errorf("apply schema: %w", err)
 	}
 
+	if err := runMigrations(db); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("run migrations: %w", err)
+	}
+
 	return &DB{db: db}, nil
+}
+
+// runMigrations applies ALTER TABLE statements for columns added after the
+// initial schema. Each migration is idempotent — "duplicate column name"
+// errors are silently ignored.
+func runMigrations(db *sql.DB) error {
+	migrations := []string{
+		`ALTER TABLE evaluations ADD COLUMN summary TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE evaluations ADD COLUMN top_resort_picks TEXT NOT NULL DEFAULT '[]'`,
+	}
+	for _, m := range migrations {
+		if _, err := db.ExecContext(context.Background(), m); err != nil {
+			if strings.Contains(err.Error(), "duplicate column name") {
+				continue
+			}
+			return err
+		}
+	}
+	return nil
+}
+
+// ResetStormData deletes all evaluations and storms, preserving regions,
+// resorts, profiles, and prompt templates. Returns the number of storms deleted.
+func (d *DB) ResetStormData(ctx context.Context) (int64, error) {
+	tx, err := d.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback() //nolint:errcheck
+
+	if _, err := tx.ExecContext(ctx, `DELETE FROM evaluations`); err != nil {
+		return 0, fmt.Errorf("delete evaluations: %w", err)
+	}
+
+	result, err := tx.ExecContext(ctx, `DELETE FROM storms`)
+	if err != nil {
+		return 0, fmt.Errorf("delete storms: %w", err)
+	}
+
+	count, _ := result.RowsAffected()
+
+	if err := tx.Commit(); err != nil {
+		return 0, fmt.Errorf("commit reset: %w", err)
+	}
+	return count, nil
 }
 
 // Close releases the database connection.
