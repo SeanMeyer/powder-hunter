@@ -13,7 +13,7 @@ func TestGroupByMacroRegion(t *testing.T) {
 	makeResult := func(regionID, macroRegion string, friction FrictionTier, windowStart, windowEnd time.Time, tier Tier) StormGroupInput {
 		return StormGroupInput{
 			RegionID:    regionID,
-			MacroRegion: macroRegion,
+			StormGroup: macroRegion,
 			Friction:    friction,
 			WindowStart: windowStart,
 			WindowEnd:   windowEnd,

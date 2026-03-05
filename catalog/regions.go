@@ -105,7 +105,7 @@ func toRegion(j regionJSON) domain.Region {
 			DriveNotes:     j.Logistics.DriveNotes,
 			LodgingNotes:   j.Logistics.LodgingNotes,
 		},
-		MacroRegion: j.MacroRegion,
+		StormGroup: j.MacroRegion,
 	}
 }
 

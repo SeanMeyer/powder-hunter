@@ -671,7 +671,7 @@ func (p *Pipeline) Group(ctx context.Context, results []CompareResult, summary *
 	for i, r := range results {
 		inputs[i] = domain.StormGroupInput{
 			RegionID:    r.Region.ID,
-			MacroRegion: r.Region.MacroRegion,
+			StormGroup: r.Region.StormGroup,
 			Friction:    r.Region.FrictionTier,
 			WindowStart: r.Storm.WindowStart,
 			WindowEnd:   r.Storm.WindowEnd,

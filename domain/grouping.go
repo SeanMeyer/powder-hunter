@@ -5,7 +5,7 @@ import "time"
 // StormGroupInput holds the fields needed for grouping decisions.
 type StormGroupInput struct {
 	RegionID    string
-	MacroRegion string
+	StormGroup string
 	Friction    FrictionTier
 	WindowStart time.Time
 	WindowEnd   time.Time
@@ -23,15 +23,15 @@ type StormGroup struct {
 // groups whose storm windows don't overlap. Pure function, no I/O.
 func GroupByMacroRegion(inputs []StormGroupInput) []StormGroup {
 	type bucketKey struct {
-		macroRegion string
-		friction    FrictionTier
+		stormGroup string
+		friction   FrictionTier
 	}
 
 	buckets := make(map[bucketKey][]StormGroupInput)
 	var keyOrder []bucketKey
 
 	for _, in := range inputs {
-		k := bucketKey{macroRegion: in.MacroRegion, friction: in.Friction}
+		k := bucketKey{stormGroup: in.StormGroup, friction: in.Friction}
 		if _, exists := buckets[k]; !exists {
 			keyOrder = append(keyOrder, k)
 		}
@@ -44,7 +44,7 @@ func GroupByMacroRegion(inputs []StormGroupInput) []StormGroup {
 		for _, subgroup := range splitByWindowOverlap(members) {
 			sortByTierDesc(subgroup)
 			groups = append(groups, StormGroup{
-				Key:     k.macroRegion + ":" + string(k.friction),
+				Key:     k.stormGroup + ":" + string(k.friction),
 				Members: subgroup,
 			})
 		}

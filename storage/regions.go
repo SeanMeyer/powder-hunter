@@ -27,7 +27,7 @@ func (d *DB) UpsertRegion(ctx context.Context, r domain.Region) error {
 		r.ID, r.Name, r.Latitude, r.Longitude,
 		string(r.FrictionTier), r.NearThresholdIn, r.ExtendedThresholdIn, r.Country,
 		r.Logistics.NearestAirport, r.Logistics.DriveTimeHours, r.Logistics.DriveNotes, r.Logistics.LodgingNotes,
-		r.MacroRegion,
+		r.StormGroup,
 	)
 	if err != nil {
 		return fmt.Errorf("upsert region %s: %w", r.ID, err)
@@ -142,7 +142,7 @@ func scanRegion(s scanner) (domain.Region, error) {
 		&ft, &r.NearThresholdIn, &r.ExtendedThresholdIn, &r.Country,
 		&r.Logistics.NearestAirport, &r.Logistics.DriveTimeHours,
 		&r.Logistics.DriveNotes, &r.Logistics.LodgingNotes,
-		&r.MacroRegion,
+		&r.StormGroup,
 	)
 	if err != nil {
 		return domain.Region{}, err
@@ -159,7 +159,7 @@ func scanRegionRow(row *sql.Row) (domain.Region, error) {
 		&ft, &r.NearThresholdIn, &r.ExtendedThresholdIn, &r.Country,
 		&r.Logistics.NearestAirport, &r.Logistics.DriveTimeHours,
 		&r.Logistics.DriveNotes, &r.Logistics.LodgingNotes,
-		&r.MacroRegion,
+		&r.StormGroup,
 	)
 	if err != nil {
 		return domain.Region{}, err

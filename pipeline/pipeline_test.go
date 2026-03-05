@@ -1242,7 +1242,7 @@ func TestPipeline_GroupSingletonPassthrough(t *testing.T) {
 	seedProfile(t, ctx, db)
 
 	r := testRegion("ak-valdez")
-	r.MacroRegion = "ak_chugach"
+	r.StormGroup = "ak_chugach"
 	seedRegion(t, ctx, db, r)
 
 	now := time.Now().UTC()
@@ -1313,12 +1313,12 @@ func TestPipeline_GroupMultiRegion(t *testing.T) {
 	db := setupDB(t)
 	seedProfile(t, ctx, db)
 
-	// 3 regions, all same MacroRegion and FrictionTier.
+	// 3 regions, all same StormGroup and FrictionTier.
 	regions := make([]domain.Region, 3)
 	regionIDs := []string{"wa-central", "wa-north", "wa-south"}
 	for i, id := range regionIDs {
 		r := testRegion(id)
-		r.MacroRegion = "pnw_cascades"
+		r.StormGroup = "pnw_cascades"
 		r.FrictionTier = domain.FrictionFlight
 		regions[i] = r
 		seedRegion(t, ctx, db, r)
@@ -1423,13 +1423,13 @@ func TestPipeline_GroupFrictionSplit(t *testing.T) {
 	db := setupDB(t)
 	seedProfile(t, ctx, db)
 
-	// 2 regions in same MacroRegion but different friction tiers.
+	// 2 regions in same StormGroup but different friction tiers.
 	rLocal := testRegion("co-front-a")
-	rLocal.MacroRegion = "co_front_range"
+	rLocal.StormGroup = "co_front_range"
 	rLocal.FrictionTier = domain.FrictionLocalDrive
 
 	rRegional := testRegion("co-front-b")
-	rRegional.MacroRegion = "co_front_range"
+	rRegional.StormGroup = "co_front_range"
 	rRegional.FrictionTier = domain.FrictionRegionalDrive
 
 	seedRegion(t, ctx, db, rLocal)
@@ -1498,13 +1498,13 @@ func TestPipeline_GroupNonOverlappingWindows(t *testing.T) {
 	db := setupDB(t)
 	seedProfile(t, ctx, db)
 
-	// 2 regions in same MacroRegion and same friction, but non-overlapping windows.
+	// 2 regions in same StormGroup and same friction, but non-overlapping windows.
 	rA := testRegion("pnw-a")
-	rA.MacroRegion = "pnw_cascades"
+	rA.StormGroup = "pnw_cascades"
 	rA.FrictionTier = domain.FrictionFlight
 
 	rB := testRegion("pnw-b")
-	rB.MacroRegion = "pnw_cascades"
+	rB.StormGroup = "pnw_cascades"
 	rB.FrictionTier = domain.FrictionFlight
 
 	seedRegion(t, ctx, db, rA)
