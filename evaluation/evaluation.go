@@ -25,3 +25,42 @@ type EvalContext struct {
 type Evaluator interface {
 	Evaluate(ctx context.Context, ec EvalContext) (domain.Evaluation, error)
 }
+
+// CompareContext holds the inputs for a multi-region storm comparison.
+type CompareContext struct {
+	MacroRegionName string
+	FrictionTier    string
+	Summaries       []RegionSummary
+}
+
+// RegionSummary is a condensed view of one region's evaluation for comparison.
+type RegionSummary struct {
+	RegionID       string
+	RegionName     string
+	Tier           string
+	Snowfall       string
+	SnowQuality    string
+	TopPick        string
+	TopPickReason  string
+	BestDay        string
+	BestDayReason  string
+	Recommendation string
+	LodgingCost    string
+	FlightCost     string
+	CarRental      string
+}
+
+// ComparisonResult is the LLM's synthesis across multiple regions.
+type ComparisonResult struct {
+	TopPickRegion  string
+	TopPickName    string
+	Reasoning      string
+	RunnerUp       string
+	RunnerUpReason string
+	RawResponse    string
+}
+
+// Comparer synthesizes multiple region evaluations into a grouped recommendation.
+type Comparer interface {
+	CompareRegions(ctx context.Context, cc CompareContext) (ComparisonResult, error)
+}

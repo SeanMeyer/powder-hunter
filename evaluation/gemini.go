@@ -401,6 +401,13 @@ func NewGeminiEvaluator(gemini *GeminiClient, store *storage.DB) *GeminiEvaluato
 	return &GeminiEvaluator{gemini: gemini, store: store}
 }
 
+// CompareRegions delegates to GeminiClient.CompareRegions for multi-region
+// storm comparison. No prompt template or grounding is needed — all data has
+// already been evaluated.
+func (e *GeminiEvaluator) CompareRegions(ctx context.Context, cc CompareContext) (ComparisonResult, error) {
+	return e.gemini.CompareRegions(ctx, cc)
+}
+
 // Evaluate loads the active prompt, renders it with context data, calls Gemini,
 // and returns a domain.Evaluation ready for persistence.
 func (e *GeminiEvaluator) Evaluate(ctx context.Context, ec EvalContext) (domain.Evaluation, error) {
