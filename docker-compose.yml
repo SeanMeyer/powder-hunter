@@ -1,0 +1,13 @@
+services:
+  powder-hunter:
+    build: .
+    container_name: powder-hunter
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - powder-hunter-data:/data
+    command: ["run", "--loop"]
+
+volumes:
+  powder-hunter-data:
