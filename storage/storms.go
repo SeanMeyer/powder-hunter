@@ -148,12 +148,15 @@ func nullableTime(t time.Time) string {
 	return t.UTC().Format(time.RFC3339)
 }
 
-func parseOptionalTime(s string) time.Time {
+func parseOptionalTime(s string) (time.Time, error) {
 	if s == "" {
-		return time.Time{}
+		return time.Time{}, nil
 	}
-	t, _ := time.Parse(time.RFC3339, s)
-	return t
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("parse time %q: %w", s, err)
+	}
+	return t, nil
 }
 
 func scanStorms(rows *sql.Rows) ([]domain.Storm, error) {
@@ -194,11 +197,21 @@ func scanStorm(s scanner) (domain.Storm, error) {
 			return domain.Storm{}, fmt.Errorf("scan storm: %w", err)
 		}
 	}
-	st.WindowStart, _ = time.Parse(time.RFC3339, windowStart)
-	st.WindowEnd, _ = time.Parse(time.RFC3339, windowEnd)
-	st.DetectedAt, _ = time.Parse(time.RFC3339, detectedAt)
-	st.LastEvaluatedAt = parseOptionalTime(lastEval)
-	st.LastPostedAt = parseOptionalTime(lastPosted)
+	if st.WindowStart, err = time.Parse(time.RFC3339, windowStart); err != nil {
+		return domain.Storm{}, fmt.Errorf("scan storm: parse window_start: %w", err)
+	}
+	if st.WindowEnd, err = time.Parse(time.RFC3339, windowEnd); err != nil {
+		return domain.Storm{}, fmt.Errorf("scan storm: parse window_end: %w", err)
+	}
+	if st.DetectedAt, err = time.Parse(time.RFC3339, detectedAt); err != nil {
+		return domain.Storm{}, fmt.Errorf("scan storm: parse detected_at: %w", err)
+	}
+	if st.LastEvaluatedAt, err = parseOptionalTime(lastEval); err != nil {
+		return domain.Storm{}, fmt.Errorf("scan storm: %w", err)
+	}
+	if st.LastPostedAt, err = parseOptionalTime(lastPosted); err != nil {
+		return domain.Storm{}, fmt.Errorf("scan storm: %w", err)
+	}
 	return st, nil
 }
 
@@ -225,10 +238,20 @@ func scanStormRow(row *sql.Row) (domain.Storm, error) {
 			return domain.Storm{}, fmt.Errorf("scan storm: %w", err)
 		}
 	}
-	st.WindowStart, _ = time.Parse(time.RFC3339, windowStart)
-	st.WindowEnd, _ = time.Parse(time.RFC3339, windowEnd)
-	st.DetectedAt, _ = time.Parse(time.RFC3339, detectedAt)
-	st.LastEvaluatedAt = parseOptionalTime(lastEval)
-	st.LastPostedAt = parseOptionalTime(lastPosted)
+	if st.WindowStart, err = time.Parse(time.RFC3339, windowStart); err != nil {
+		return domain.Storm{}, fmt.Errorf("scan storm: parse window_start: %w", err)
+	}
+	if st.WindowEnd, err = time.Parse(time.RFC3339, windowEnd); err != nil {
+		return domain.Storm{}, fmt.Errorf("scan storm: parse window_end: %w", err)
+	}
+	if st.DetectedAt, err = time.Parse(time.RFC3339, detectedAt); err != nil {
+		return domain.Storm{}, fmt.Errorf("scan storm: parse detected_at: %w", err)
+	}
+	if st.LastEvaluatedAt, err = parseOptionalTime(lastEval); err != nil {
+		return domain.Storm{}, fmt.Errorf("scan storm: %w", err)
+	}
+	if st.LastPostedAt, err = parseOptionalTime(lastPosted); err != nil {
+		return domain.Storm{}, fmt.Errorf("scan storm: %w", err)
+	}
 	return st, nil
 }

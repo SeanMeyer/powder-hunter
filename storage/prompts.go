@@ -102,7 +102,10 @@ func (d *DB) ListPromptVersions(ctx context.Context, id string) ([]PromptVersion
 		if err := rows.Scan(&pv.ID, &pv.Version, &pv.Template, &createdAt, &isActive); err != nil {
 			return nil, fmt.Errorf("scan prompt version: %w", err)
 		}
-		pv.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
+		var parseErr error
+		if pv.CreatedAt, parseErr = time.Parse(time.RFC3339, createdAt); parseErr != nil {
+			return nil, fmt.Errorf("scan prompt version: parse created_at: %w", parseErr)
+		}
 		pv.IsActive = isActive != 0
 		versions = append(versions, pv)
 	}

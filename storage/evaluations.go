@@ -198,9 +198,11 @@ func scanEvaluation(s scanner) (domain.Evaluation, error) {
 		return domain.Evaluation{}, err
 	}
 
-	e.EvaluatedAt, _ = time.Parse(time.RFC3339, evaluatedAt)
+	var parseErr error
+	if e.EvaluatedAt, parseErr = time.Parse(time.RFC3339, evaluatedAt); parseErr != nil {
+		return domain.Evaluation{}, fmt.Errorf("scan evaluation: parse evaluated_at: %w", parseErr)
+	}
 	if tier != "" {
-		var parseErr error
 		e.Tier, parseErr = domain.ParseTier(tier)
 		if parseErr != nil {
 			return domain.Evaluation{}, fmt.Errorf("scan evaluation: %w", parseErr)
@@ -251,7 +253,9 @@ func scanEvaluationRow(row *sql.Row) (domain.Evaluation, error) {
 		return domain.Evaluation{}, err
 	}
 
-	e.EvaluatedAt, _ = time.Parse(time.RFC3339, evaluatedAt)
+	if e.EvaluatedAt, err = time.Parse(time.RFC3339, evaluatedAt); err != nil {
+		return domain.Evaluation{}, fmt.Errorf("scan evaluation: parse evaluated_at: %w", err)
+	}
 	if tier != "" {
 		e.Tier, err = domain.ParseTier(tier)
 		if err != nil {
