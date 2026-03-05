@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"math"
+	"time"
+)
 
 // Forecast holds parsed daily weather data from a single source fetch.
 // Each forecast is tied to a specific resort's coordinates and elevation.
@@ -96,43 +99,67 @@ func AFDCoversSnowDays(d *ForecastDiscussion, forecasts []Forecast) bool {
 	return false
 }
 
-// SLR temperature thresholds in Celsius (exact conversions from Fahrenheit bands).
-// Contiguous ranges: >1.67°C rain, [0, 1.67°C] mixed, [-3.89, 0) wet, [-9.44, -3.89) dry, <-9.44 cold smoke.
+// Rain/snow temperature threshold in Celsius.
 const (
-	slrThresholdRainC      = 1.6667  // 35°F — above this is rain
-	slrThresholdMixedC     = 0.0     // 32°F — above this (up to rain) is mixed
-	slrThresholdWetC       = -3.8889 // 25°F — above this (up to mixed) is wet snow
-	slrThresholdDryC       = -9.4444 // 15°F — above this (up to wet) is dry powder
+	slrThresholdRainC = 1.6667 // 35°F — above this is rain
 )
 
-// CalculateSLR returns the snow-to-liquid ratio for a given temperature in Celsius.
-// Five contiguous bands per spec: rain (0), mixed (5), wet (10), dry (15), cold smoke (20).
-func CalculateSLR(tempC float64) float64 {
-	switch {
-	case tempC > slrThresholdRainC:
-		return 0 // rain — no snow
-	case tempC >= slrThresholdMixedC:
-		return 5 // mixed/very wet
-	case tempC >= slrThresholdWetC:
-		return 10 // wet snow
-	case tempC >= slrThresholdDryC:
-		return 15 // dry powder
-	default:
-		return 20 // cold smoke
+const (
+	// Vionnet density clamps prevent unrealistic values at temperature/wind extremes.
+	densityFloor   = 40.0  // kg/m3 — coldest realistic snow (25:1 SLR)
+	densityCeiling = 250.0 // kg/m3 — heaviest realistic wet snow (4:1 SLR)
+)
+
+// CalculateDensity returns fresh snow density in kg/m3 using the Vionnet et al. (2012)
+// formula: density = 109 + 6*T + 26*sqrt(u), clamped to [40, 250] kg/m3.
+// Returns 0 for rain (temp above 1.67°C / 35°F).
+func CalculateDensity(tempC float64, windSpeedMs float64) float64 {
+	if tempC > slrThresholdRainC {
+		return 0
 	}
+	density := 109.0 + 6.0*tempC + 26.0*math.Sqrt(windSpeedMs)
+	if density < densityFloor {
+		return densityFloor
+	}
+	if density > densityCeiling {
+		return densityCeiling
+	}
+	return density
 }
 
-// SnowfallFromPrecip returns snowfall in cm for a given hour's precipitation (mm) and
-// temperature (°C). Applies SLR and unit conversion: precipMM / 10.0 * SLR (mm→cm × ratio).
-func SnowfallFromPrecip(precipMM float64, tempC float64) float64 {
+// SLRFromDensity converts snow density (kg/m3) to snow-to-liquid ratio.
+// Returns 0 if density is 0 (rain).
+func SLRFromDensity(density float64) float64 {
+	if density <= 0 {
+		return 0
+	}
+	return 1000.0 / density
+}
+
+// SnowfallFromPrecip returns snowfall in cm for a given hour's precipitation (mm),
+// temperature (°C), and wind speed (m/s). Uses Vionnet density model with
+// unit conversion: precipMM / 10.0 * SLR (mm→cm × ratio).
+func SnowfallFromPrecip(precipMM float64, tempC float64, windSpeedMs float64) float64 {
 	if precipMM <= 0 {
 		return 0
 	}
-	slr := CalculateSLR(tempC)
-	if slr == 0 {
-		return 0
+	density := CalculateDensity(tempC, windSpeedMs)
+	if density <= 0 {
+		return 0 // rain
 	}
+	slr := SLRFromDensity(density)
 	return precipMM / 10.0 * slr
+}
+
+// IsRain returns true if the temperature is above the rain threshold (35°F / 1.67°C).
+func IsRain(tempC float64) bool {
+	return tempC > slrThresholdRainC
+}
+
+// IsMixedPrecip returns true if the temperature is in the mixed precipitation zone
+// (32-35°F / 0-1.67°C) — snow may be mixed with rain/sleet.
+func IsMixedPrecip(tempC float64) bool {
+	return tempC >= 0 && tempC <= slrThresholdRainC
 }
 
 // ComputeConsensus takes multiple Forecast values (same region, different models),

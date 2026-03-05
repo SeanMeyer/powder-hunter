@@ -312,9 +312,9 @@ func decodeStringArray(raw json.RawMessage) []string {
 // half-day breakdown. Day = hours 6-17 (6am-6pm), Night = hours 18-5 (6pm-6am).
 // Open-Meteo timestamps are in the requested timezone, so hour checks are local.
 //
-// Snowfall is computed per-hour from precipitation + temperature using SLR bands,
-// replacing the raw API snowfall field. This produces temperature-appropriate
-// estimates (cold smoke at 12°F gets 20:1 instead of default ~10:1).
+// Snowfall is computed per-hour from precipitation, temperature, and wind speed
+// using the Vionnet (2012) snow density model. This produces physically-informed
+// estimates that account for wind compaction (windy storms = denser snow = less depth).
 func parseOpenMeteoHourly(h openMeteoHourlyData) ([]domain.DailyForecast, error) {
 	n := len(h.Time)
 	if n == 0 {
@@ -385,13 +385,15 @@ func parseOpenMeteoHourly(h openMeteoHourlyData) ([]domain.DailyForecast, error)
 			gust = h.WindGusts10m[i]
 		}
 
-		snowCM := domain.SnowfallFromPrecip(precip, temp)
-		slr := domain.CalculateSLR(temp)
+		windMs := wind / 3.6 // km/h → m/s
+		snowCM := domain.SnowfallFromPrecip(precip, temp, windMs)
+		density := domain.CalculateDensity(temp, windMs)
+		slr := domain.SLRFromDensity(density)
 
 		if precip > 0 {
-			if slr == 0 {
+			if domain.IsRain(temp) {
 				acc.rainHours++
-			} else if slr == 5 {
+			} else if domain.IsMixedPrecip(temp) {
 				acc.mixedHours++
 			}
 		}

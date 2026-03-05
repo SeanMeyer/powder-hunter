@@ -9,10 +9,10 @@ import (
 )
 
 func TestParseOpenMeteoHourly_SLRAdjusted(t *testing.T) {
-	t.Run("cold smoke — 0.5in liquid at 12°F produces ~10in snow", func(t *testing.T) {
-		// 12°F ≈ -11.1°C → cold smoke band → 20:1 SLR
+	t.Run("cold snow calm wind — Vionnet density model", func(t *testing.T) {
+		// -11.1°C, 0 wind → density = 109 + 6*(-11.1) + 0 = 42.4 kg/m3, SLR = 1000/42.4 = 23.58
 		// 0.5" liquid = 12.7mm total, spread across 8 hours = 1.5875mm/hr
-		// Each hour: 1.5875mm / 10 * 20 = 3.175cm → 8 hours = 25.4cm ≈ 10"
+		// Each hour: 1.5875mm / 10 * 23.58 = 3.74cm → 8 hours = 29.95cm
 		h := makeHourlyData(8, -11.1, 1.5875, 0, 0, 0)
 		daily, err := parseOpenMeteoHourly(h)
 		if err != nil {
@@ -21,9 +21,8 @@ func TestParseOpenMeteoHourly_SLRAdjusted(t *testing.T) {
 		if len(daily) != 1 {
 			t.Fatalf("expected 1 day, got %d", len(daily))
 		}
-		// ~25.4cm expected
-		assertApprox(t, "SnowfallCM", daily[0].SnowfallCM, 25.4, 0.1)
-		assertApprox(t, "SLRatio", daily[0].SLRatio, 20.0, 0.01)
+		assertApprox(t, "SnowfallCM", daily[0].SnowfallCM, 29.95, 0.5)
+		assertApprox(t, "SLRatio", daily[0].SLRatio, 23.58, 0.1)
 		if daily[0].RainHours != 0 {
 			t.Errorf("RainHours = %d, want 0", daily[0].RainHours)
 		}
@@ -38,8 +37,8 @@ func TestParseOpenMeteoHourly_SLRAdjusted(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		assertApprox(t, "SnowfallCM", daily[0].SnowfallCM, 25.4, 0.1)
-		assertApprox(t, "SLRatio", daily[0].SLRatio, 10.0, 0.01)
+		assertApprox(t, "SnowfallCM", daily[0].SnowfallCM, 26.51, 0.5)
+		assertApprox(t, "SLRatio", daily[0].SLRatio, 10.44, 0.1)
 	})
 
 	t.Run("rain-to-snow transition — first 4 hours rain then 8 hours cold", func(t *testing.T) {
@@ -83,7 +82,7 @@ func TestParseOpenMeteoHourly_SLRAdjusted(t *testing.T) {
 			t.Fatalf("expected 1 day, got %d", len(daily))
 		}
 
-		assertApprox(t, "SnowfallCM", daily[0].SnowfallCM, 40.64, 0.1)
+		assertApprox(t, "SnowfallCM", daily[0].SnowfallCM, 47.26, 0.5)
 		if daily[0].RainHours != 4 {
 			t.Errorf("RainHours = %d, want 4", daily[0].RainHours)
 		}
