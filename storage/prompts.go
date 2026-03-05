@@ -34,7 +34,8 @@ func (d *DB) SavePromptTemplate(ctx context.Context, id, version, template strin
 
 	if _, err := tx.ExecContext(ctx, `
 		INSERT INTO prompt_templates (id, version, template, created_at, is_active)
-		VALUES (?, ?, ?, ?, 1)`,
+		VALUES (?, ?, ?, ?, 1)
+		ON CONFLICT(id, version) DO UPDATE SET is_active = 1`,
 		id, version, template,
 		time.Now().UTC().Format(time.RFC3339),
 	); err != nil {

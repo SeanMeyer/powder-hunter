@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/seanmeyer/powder-hunter/domain"
@@ -29,6 +30,7 @@ const (
 // then fetches gridpoint data containing time-series values for each weather element.
 type NWSClient struct {
 	client    *http.Client
+	gridMu    sync.Mutex
 	gridCache map[string]nwsGrid // keyed by "lat,lon" rounded to 4dp
 }
 
@@ -82,9 +84,13 @@ func (c *NWSClient) Fetch(ctx context.Context, region domain.Region) (domain.For
 // the in-process cache to avoid repeated /points calls for the same location.
 func (c *NWSClient) resolveGrid(ctx context.Context, lat, lon float64) (nwsGrid, error) {
 	key := gridCacheKey(lat, lon)
+
+	c.gridMu.Lock()
 	if grid, ok := c.gridCache[key]; ok {
+		c.gridMu.Unlock()
 		return grid, nil
 	}
+	c.gridMu.Unlock()
 
 	lat4 := roundTo4(lat)
 	lon4 := roundTo4(lon)
@@ -111,7 +117,11 @@ func (c *NWSClient) resolveGrid(ctx context.Context, lat, lon float64) (nwsGrid,
 		GridX: resp.Properties.GridX,
 		GridY: resp.Properties.GridY,
 	}
+
+	c.gridMu.Lock()
 	c.gridCache[key] = grid
+	c.gridMu.Unlock()
+
 	return grid, nil
 }
 
