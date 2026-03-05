@@ -4,6 +4,9 @@
 # Claude Code
 .claude/
 
+# Git worktrees
+.worktrees/
+
 # Go
 *.exe
 *.test
