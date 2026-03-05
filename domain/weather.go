@@ -81,6 +81,21 @@ type ForecastDiscussion struct {
 // CMToInches converts centimeters to inches.
 func CMToInches(cm float64) float64 { return cm / 2.54 }
 
+// AFDCoversSnowDays checks whether any day with significant snowfall (>=2")
+// falls within the AFD's ~7-day coverage from issuance.
+func AFDCoversSnowDays(d *ForecastDiscussion, forecasts []Forecast) bool {
+	const afdHorizonDays = 7
+	afdCoverage := d.IssuedAt.AddDate(0, 0, afdHorizonDays)
+	for _, f := range forecasts {
+		for _, day := range f.DailyData {
+			if CMToInches(day.SnowfallCM) >= 2.0 && !day.Date.After(afdCoverage) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // SLR temperature thresholds in Celsius (exact conversions from Fahrenheit bands).
 // Contiguous ranges: >1.67°C rain, [0, 1.67°C] mixed, [-3.89, 0) wet, [-9.44, -3.89) dry, <-9.44 cold smoke.
 const (

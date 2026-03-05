@@ -74,8 +74,8 @@ func FormatWeatherForPrompt(forecasts []domain.Forecast) string {
 				daySnow := domain.CMToInches(d.Day.SnowfallCM)
 				nightSnow := domain.CMToInches(d.Night.SnowfallCM)
 				totalSnow := domain.CMToInches(d.SnowfallCM)
-				dayTempF := cToF(d.Day.TemperatureC)
-				nightTempF := cToF(d.Night.TemperatureC)
+				dayTempF := domain.CToF(d.Day.TemperatureC)
+				nightTempF := domain.CToF(d.Night.TemperatureC)
 				dayPrecip := d.Day.PrecipitationMM / 25.4
 				nightPrecip := d.Night.PrecipitationMM / 25.4
 				dayWind := d.Day.WindSpeedKmh * 0.621371
@@ -120,8 +120,8 @@ func FormatWeatherForPrompt(forecasts []domain.Forecast) string {
 			fmt.Fprintf(&b, "%-12s %8s %8s %8s %10s\n", "----------", "--------", "-------", "--------", "---------")
 			for _, d := range f.DailyData {
 				snowIn := domain.CMToInches(d.SnowfallCM)
-				minF := cToF(d.TemperatureMinC)
-				maxF := cToF(d.TemperatureMaxC)
+				minF := domain.CToF(d.TemperatureMinC)
+				maxF := domain.CToF(d.TemperatureMaxC)
 				precipIn := d.PrecipitationMM / 25.4
 				marker := ""
 				if snowIn >= 4.0 {
@@ -133,10 +133,6 @@ func FormatWeatherForPrompt(forecasts []domain.Forecast) string {
 		}
 	}
 	return b.String()
-}
-
-func cToF(c float64) float64 {
-	return c*9.0/5.0 + 32.0
 }
 
 // FormatConsolidatedWeatherForPrompt produces a compact per-resort weather summary
@@ -216,8 +212,8 @@ func FormatConsolidatedWeatherForPrompt(forecasts []domain.Forecast, resorts []d
 
 			daySnow := domain.CMToInches(d.Day.SnowfallCM)
 			nightSnow := domain.CMToInches(d.Night.SnowfallCM)
-			dayTempF := cToF(d.Day.TemperatureC)
-			nightTempF := cToF(d.Night.TemperatureC)
+			dayTempF := domain.CToF(d.Day.TemperatureC)
+			nightTempF := domain.CToF(d.Night.TemperatureC)
 			dayPrecip := d.Day.PrecipitationMM / 25.4
 			nightPrecip := d.Night.PrecipitationMM / 25.4
 			dayWind := d.Day.WindGustKmh * 0.621371
@@ -462,7 +458,7 @@ func FormatDiscussionForPrompt(d *domain.ForecastDiscussion, forecasts []domain.
 		return "No NWS forecast discussion available for this region."
 	}
 
-	if !afdCoversSnowDays(d, forecasts) {
+	if !domain.AFDCoversSnowDays(d, forecasts) {
 		return "NWS forecast discussion omitted — significant snow falls beyond the AFD's ~7-day coverage horizon."
 	}
 
@@ -472,23 +468,3 @@ func FormatDiscussionForPrompt(d *domain.ForecastDiscussion, forecasts []domain.
 	return b.String()
 }
 
-// afdCoversSnowDays checks whether any day with significant snowfall (≥2")
-// falls within the AFD's ~7-day coverage from issuance. NWS AFDs are issued
-// 2-4x daily and discuss the next 5-7 days of weather.
-func afdCoversSnowDays(d *domain.ForecastDiscussion, forecasts []domain.Forecast) bool {
-	const (
-		afdHorizonDays     = 7
-		significantSnowIn  = 2.0
-	)
-
-	afdCoverage := d.IssuedAt.AddDate(0, 0, afdHorizonDays)
-
-	for _, f := range forecasts {
-		for _, day := range f.DailyData {
-			if domain.CMToInches(day.SnowfallCM) >= significantSnowIn && !day.Date.After(afdCoverage) {
-				return true
-			}
-		}
-	}
-	return false
-}

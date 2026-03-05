@@ -19,7 +19,7 @@ func Compare(prev, curr Evaluation) ChangeClass {
 		return ChangeNew
 	}
 
-	if tierRank(curr.Tier) < tierRank(prev.Tier) {
+	if TierRank(curr.Tier) < TierRank(prev.Tier) {
 		return ChangeDowngrade
 	}
 
@@ -34,9 +34,9 @@ func Compare(prev, curr Evaluation) ChangeClass {
 	return ChangeMinor
 }
 
-// tierRank maps tiers to an ordinal so we can compare direction of change.
+// TierRank maps tiers to an ordinal so we can compare direction of change.
 // Higher rank = better storm.
-func tierRank(t Tier) int {
+func TierRank(t Tier) int {
 	switch t {
 	case TierDropEverything:
 		return 3

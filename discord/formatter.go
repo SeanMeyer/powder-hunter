@@ -118,22 +118,11 @@ func formatWindowDatesFromEvals(evals []EvalWithRegion) string {
 func highestTier(evals []EvalWithRegion) domain.Tier {
 	best := domain.TierOnTheRadar
 	for _, ew := range evals {
-		if tierRank(ew.Evaluation.Tier) > tierRank(best) {
+		if domain.TierRank(ew.Evaluation.Tier) > domain.TierRank(best) {
 			best = ew.Evaluation.Tier
 		}
 	}
 	return best
-}
-
-func tierRank(t domain.Tier) int {
-	switch t {
-	case domain.TierDropEverything:
-		return 3
-	case domain.TierWorthALook:
-		return 2
-	default:
-		return 1
-	}
 }
 
 // FormatDetail creates a detail post for a single region within a thread.

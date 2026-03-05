@@ -62,7 +62,7 @@ func FormatWeather(w io.Writer, region domain.Region, resorts []domain.Resort, f
 					d.Date.Format("Jan 02"), totalIn,
 					dayIn, fmtSLRInline(daySLR),
 					nightIn, fmtSLRInline(nightSLR),
-					cToF(d.TemperatureMinC), cToF(d.TemperatureMaxC))
+					domain.CToF(d.TemperatureMinC), domain.CToF(d.TemperatureMaxC))
 				if d.Day.WindGustKmh > 0 {
 					fmt.Fprintf(w, "    gusts: %.0f mph", d.Day.WindGustKmh*0.621371)
 				}
@@ -92,7 +92,7 @@ func FormatWeather(w io.Writer, region domain.Region, resorts []domain.Resort, f
 					marker = "  ← notable"
 				}
 				fmt.Fprintf(w, "  %s: %4.1f\"    %3.0f°F / %3.0f°F%s\n",
-					d.Date.Format("Jan 02"), snowIn, cToF(d.TemperatureMinC), cToF(d.TemperatureMaxC), marker)
+					d.Date.Format("Jan 02"), snowIn, domain.CToF(d.TemperatureMinC), domain.CToF(d.TemperatureMaxC), marker)
 			}
 		}
 	}
@@ -345,7 +345,7 @@ func FormatAFD(w io.Writer, d *domain.ForecastDiscussion, forecasts []domain.For
 
 	fmt.Fprintf(w, "WFO: %s (issued %s)\n", d.WFO, d.IssuedAt.Format("2006-01-02 15:04 MST"))
 
-	if !afdCoversSnowDays(d, forecasts) {
+	if !domain.AFDCoversSnowDays(d, forecasts) {
 		fmt.Fprintf(w, "⚠ Omitted — significant snow falls beyond AFD's ~7-day coverage\n\n")
 		return
 	}
@@ -360,21 +360,6 @@ func FormatAFD(w io.Writer, d *domain.ForecastDiscussion, forecasts []domain.For
 	fmt.Fprintln(w)
 }
 
-// afdCoversSnowDays checks whether any day with significant snowfall (≥2")
-// falls within the AFD's ~7-day coverage from issuance.
-func afdCoversSnowDays(d *domain.ForecastDiscussion, forecasts []domain.Forecast) bool {
-	const afdHorizonDays = 7
-	afdCoverage := d.IssuedAt.AddDate(0, 0, afdHorizonDays)
-	for _, f := range forecasts {
-		for _, day := range f.DailyData {
-			if domain.CMToInches(day.SnowfallCM) >= 2.0 && !day.Date.After(afdCoverage) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 func sourceLabel(source string) string {
 	switch source {
 	case "open_meteo":
@@ -384,10 +369,6 @@ func sourceLabel(source string) string {
 	default:
 		return source
 	}
-}
-
-func cToF(c float64) float64 {
-	return c*9.0/5.0 + 32.0
 }
 
 // FormatTimestamp prints the trace execution timestamp.
