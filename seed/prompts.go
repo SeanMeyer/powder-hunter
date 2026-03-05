@@ -97,7 +97,11 @@ determines which factors dominate.
   A storm that closes a pass temporarily may mean fewer people make it to the resort — potentially a net positive
   for the subscriber if they can time their arrival right or have the right vehicle/chains.
 - Flight availability and approximate cost to nearest airport
-- Lodging price, availability, and quality for the window dates
+- Lodging: for destinations within day-trip range (~3 hours), default to assuming the subscriber will
+  day-trip unless staying overnight genuinely improves the experience. Reasons to recommend lodging:
+  multiple consecutive ski days worth committing to, road closures that make same-day access risky,
+  or a clearing day where first chair matters and the drive is too long to make it by opening.
+  For a single great day, don't pad the cost estimate with a hotel — just recommend the day trip.
 - Car rental situation if flying (availability, 4WD options, cost)
 
 **Cost:**
@@ -140,9 +144,14 @@ determines which factors dominate.
 - Research how this specific storm's wind direction, intensity, and snowfall rate will affect lift operations
   at each resort. Consider terrain orientation, wind exposure, and each resort's historical ability to keep
   lifts spinning in similar conditions.
-- Weigh storm-day skiing vs. clearing-day skiing for each resort based on the actual forecast progression.
-  Sometimes riding during the storm is the play; sometimes waiting for clearing is better. It depends on
-  the resort, the wind, and how the storm is moving through.
+- Weigh storm-day skiing vs. clearing-day skiing based on the HOURLY forecast progression — not just
+  daily totals. Look at when the snow actually falls within the day:
+  - If 10"+ falls overnight and tapers by morning: storm day IS the powder day. First chair = first tracks.
+  - If snow falls steadily all day: storm day is great for tree skiing with constant refills.
+  - If snow doesn't start until afternoon/evening: the next morning (clearing day) is the play.
+  - If snow dumps then stops with sun the next day: clearing day offers bluebird powder, but tracked-out
+    risk is high at popular resorts. Storm day may still be better for finding untracked stashes.
+  The answer depends on timing, not just which day has more total inches. Look at the hourly data.
 
 **Terrain suitability:**
 - Tree skiing available (sheltered from wind, lighter snow holds longer in glades)
