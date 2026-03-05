@@ -1,5 +1,26 @@
 package seed
 
+import "github.com/seanmeyer/powder-hunter/domain"
+
+// DefaultProfile returns the default single-user profile used when seeding
+// the database or running trace without a pre-existing profile.
+func DefaultProfile() domain.UserProfile {
+	return domain.UserProfile{
+		ID:                1,
+		HomeBase:          "Denver, CO",
+		HomeLatitude:      39.7392,
+		HomeLongitude:     -104.9903,
+		PassesHeld:        []string{"ikon"},
+		SkillLevel:        "expert",
+		Preferences:       "Favorite is moderately steep untouched powder — trees, open bowls, whatever. Steep and deep is fun too. Strong preference for avoiding crowds because the goal is untracked powder, but a big enough resort can let you find it even with crowds, so it's nuanced.",
+		RemoteWorkCapable: true,
+		TypicalPTODays:    15,
+		MinTierForPing:    domain.TierDropEverything,
+		QuietHoursStart:   "22:00",
+		QuietHoursEnd:     "07:00",
+	}
+}
+
 const stormEvalPromptID = "storm_eval"
 const stormEvalPromptVersion = "v1.0.0"
 
@@ -74,6 +95,14 @@ determines which factors dominate.
   who could sneak in runs before/after or during breaks
 - Blackout dates — check against the storm window
 
+**Lift operations and mountain access:**
+- Research how this specific storm's wind direction, intensity, and snowfall rate will affect lift operations
+  at each resort. Consider terrain orientation, wind exposure, and each resort's historical ability to keep
+  lifts spinning in similar conditions.
+- Weigh storm-day skiing vs. clearing-day skiing for each resort based on the actual forecast progression.
+  Sometimes riding during the storm is the play; sometimes waiting for clearing is better. It depends on
+  the resort, the wind, and how the storm is moving through.
+
 **Terrain suitability:**
 - Tree skiing available (sheltered from wind, lighter snow holds longer in glades)
 - Steeps, bowls, and chutes for deep powder skiing
@@ -118,6 +147,9 @@ Return a JSON object matching this exact schema. All fields are required.
 - snow_quality: assessment of expected snow density and quality based on temperatures and timing
 - crowd_estimate: expected crowd level and any specific days/resorts to avoid or prefer
 - closure_risk: assessment of road/pass access including both difficulty AND crowd-thinning upside
+- best_ski_day: the single best date to ski in "YYYY-MM-DD" format, based on your analysis of the storm
+  progression, lift operations, conditions, and crowds for the specific resorts in this region
+- best_ski_day_reason: 1-2 sentences explaining why — what specific conditions make this the optimal day
 - key_factors_pros: array of 3-5 bullet strings for top positive factors
 - key_factors_cons: array of 2-4 bullet strings for top negative factors or risks
 - logistics_lodging: narrative on lodging options, price expectations, and remote-work suitability if applicable

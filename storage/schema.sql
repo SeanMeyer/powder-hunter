@@ -69,6 +69,8 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     home_lat             REAL NOT NULL DEFAULT 0,
     home_lon             REAL NOT NULL DEFAULT 0,
     passes_held          TEXT NOT NULL DEFAULT '[]',
+    skill_level          TEXT NOT NULL DEFAULT '',
+    preferences          TEXT NOT NULL DEFAULT '',
     remote_work_capable  INTEGER NOT NULL DEFAULT 0,
     typical_pto_days     INTEGER NOT NULL DEFAULT 0,
     blackout_dates       TEXT NOT NULL DEFAULT '[]',

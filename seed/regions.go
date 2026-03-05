@@ -29,6 +29,7 @@ type regionJSON struct {
 	ID           string       `json:"id"`
 	Name         string       `json:"name"`
 	Country      string       `json:"country"`
+	Timezone     string       `json:"timezone"`
 	FrictionTier string       `json:"friction_tier"`
 	Coords       coordsJSON   `json:"coords"`
 	Logistics    logisticsJSON `json:"logistics"`
@@ -91,6 +92,7 @@ func toRegion(j regionJSON) domain.Region {
 		ID:                  j.ID,
 		Name:                j.Name,
 		Country:             j.Country,
+		Timezone:            j.Timezone,
 		FrictionTier:        ft,
 		Latitude:            j.Coords.Lat,
 		Longitude:           j.Coords.Lon,

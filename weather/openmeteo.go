@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"math"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"time"
 
@@ -15,20 +17,19 @@ import (
 
 const openMeteoEndpoint = "https://api.open-meteo.com/v1/forecast"
 
-// openMeteoDailyVars are the daily variables requested from the API. Order must
-// match the documented parallel-array response.
-const openMeteoDailyVars = "snowfall_sum,temperature_2m_max,temperature_2m_min,precipitation_sum"
+const openMeteoHourlyVars = "snowfall,temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m"
 
 type openMeteoResponse struct {
-	Daily openMeteoDailyData `json:"daily"`
+	Hourly openMeteoHourlyData `json:"hourly"`
 }
 
-type openMeteoDailyData struct {
-	Time             []string  `json:"time"`
-	SnowfallSum      []float64 `json:"snowfall_sum"`
-	Temperature2mMax []float64 `json:"temperature_2m_max"`
-	Temperature2mMin []float64 `json:"temperature_2m_min"`
-	PrecipitationSum []float64 `json:"precipitation_sum"`
+type openMeteoHourlyData struct {
+	Time          []string  `json:"time"`
+	Snowfall      []float64 `json:"snowfall"`
+	Temperature2m []float64 `json:"temperature_2m"`
+	Precipitation []float64 `json:"precipitation"`
+	WindSpeed10m  []float64 `json:"wind_speed_10m"`
+	WindGusts10m  []float64 `json:"wind_gusts_10m"`
 }
 
 // OpenMeteoClient fetches weather forecasts from the Open-Meteo public API.
@@ -67,10 +68,10 @@ func (c *OpenMeteoClient) Fetch(ctx context.Context, region domain.Region) (doma
 		return domain.Forecast{}, fmt.Errorf("decoding open-meteo response for region %s: %w", region.ID, err)
 	}
 
-	daily, err := parseOpenMeteoDailyData(raw.Daily)
+	daily, err := parseOpenMeteoHourly(raw.Hourly)
 	if err != nil {
 		slog.ErrorContext(ctx, "open-meteo response parse failed", "region_id", region.ID, "error", err)
-		return domain.Forecast{}, fmt.Errorf("parsing open-meteo daily data for region %s: %w", region.ID, err)
+		return domain.Forecast{}, fmt.Errorf("parsing open-meteo hourly data for region %s: %w", region.ID, err)
 	}
 
 	return domain.Forecast{
@@ -85,38 +86,138 @@ func buildOpenMeteoURL(region domain.Region) string {
 	params := url.Values{}
 	params.Set("latitude", strconv.FormatFloat(region.Latitude, 'f', -1, 64))
 	params.Set("longitude", strconv.FormatFloat(region.Longitude, 'f', -1, 64))
-	params.Set("daily", openMeteoDailyVars)
+	params.Set("hourly", openMeteoHourlyVars)
 	params.Set("forecast_days", "16")
-	params.Set("timezone", "auto")
+	tz := region.Timezone
+	if tz == "" {
+		tz = "auto"
+	}
+	params.Set("timezone", tz)
 	return openMeteoEndpoint + "?" + params.Encode()
 }
 
-func parseOpenMeteoDailyData(d openMeteoDailyData) ([]domain.DailyForecast, error) {
-	n := len(d.Time)
+// parseOpenMeteoHourly aggregates hourly data into daily forecasts with day/night
+// half-day breakdown. Day = hours 6-17 (6am-6pm), Night = hours 18-5 (6pm-6am).
+// Open-Meteo timestamps are in the requested timezone, so hour checks are local.
+func parseOpenMeteoHourly(h openMeteoHourlyData) ([]domain.DailyForecast, error) {
+	n := len(h.Time)
 	if n == 0 {
-		return nil, fmt.Errorf("daily.time array is empty")
+		return nil, fmt.Errorf("hourly.time array is empty")
+	}
+	if len(h.Snowfall) != n || len(h.Temperature2m) != n ||
+		len(h.Precipitation) != n || len(h.WindSpeed10m) != n ||
+		len(h.WindGusts10m) != n {
+		return nil, fmt.Errorf("hourly arrays have inconsistent lengths (time=%d)", n)
 	}
 
-	// Guard against truncated parallel arrays before indexing.
-	if len(d.SnowfallSum) != n ||
-		len(d.Temperature2mMax) != n ||
-		len(d.Temperature2mMin) != n ||
-		len(d.PrecipitationSum) != n {
-		return nil, fmt.Errorf("daily arrays have inconsistent lengths (time=%d)", n)
+	type dayAccum struct {
+		date          string
+		snowCM        float64
+		tempMin       float64
+		tempMax       float64
+		precipMM      float64
+		daySnowCM     float64
+		dayTempMax    float64
+		dayPrecipMM   float64
+		dayWindMax    float64
+		dayGustMax    float64
+		nightSnowCM   float64
+		nightTempMin  float64
+		nightPrecipMM float64
+		nightWindMax  float64
+		nightGustMax  float64
+		dayInit       bool
+		nightInit     bool
+		tempInit      bool
 	}
+	byDate := make(map[string]*dayAccum)
 
-	forecasts := make([]domain.DailyForecast, 0, n)
-	for i := range d.Time {
-		date, err := time.Parse("2006-01-02", d.Time[i])
+	for i, ts := range h.Time {
+		t, err := time.Parse("2006-01-02T15:04", ts)
 		if err != nil {
-			return nil, fmt.Errorf("parsing date %q at index %d: %w", d.Time[i], i, err)
+			continue
 		}
+		dateKey := t.Format("2006-01-02")
+		hour := t.Hour()
+
+		acc, ok := byDate[dateKey]
+		if !ok {
+			acc = &dayAccum{date: dateKey}
+			byDate[dateKey] = acc
+		}
+
+		snow := h.Snowfall[i]
+		temp := h.Temperature2m[i]
+		precip := h.Precipitation[i]
+		wind := h.WindSpeed10m[i]
+		gust := h.WindGusts10m[i]
+
+		acc.snowCM += snow
+		acc.precipMM += precip
+		if !acc.tempInit {
+			acc.tempMin = temp
+			acc.tempMax = temp
+			acc.tempInit = true
+		} else {
+			acc.tempMin = math.Min(acc.tempMin, temp)
+			acc.tempMax = math.Max(acc.tempMax, temp)
+		}
+
+		if hour >= 6 && hour < 18 { // day: 6am-6pm
+			acc.daySnowCM += snow
+			acc.dayPrecipMM += precip
+			acc.dayWindMax = math.Max(acc.dayWindMax, wind)
+			acc.dayGustMax = math.Max(acc.dayGustMax, gust)
+			if !acc.dayInit {
+				acc.dayTempMax = temp
+				acc.dayInit = true
+			} else {
+				acc.dayTempMax = math.Max(acc.dayTempMax, temp)
+			}
+		} else { // night: 6pm-6am
+			acc.nightSnowCM += snow
+			acc.nightPrecipMM += precip
+			acc.nightWindMax = math.Max(acc.nightWindMax, wind)
+			acc.nightGustMax = math.Max(acc.nightGustMax, gust)
+			if !acc.nightInit {
+				acc.nightTempMin = temp
+				acc.nightInit = true
+			} else {
+				acc.nightTempMin = math.Min(acc.nightTempMin, temp)
+			}
+		}
+	}
+
+	dates := make([]string, 0, len(byDate))
+	for d := range byDate {
+		dates = append(dates, d)
+	}
+	sort.Strings(dates)
+
+	forecasts := make([]domain.DailyForecast, 0, len(dates))
+	for _, d := range dates {
+		acc := byDate[d]
+		t, _ := time.Parse("2006-01-02", d)
 		forecasts = append(forecasts, domain.DailyForecast{
-			Date:            date,
-			SnowfallCM:      d.SnowfallSum[i],
-			TemperatureMaxC: d.Temperature2mMax[i],
-			TemperatureMinC: d.Temperature2mMin[i],
-			PrecipitationMM: d.PrecipitationSum[i],
+			Date:            t,
+			SnowfallCM:      acc.snowCM,
+			TemperatureMinC: acc.tempMin,
+			TemperatureMaxC: acc.tempMax,
+			PrecipitationMM: acc.precipMM,
+			Day: domain.HalfDay{
+				SnowfallCM:      acc.daySnowCM,
+				TemperatureC:    acc.dayTempMax,
+				PrecipitationMM: acc.dayPrecipMM,
+				WindSpeedKmh:    acc.dayWindMax,
+				WindGustKmh:     acc.dayGustMax,
+			},
+			Night: domain.HalfDay{
+				SnowfallCM:      acc.nightSnowCM,
+				TemperatureC:    acc.nightTempMin,
+				PrecipitationMM: acc.nightPrecipMM,
+				WindSpeedKmh:    acc.nightWindMax,
+				WindGustKmh:     acc.nightGustMax,
+			},
 		})
 	}
 	return forecasts, nil

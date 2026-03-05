@@ -15,7 +15,8 @@ const profileID = 1
 // GetProfile returns the single user profile, or nil if none has been saved yet.
 func (d *DB) GetProfile(ctx context.Context) (*domain.UserProfile, error) {
 	row := d.db.QueryRowContext(ctx, `
-		SELECT id, home_base, home_lat, home_lon, passes_held, remote_work_capable,
+		SELECT id, home_base, home_lat, home_lon, passes_held,
+		       skill_level, preferences, remote_work_capable,
 		       typical_pto_days, blackout_dates, min_tier_for_ping,
 		       quiet_hours_start, quiet_hours_end
 		FROM user_profiles
@@ -49,13 +50,14 @@ func (d *DB) SaveProfile(ctx context.Context, p domain.UserProfile) error {
 
 	_, err = d.db.ExecContext(ctx, `
 		INSERT OR REPLACE INTO user_profiles
-			(id, home_base, home_lat, home_lon, passes_held, remote_work_capable,
+			(id, home_base, home_lat, home_lon, passes_held,
+			 skill_level, preferences, remote_work_capable,
 			 typical_pto_days, blackout_dates, min_tier_for_ping,
 			 quiet_hours_start, quiet_hours_end)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		profileID,
 		p.HomeBase, p.HomeLatitude, p.HomeLongitude,
-		string(passes), remoteWork,
+		string(passes), p.SkillLevel, p.Preferences, remoteWork,
 		p.TypicalPTODays, string(blackout),
 		string(p.MinTierForPing),
 		p.QuietHoursStart, p.QuietHoursEnd,
@@ -73,7 +75,7 @@ func scanProfile(row *sql.Row) (domain.UserProfile, error) {
 
 	err := row.Scan(
 		&p.ID, &p.HomeBase, &p.HomeLatitude, &p.HomeLongitude,
-		&passesJSON, &remoteWork,
+		&passesJSON, &p.SkillLevel, &p.Preferences, &remoteWork,
 		&p.TypicalPTODays, &blackoutJSON,
 		&tier, &p.QuietHoursStart, &p.QuietHoursEnd,
 	)

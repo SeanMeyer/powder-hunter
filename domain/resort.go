@@ -39,6 +39,7 @@ type Region struct {
 	NearThresholdIn     float64 // 1-7 day snowfall threshold in inches
 	ExtendedThresholdIn float64 // 8-16 day snowfall threshold in inches
 	Country             string  // "US" or "CA"
+	Timezone            string  // IANA timezone (e.g. "America/Los_Angeles")
 	Logistics           RegionLogistics
 }
 

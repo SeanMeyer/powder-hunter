@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	genai "google.golang.org/genai"
@@ -136,11 +137,11 @@ func stormEvalSchema() *genai.Schema {
 			"closure_risk":             {Type: genai.TypeString},
 			"best_ski_day": {
 				Type:        genai.TypeString,
-				Description: "The single best date to ski in YYYY-MM-DD format, considering snowfall, clearing, and conditions",
+				Description: "The single best date to ski in YYYY-MM-DD format, based on your analysis of conditions, operations, and timing",
 			},
 			"best_ski_day_reason": {
 				Type:        genai.TypeString,
-				Description: "Why this is the best day — what combination of factors makes it stand out",
+				Description: "Why this is the best day — what specific conditions and factors led to this choice",
 			},
 			"key_factors_pros":         {Type: genai.TypeArray, Items: &genai.Schema{Type: genai.TypeString}},
 			"key_factors_cons":         {Type: genai.TypeArray, Items: &genai.Schema{Type: genai.TypeString}},
@@ -192,7 +193,8 @@ func extractGroundingSources(resp *genai.GenerateContentResponse) []string {
 	}
 	var sources []string
 	for _, chunk := range gm.GroundingChunks {
-		if chunk.Web != nil && chunk.Web.URI != "" {
+		if chunk.Web != nil && chunk.Web.URI != "" &&
+			!strings.Contains(chunk.Web.URI, "vertexaisearch.cloud.google.com") {
 			sources = append(sources, chunk.Web.URI)
 		}
 	}

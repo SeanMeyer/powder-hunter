@@ -356,18 +356,7 @@ func runSeed(ctx context.Context, args []string) int {
 		return 1
 	}
 	if profile == nil {
-		defaultProfile := domain.UserProfile{
-			ID:                1,
-			HomeBase:          "Denver, CO",
-			HomeLatitude:      39.7392,
-			HomeLongitude:     -104.9903,
-			PassesHeld:        []string{"ikon"},
-			RemoteWorkCapable: true,
-			TypicalPTODays:    15,
-			MinTierForPing:    domain.TierDropEverything,
-			QuietHoursStart:   "22:00",
-			QuietHoursEnd:     "07:00",
-		}
+		defaultProfile := seed.DefaultProfile()
 		if err := db.SaveProfile(ctx, defaultProfile); err != nil {
 			slog.Error("create default profile", "error", err)
 			return 1
@@ -570,18 +559,7 @@ func runTrace(ctx context.Context, args []string) int {
 		return 1
 	}
 	if profile == nil {
-		defaultProfile := domain.UserProfile{
-			ID:                1,
-			HomeBase:          "Denver, CO",
-			HomeLatitude:      39.7392,
-			HomeLongitude:     -104.9903,
-			PassesHeld:        []string{"ikon"},
-			RemoteWorkCapable: true,
-			TypicalPTODays:    15,
-			MinTierForPing:    domain.TierDropEverything,
-			QuietHoursStart:   "22:00",
-			QuietHoursEnd:     "07:00",
-		}
+		defaultProfile := seed.DefaultProfile()
 		if saveErr := db.SaveProfile(ctx, defaultProfile); saveErr != nil {
 			fmt.Fprintf(os.Stderr, "error: create default profile: %v\n", saveErr)
 			return 1
@@ -631,14 +609,7 @@ func runTrace(ctx context.Context, args []string) int {
 func buildPrompt(region domain.Region, resorts []domain.Resort, forecasts []domain.Forecast) string {
 	_, promptVersion, promptTemplate := seed.InitialPromptTemplate()
 
-	defaultProfile := domain.UserProfile{
-		HomeBase:          "Denver, CO",
-		HomeLatitude:      39.7392,
-		HomeLongitude:     -104.9903,
-		PassesHeld:        []string{"ikon"},
-		RemoteWorkCapable: true,
-		TypicalPTODays:    15,
-	}
+	defaultProfile := seed.DefaultProfile()
 
 	detection := domain.Detect(region, forecasts)
 

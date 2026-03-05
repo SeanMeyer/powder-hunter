@@ -10,6 +10,8 @@ type UserProfile struct {
 	HomeLatitude      float64
 	HomeLongitude     float64
 	PassesHeld        []string  // e.g. ["ikon", "epic"]
+	SkillLevel        string    // e.g. "expert", "advanced", "intermediate"
+	Preferences       string    // freeform skiing preferences for LLM context
 	RemoteWorkCapable bool
 	TypicalPTODays    int
 	BlackoutDates     []DateRange

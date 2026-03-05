@@ -75,14 +75,57 @@ destinations like Utah, Montana, and interior BC.
 **Feasibility**: High — we already fetch temperature and precipitation. Just need
 to add the SLR calculation and use it instead of (or alongside) the raw snowfall field.
 
+### 5. NWS Forecast Discussions
+
+NWS meteorologists write free-text forecast discussions for each Weather Forecast Office (WFO)
+that cover upcoming weather patterns in plain English. These are available free at
+`api.weather.gov/products/types/AFD` and contain the kind of expert nuance that raw model
+data can't provide — things like "model uncertainty is higher than usual for this event" or
+"expecting an upslope component that models consistently underpredict for this area."
+
+We could fetch the relevant WFO's discussion and include it in the LLM prompt as additional
+context. This gives the LLM access to expert meteorological analysis without us having to
+build that expertise into our own code.
+
+**Feasibility**: High — free API, simple text fetch. The main challenge is mapping our region
+coordinates to the correct WFO (which we already resolve via the NWS `/points` endpoint).
+
+### 6. Forecast Confidence Guidance in LLM Prompt
+
+Add explicit guidance about forecast reliability at different time horizons so the LLM can
+factor lead time into its strategy recommendations:
+
+- **1-2 days**: High confidence. Storm track and timing locked in. Safe to commit.
+- **3-5 days**: Moderate confidence. Storm is real but totals and timing can shift. Book
+  refundable flights, tentative lodging.
+- **6-7 days**: Lower confidence. Pattern is coming but specifics unreliable. Worth watching.
+- **8-16 days**: Pattern-level only. "A trough is developing" not "12 inches on Tuesday."
+
+The LLM should give advice that accounts for the subscriber receiving updated evaluations
+as the storm gets closer — e.g., "book a refundable flight now; re-evaluate Tuesday night
+before committing" rather than hard plans based on 5-day forecasts.
+
+**Feasibility**: Very high — prompt-only change, no code needed beyond the template.
+
+## Completed
+
+- **Day/night half-day forecast split**: Implemented in 001-storm-tracker branch. Both
+  Open-Meteo (switched to hourly endpoint) and NWS now aggregate into day (6am-6pm) and
+  night (6pm-6am) periods matching OpenSnow's convention. Wind speed and gust data added
+  to both sources. LLM prompt and trace output show the day/night breakdown so the model
+  can reason about overnight accumulation and next-morning powder conditions.
+
 ## Priority Recommendation
 
-1. **SLR math** (easiest win, highest accuracy impact per effort)
-2. **Multi-model aggregation** (moderate effort, big confidence improvement)
-3. **Elevation gradient** (moderate effort, fixes rain-line blind spot)
-4. **High-res handover** (most complex, biggest accuracy improvement for near-range)
+1. **Forecast confidence guidance** (prompt-only change, immediate improvement)
+2. **SLR math** (easiest code win, highest accuracy impact per effort)
+3. **NWS forecast discussions** (moderate effort, huge context improvement for LLM)
+4. **Multi-model aggregation** (moderate effort, big confidence improvement)
+5. **Elevation gradient** (moderate effort, fixes rain-line blind spot)
+6. **High-res handover** (most complex, biggest accuracy improvement for near-range)
 
 ## Related
 
 - NWS mm→cm unit fix: committed in 001-storm-tracker
 - Detection now uses source-preference (NWS near-range, Open-Meteo extended): 001-storm-tracker
+- Day/night split + wind data: committed in 001-storm-tracker

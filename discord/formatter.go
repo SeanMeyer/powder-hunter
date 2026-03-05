@@ -168,7 +168,23 @@ func buildFields(eval domain.Evaluation, region domain.Region) []EmbedField {
 		fields = append(fields, EmbedField{Name: "Total Snowfall", Value: totalSnowfall, Inline: true})
 	}
 
-	if region.Logistics.DriveTimeHours > 0 {
+	if eval.LogisticsSummary.Lodging != "" {
+		fields = append(fields, EmbedField{Name: "Lodging", Value: eval.LogisticsSummary.Lodging, Inline: false})
+	}
+
+	if eval.LogisticsSummary.Transportation != "" {
+		fields = append(fields, EmbedField{Name: "Getting There", Value: eval.LogisticsSummary.Transportation, Inline: false})
+	}
+
+	if eval.LogisticsSummary.FlightCost != "" && eval.LogisticsSummary.FlightCost != "N/A" {
+		fields = append(fields, EmbedField{Name: "Flight Cost", Value: eval.LogisticsSummary.FlightCost, Inline: true})
+	}
+
+	if eval.LogisticsSummary.CarRental != "" && eval.LogisticsSummary.CarRental != "N/A" {
+		fields = append(fields, EmbedField{Name: "Car Rental", Value: eval.LogisticsSummary.CarRental, Inline: true})
+	}
+
+	if region.Logistics.DriveTimeHours > 0 && region.FrictionTier != domain.FrictionFlight {
 		fields = append(fields, EmbedField{
 			Name:   "Drive Time",
 			Value:  fmt.Sprintf("%.1fh", region.Logistics.DriveTimeHours),
@@ -216,20 +232,14 @@ func totalSnowfallLine(eval domain.Evaluation) string {
 	return strings.Join(parts, "\n")
 }
 
-// bestDayLine finds the DayEvaluation with the most notable recommendation.
+// bestDayLine renders the LLM's explicitly chosen best ski day.
 func bestDayLine(eval domain.Evaluation) string {
-	if len(eval.DayByDay) == 0 {
+	if eval.BestSkiDay.IsZero() {
 		return ""
 	}
-	// Return the first day's date + conditions as the headline best-day candidate.
-	// The LLM orders days by quality, so the first entry is the recommended day.
-	d := eval.DayByDay[0]
-	if d.Conditions == "" && d.Recommendation == "" {
-		return ""
-	}
-	text := d.Date.Format("Mon Jan 2")
-	if d.Conditions != "" {
-		text += ": " + d.Conditions
+	text := eval.BestSkiDay.Format("Mon Jan 2")
+	if eval.BestSkiDayReason != "" {
+		text += " — " + eval.BestSkiDayReason
 	}
 	return text
 }

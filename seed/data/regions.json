@@ -4,6 +4,7 @@
       "id": "co_i70_corridor",
       "name": "Colorado I-70 Corridor",
       "country": "US",
+      "timezone": "America/Denver",
       "friction_tier": "local_drive",
       "coords": { "lat": 39.6042, "lon": -106.1417 },
       "logistics": {
@@ -187,6 +188,7 @@
       "id": "co_roaring_fork",
       "name": "Roaring Fork Valley",
       "country": "US",
+      "timezone": "America/Denver",
       "friction_tier": "regional_drive",
       "coords": { "lat": 39.186, "lon": -106.818 },
       "logistics": {
@@ -307,6 +309,7 @@
       "id": "co_steamboat",
       "name": "The Steamboat Bubble",
       "country": "US",
+      "timezone": "America/Denver",
       "friction_tier": "regional_drive",
       "coords": { "lat": 40.457, "lon": -106.804 },
       "logistics": {
@@ -343,6 +346,7 @@
       "id": "co_san_juans",
       "name": "Southwest Colorado (San Juans)",
       "country": "US",
+      "timezone": "America/Denver",
       "friction_tier": "high_friction_drive",
       "coords": { "lat": 37.937, "lon": -107.812 },
       "logistics": {
@@ -421,6 +425,7 @@
       "id": "co_wolf_creek",
       "name": "Wolf Creek",
       "country": "US",
+      "timezone": "America/Denver",
       "friction_tier": "regional_drive",
       "coords": { "lat": 37.472, "lon": -106.793 },
       "logistics": {
@@ -457,6 +462,7 @@
       "id": "co_route_50",
       "name": "Route 50 Corridor",
       "country": "US",
+      "timezone": "America/Denver",
       "friction_tier": "regional_drive",
       "coords": { "lat": 38.899, "lon": -106.965 },
       "logistics": {
@@ -514,6 +520,7 @@
       "id": "co_powderhorn",
       "name": "Grand Mesa (Powderhorn)",
       "country": "US",
+      "timezone": "America/Denver",
       "friction_tier": "regional_drive",
       "coords": { "lat": 39.069, "lon": -108.150 },
       "logistics": {
@@ -550,6 +557,7 @@
       "id": "ut_little_cottonwood",
       "name": "Little Cottonwood Canyon, UT",
       "country": "US",
+      "timezone": "America/Denver",
       "friction_tier": "high_friction_drive",
       "coords": { "lat": 40.584, "lon": -111.637 },
       "logistics": {
@@ -607,6 +615,7 @@
       "id": "ut_big_cottonwood",
       "name": "Big Cottonwood Canyon, UT",
       "country": "US",
+      "timezone": "America/Denver",
       "friction_tier": "high_friction_drive",
       "coords": { "lat": 40.603, "lon": -111.583 },
       "logistics": {
@@ -664,6 +673,7 @@
       "id": "ut_park_city",
       "name": "Park City Area, UT",
       "country": "US",
+      "timezone": "America/Denver",
       "friction_tier": "high_friction_drive",
       "coords": { "lat": 40.651, "lon": -111.508 },
       "logistics": {
@@ -742,6 +752,7 @@
       "id": "ut_northern",
       "name": "Northern Utah (Ogden / Logan)",
       "country": "US",
+      "timezone": "America/Denver",
       "friction_tier": "high_friction_drive",
       "coords": { "lat": 41.250, "lon": -111.833 },
       "logistics": {
@@ -820,6 +831,7 @@
       "id": "ut_southern",
       "name": "Southern Utah",
       "country": "US",
+      "timezone": "America/Denver",
       "friction_tier": "high_friction_drive",
       "coords": { "lat": 38.300, "lon": -112.350 },
       "logistics": {
@@ -877,6 +889,7 @@
       "id": "ca_tahoe_north",
       "name": "North Lake Tahoe",
       "country": "US",
+      "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
       "coords": { "lat": 39.250, "lon": -120.150 },
       "logistics": {
@@ -1018,6 +1031,7 @@
       "id": "ca_tahoe_south",
       "name": "South Lake Tahoe",
       "country": "US",
+      "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
       "coords": { "lat": 38.866, "lon": -120.016 },
       "logistics": {
@@ -1096,6 +1110,7 @@
       "id": "ca_eastern_sierra",
       "name": "Eastern Sierra",
       "country": "US",
+      "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
       "coords": { "lat": 37.630, "lon": -119.032 },
       "logistics": {
@@ -1153,6 +1168,7 @@
       "id": "ca_central_sierra",
       "name": "Central Sierra",
       "country": "US",
+      "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
       "coords": { "lat": 38.000, "lon": -119.500 },
       "logistics": {
@@ -1231,6 +1247,7 @@
       "id": "wa_cascades_central",
       "name": "Central Washington Cascades",
       "country": "US",
+      "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
       "coords": { "lat": 47.422, "lon": -121.413 },
       "logistics": {
@@ -1309,6 +1326,7 @@
       "id": "wa_cascades_south",
       "name": "South Washington Cascades (Mt. Rainier Area)",
       "country": "US",
+      "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
       "coords": { "lat": 46.935, "lon": -121.474 },
       "logistics": {
@@ -1366,6 +1384,7 @@
       "id": "wa_cascades_north",
       "name": "North Cascades",
       "country": "US",
+      "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
       "coords": { "lat": 48.861, "lon": -121.660 },
       "logistics": {
@@ -1402,6 +1421,7 @@
       "id": "wa_eastern",
       "name": "Eastern Washington",
       "country": "US",
+      "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
       "coords": { "lat": 47.954, "lon": -117.563 },
       "logistics": {
@@ -1480,6 +1500,7 @@
       "id": "or_mt_hood",
       "name": "Mount Hood Area, OR",
       "country": "US",
+      "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
       "coords": { "lat": 45.330, "lon": -121.710 },
       "logistics": {
@@ -1558,6 +1579,7 @@
       "id": "or_central",
       "name": "Central Oregon",
       "country": "US",
+      "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
       "coords": { "lat": 43.979, "lon": -121.688 },
       "logistics": {
@@ -1636,6 +1658,7 @@
       "id": "or_eastern",
       "name": "Eastern Oregon",
       "country": "US",
+      "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
       "coords": { "lat": 44.962, "lon": -118.239 },
       "logistics": {
@@ -1672,6 +1695,7 @@
       "id": "wy_tetons",
       "name": "The Tetons (WY/ID)",
       "country": "US",
+      "timezone": "America/Denver",
       "friction_tier": "flight",
       "coords": { "lat": 43.587, "lon": -110.827 },
       "logistics": {
@@ -1750,6 +1774,7 @@
       "id": "mt_southwest",
       "name": "Southwest Montana (Bozeman Area)",
       "country": "US",
+      "timezone": "America/Denver",
       "friction_tier": "flight",
       "coords": { "lat": 45.280, "lon": -111.400 },
       "logistics": {
@@ -1828,6 +1853,7 @@
       "id": "mt_western",
       "name": "Western & Northern Montana",
       "country": "US",
+      "timezone": "America/Denver",
       "friction_tier": "flight",
       "coords": { "lat": 48.480, "lon": -114.350 },
       "logistics": {
@@ -1990,6 +2016,7 @@
       "id": "id_panhandle",
       "name": "Idaho Panhandle",
       "country": "US",
+      "timezone": "America/Boise",
       "friction_tier": "flight",
       "coords": { "lat": 48.367, "lon": -116.623 },
       "logistics": {
@@ -2068,6 +2095,7 @@
       "id": "id_central_southern",
       "name": "Central & Southern Idaho",
       "country": "US",
+      "timezone": "America/Boise",
       "friction_tier": "flight",
       "coords": { "lat": 43.766, "lon": -116.100 },
       "logistics": {
@@ -2209,6 +2237,7 @@
       "id": "nm_northern",
       "name": "Northern New Mexico",
       "country": "US",
+      "timezone": "America/Denver",
       "friction_tier": "regional_drive",
       "coords": { "lat": 36.596, "lon": -105.454 },
       "logistics": {
@@ -2308,6 +2337,7 @@
       "id": "nm_southern",
       "name": "Central & Southern New Mexico",
       "country": "US",
+      "timezone": "America/Denver",
       "friction_tier": "high_friction_drive",
       "coords": { "lat": 33.397, "lon": -105.792 },
       "logistics": {
@@ -2365,6 +2395,7 @@
       "id": "az_flagstaff",
       "name": "Arizona",
       "country": "US",
+      "timezone": "America/Phoenix",
       "friction_tier": "flight",
       "coords": { "lat": 35.330, "lon": -111.708 },
       "logistics": {
@@ -2422,6 +2453,7 @@
       "id": "ak_chugach",
       "name": "Alaska (Chugach Range)",
       "country": "US",
+      "timezone": "America/Anchorage",
       "friction_tier": "flight",
       "coords": { "lat": 60.960, "lon": -149.098 },
       "logistics": {
@@ -2479,6 +2511,7 @@
       "id": "mi_upper_peninsula",
       "name": "Midwest (Upper Peninsula)",
       "country": "US",
+      "timezone": "America/Detroit",
       "friction_tier": "flight",
       "coords": { "lat": 47.388, "lon": -88.015 },
       "logistics": {
@@ -2515,6 +2548,7 @@
       "id": "vt_northern",
       "name": "Northern Vermont (The Snow Pocket)",
       "country": "US",
+      "timezone": "America/New_York",
       "friction_tier": "flight",
       "coords": { "lat": 44.924, "lon": -72.454 },
       "logistics": {
@@ -2677,6 +2711,7 @@
       "id": "me_ny_rugged",
       "name": "Maine & The Adirondacks",
       "country": "US",
+      "timezone": "America/New_York",
       "friction_tier": "flight",
       "coords": { "lat": 44.302, "lon": -70.313 },
       "logistics": {
@@ -2776,6 +2811,7 @@
       "id": "bc_coast",
       "name": "British Columbia (Coast Mountains)",
       "country": "CA",
+      "timezone": "America/Vancouver",
       "friction_tier": "flight",
       "coords": { "lat": 50.115, "lon": -122.948 },
       "logistics": {
@@ -2812,6 +2848,7 @@
       "id": "bc_interior_powder_highway",
       "name": "British Columbia (The Powder Highway)",
       "country": "CA",
+      "timezone": "America/Vancouver",
       "friction_tier": "flight",
       "coords": { "lat": 51.000, "lon": -118.200 },
       "logistics": {
@@ -2932,6 +2969,7 @@
       "id": "ab_banff",
       "name": "Alberta (Banff & Lake Louise)",
       "country": "CA",
+      "timezone": "America/Edmonton",
       "friction_tier": "flight",
       "coords": { "lat": 51.411, "lon": -116.155 },
       "logistics": {
@@ -2989,6 +3027,7 @@
       "id": "vt_nh_southern",
       "name": "Southern Vermont & New Hampshire",
       "country": "US",
+      "timezone": "America/New_York",
       "friction_tier": "flight",
       "coords": { "lat": 43.113, "lon": -72.826 },
       "logistics": {
@@ -3067,6 +3106,7 @@
       "id": "ca_socal",
       "name": "Southern California",
       "country": "US",
+      "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
       "coords": { "lat": 34.236, "lon": -116.889 },
       "logistics": {
@@ -3124,6 +3164,7 @@
       "id": "ca_norcal_volcano",
       "name": "Northern California (Shasta)",
       "country": "US",
+      "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
       "coords": { "lat": 41.319, "lon": -122.194 },
       "logistics": {
@@ -3160,6 +3201,7 @@
       "id": "co_front_range",
       "name": "Colorado Front Range",
       "country": "US",
+      "timezone": "America/Denver",
       "friction_tier": "local_drive",
       "coords": { "lat": 39.938, "lon": -105.582 },
       "logistics": {
@@ -3196,6 +3238,7 @@
       "id": "bc_okanagan",
       "name": "British Columbia (Okanagan & Interior)",
       "country": "CA",
+      "timezone": "America/Vancouver",
       "friction_tier": "flight",
       "coords": { "lat": 50.450, "lon": -119.230 },
       "logistics": {
@@ -3274,6 +3317,7 @@
       "id": "ab_jasper",
       "name": "Alberta (Jasper National Park)",
       "country": "CA",
+      "timezone": "America/Edmonton",
       "friction_tier": "flight",
       "coords": { "lat": 52.793, "lon": -118.093 },
       "logistics": {
@@ -3310,6 +3354,7 @@
       "id": "nh_white_mountains",
       "name": "New Hampshire (White Mountains)",
       "country": "US",
+      "timezone": "America/New_York",
       "friction_tier": "flight",
       "coords": { "lat": 44.030, "lon": -71.630 },
       "logistics": {

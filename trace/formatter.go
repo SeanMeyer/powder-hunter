@@ -10,7 +10,7 @@ import (
 	"github.com/seanmeyer/powder-hunter/domain"
 )
 
-// FormatWeather renders weather forecast data as a human-readable table.
+// FormatWeather renders weather forecast data as a human-readable table with day/night breakdown.
 func FormatWeather(w io.Writer, region domain.Region, resorts []domain.Resort, forecasts []domain.Forecast) {
 	fmt.Fprintf(w, "═══ WEATHER DATA ═══\n")
 	fmt.Fprintf(w, "Region: %s (%s tier)\n", region.Name, region.FrictionTier)
@@ -23,16 +23,42 @@ func FormatWeather(w io.Writer, region domain.Region, resorts []domain.Resort, f
 
 	for _, f := range forecasts {
 		fmt.Fprintf(w, "\n%s forecast:\n", sourceLabel(f.Source))
+
+		hasHalfDay := false
 		for _, d := range f.DailyData {
-			snowIn := domain.CMToInches(d.SnowfallCM)
-			minF := cToF(d.TemperatureMinC)
-			maxF := cToF(d.TemperatureMaxC)
-			marker := ""
-			if snowIn >= 4.0 {
-				marker = "  ← notable"
+			if d.Day.SnowfallCM > 0 || d.Night.SnowfallCM > 0 || d.Day.WindGustKmh > 0 {
+				hasHalfDay = true
+				break
 			}
-			fmt.Fprintf(w, "  %s: %4.1f\"    %3.0f°F / %3.0f°F%s\n",
-				d.Date.Format("Jan 02"), snowIn, minF, maxF, marker)
+		}
+
+		if hasHalfDay {
+			for _, d := range f.DailyData {
+				totalIn := domain.CMToInches(d.SnowfallCM)
+				dayIn := domain.CMToInches(d.Day.SnowfallCM)
+				nightIn := domain.CMToInches(d.Night.SnowfallCM)
+				marker := ""
+				if totalIn >= 4.0 {
+					marker = "  ← notable"
+				}
+				fmt.Fprintf(w, "  %s: %4.1f\" total (day: %.1f\" / night: %.1f\")    %3.0f°F / %3.0f°F",
+					d.Date.Format("Jan 02"), totalIn, dayIn, nightIn,
+					cToF(d.TemperatureMinC), cToF(d.TemperatureMaxC))
+				if d.Day.WindGustKmh > 0 {
+					fmt.Fprintf(w, "    gusts: %.0f mph", d.Day.WindGustKmh*0.621371)
+				}
+				fmt.Fprintf(w, "%s\n", marker)
+			}
+		} else {
+			for _, d := range f.DailyData {
+				snowIn := domain.CMToInches(d.SnowfallCM)
+				marker := ""
+				if snowIn >= 4.0 {
+					marker = "  ← notable"
+				}
+				fmt.Fprintf(w, "  %s: %4.1f\"    %3.0f°F / %3.0f°F%s\n",
+					d.Date.Format("Jan 02"), snowIn, cToF(d.TemperatureMinC), cToF(d.TemperatureMaxC), marker)
+			}
 		}
 	}
 	fmt.Fprintln(w)
@@ -91,6 +117,12 @@ func FormatEvaluation(w io.Writer, eval domain.Evaluation) {
 	}
 	if eval.ClosureRisk != "" {
 		fmt.Fprintf(w, "  Closure Risk: %s\n", eval.ClosureRisk)
+	}
+	if !eval.BestSkiDay.IsZero() {
+		fmt.Fprintf(w, "  Best Ski Day: %s\n", eval.BestSkiDay.Format("Mon Jan 2"))
+		if eval.BestSkiDayReason != "" {
+			fmt.Fprintf(w, "    Reason: %s\n", eval.BestSkiDayReason)
+		}
 	}
 
 	if len(eval.KeyFactors.Pros) > 0 || len(eval.KeyFactors.Cons) > 0 {

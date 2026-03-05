@@ -57,7 +57,14 @@ func (c *NWSClient) Fetch(ctx context.Context, region domain.Region) (domain.For
 		return domain.Forecast{}, fmt.Errorf("nws: fetch gridpoint for region %s: %w", region.ID, err)
 	}
 
-	daily, err := parseGridpointForecast(raw)
+	loc := time.UTC
+	if region.Timezone != "" {
+		if l, tzErr := time.LoadLocation(region.Timezone); tzErr == nil {
+			loc = l
+		}
+	}
+
+	daily, err := parseGridpointForecast(raw, loc)
 	if err != nil {
 		return domain.Forecast{}, fmt.Errorf("nws: parse gridpoint for region %s: %w", region.ID, err)
 	}
@@ -140,34 +147,126 @@ func (c *NWSClient) get(ctx context.Context, url string) ([]byte, int, error) {
 	return body, resp.StatusCode, nil
 }
 
-// parseGridpointForecast extracts daily snowfall, temperature, and precipitation
-// from the NWS gridpoint response. Each weather element is a time-series of
-// ISO 8601 interval-tagged values that must be aggregated to calendar days.
-func parseGridpointForecast(body []byte) ([]domain.DailyForecast, error) {
+// parseGridpointForecast extracts daily snowfall, temperature, precipitation, and
+// wind from the NWS gridpoint response with day/night half-day breakdown.
+// loc determines the local timezone for 6am/6pm boundaries.
+func parseGridpointForecast(body []byte, loc *time.Location) ([]domain.DailyForecast, error) {
 	var resp nwsGridpointResponse
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return nil, fmt.Errorf("decode gridpoint response: %w", err)
 	}
 
-	// Aggregate each element into a per-day map (UTC date → total/min/max).
-	snowByDay := aggregateSnowfall(resp.Properties.SnowfallAmount.Values)
-	tempMinByDay, tempMaxByDay := aggregateTemperature(resp.Properties.Temperature.Values)
-	precipByDay := aggregatePrecip(resp.Properties.QuantitativePrecipitation.Values)
+	type dayAccum struct {
+		snowCM, precipMM                   float64
+		tempMin, tempMax                   float64
+		tempInit                           bool
+		daySnowCM, dayPrecipMM             float64
+		dayTempMax, dayWindMax, dayGustMax float64
+		dayInit                            bool
+		nightSnowCM, nightPrecipMM         float64
+		nightTempMin, nightWindMax, nightGustMax float64
+		nightInit                          bool
+	}
+	byDate := make(map[string]*dayAccum)
+	getAcc := func(dateKey string) *dayAccum {
+		if a, ok := byDate[dateKey]; ok {
+			return a
+		}
+		a := &dayAccum{}
+		byDate[dateKey] = a
+		return a
+	}
 
-	// Collect the union of all dates that have any data.
-	dateSet := make(map[string]struct{})
-	for d := range snowByDay {
-		dateSet[d] = struct{}{}
-	}
-	for d := range tempMinByDay {
-		dateSet[d] = struct{}{}
-	}
-	for d := range precipByDay {
-		dateSet[d] = struct{}{}
+	// Helper: walk an interval in 1-hour steps, calling fn with (localDate, localHour) for each.
+	walkHourly := func(values []nwsValue, fn func(acc *dayAccum, hour int, val float64)) {
+		for _, v := range values {
+			if v.Value == nil {
+				continue
+			}
+			start, dur, err := parseISO8601Interval(v.ValidTime)
+			if err != nil || dur <= 0 {
+				continue
+			}
+			end := start.Add(dur)
+			hourlyVal := *v.Value / dur.Hours() // prorate per hour
+			for t := start; t.Before(end); t = t.Add(time.Hour) {
+				local := t.In(loc)
+				dateKey := local.Format("2006-01-02")
+				fn(getAcc(dateKey), local.Hour(), hourlyVal)
+			}
+		}
 	}
 
-	dates := make([]string, 0, len(dateSet))
-	for d := range dateSet {
+	// Snowfall (NWS reports mm, convert to cm).
+	walkHourly(resp.Properties.SnowfallAmount.Values, func(acc *dayAccum, hour int, mmPerHour float64) {
+		cm := mmPerHour / 10.0
+		if cm > nwsSnowfallSanityLimitCM {
+			return
+		}
+		acc.snowCM += cm
+		if hour >= 6 && hour < 18 {
+			acc.daySnowCM += cm
+		} else {
+			acc.nightSnowCM += cm
+		}
+	})
+
+	// Temperature (°C).
+	walkHourly(resp.Properties.Temperature.Values, func(acc *dayAccum, hour int, c float64) {
+		if !acc.tempInit {
+			acc.tempMin, acc.tempMax = c, c
+			acc.tempInit = true
+		} else {
+			if c < acc.tempMin { acc.tempMin = c }
+			if c > acc.tempMax { acc.tempMax = c }
+		}
+		if hour >= 6 && hour < 18 {
+			if !acc.dayInit {
+				acc.dayTempMax = c
+				acc.dayInit = true
+			} else if c > acc.dayTempMax {
+				acc.dayTempMax = c
+			}
+		} else {
+			if !acc.nightInit {
+				acc.nightTempMin = c
+				acc.nightInit = true
+			} else if c < acc.nightTempMin {
+				acc.nightTempMin = c
+			}
+		}
+	})
+
+	// Precipitation (mm).
+	walkHourly(resp.Properties.QuantitativePrecipitation.Values, func(acc *dayAccum, hour int, mm float64) {
+		acc.precipMM += mm
+		if hour >= 6 && hour < 18 {
+			acc.dayPrecipMM += mm
+		} else {
+			acc.nightPrecipMM += mm
+		}
+	})
+
+	// Wind speed (km/h) — NWS provides in km/h.
+	walkHourly(resp.Properties.WindSpeed.Values, func(acc *dayAccum, hour int, kmh float64) {
+		if hour >= 6 && hour < 18 {
+			if kmh > acc.dayWindMax { acc.dayWindMax = kmh }
+		} else {
+			if kmh > acc.nightWindMax { acc.nightWindMax = kmh }
+		}
+	})
+
+	// Wind gusts (km/h).
+	walkHourly(resp.Properties.WindGust.Values, func(acc *dayAccum, hour int, kmh float64) {
+		if hour >= 6 && hour < 18 {
+			if kmh > acc.dayGustMax { acc.dayGustMax = kmh }
+		} else {
+			if kmh > acc.nightGustMax { acc.nightGustMax = kmh }
+		}
+	})
+
+	dates := make([]string, 0, len(byDate))
+	for d := range byDate {
 		dates = append(dates, d)
 	}
 	sort.Strings(dates)
@@ -178,119 +277,32 @@ func parseGridpointForecast(body []byte) ([]domain.DailyForecast, error) {
 		if err != nil {
 			continue
 		}
+		acc := byDate[d]
 		daily = append(daily, domain.DailyForecast{
 			Date:            t.UTC(),
-			SnowfallCM:      snowByDay[d],
-			TemperatureMinC: tempMinByDay[d],
-			TemperatureMaxC: tempMaxByDay[d],
-			PrecipitationMM: precipByDay[d],
+			SnowfallCM:      acc.snowCM,
+			TemperatureMinC: acc.tempMin,
+			TemperatureMaxC: acc.tempMax,
+			PrecipitationMM: acc.precipMM,
+			Day: domain.HalfDay{
+				SnowfallCM:      acc.daySnowCM,
+				TemperatureC:    acc.dayTempMax,
+				PrecipitationMM: acc.dayPrecipMM,
+				WindSpeedKmh:    acc.dayWindMax,
+				WindGustKmh:     acc.dayGustMax,
+			},
+			Night: domain.HalfDay{
+				SnowfallCM:      acc.nightSnowCM,
+				TemperatureC:    acc.nightTempMin,
+				PrecipitationMM: acc.nightPrecipMM,
+				WindSpeedKmh:    acc.nightWindMax,
+				WindGustKmh:     acc.nightGustMax,
+			},
 		})
 	}
 	return daily, nil
 }
 
-// aggregateSnowfall sums interval values into daily totals.
-// NWS snowfallAmount is reported in mm; we convert to cm for the domain model.
-func aggregateSnowfall(values []nwsValue) map[string]float64 {
-	byDay := make(map[string]float64)
-	for _, v := range values {
-		if v.Value == nil {
-			continue
-		}
-		cm := *v.Value / 10.0 // NWS API returns mm, domain uses cm
-		if cm > nwsSnowfallSanityLimitCM {
-			continue
-		}
-		start, dur, err := parseISO8601Interval(v.ValidTime)
-		if err != nil {
-			continue
-		}
-		distributeValueByDay(byDay, start, dur, cm, true)
-	}
-	return byDay
-}
-
-// aggregateTemperature computes per-day min and max from the hourly temperature series.
-// NWS temperature values are in °C.
-func aggregateTemperature(values []nwsValue) (minByDay map[string]float64, maxByDay map[string]float64) {
-	minByDay = make(map[string]float64)
-	maxByDay = make(map[string]float64)
-	initialized := make(map[string]bool)
-
-	for _, v := range values {
-		if v.Value == nil {
-			continue
-		}
-		c := *v.Value
-		start, dur, err := parseISO8601Interval(v.ValidTime)
-		if err != nil {
-			continue
-		}
-		// Walk through each hour of the interval and assign to its calendar day.
-		step := time.Hour
-		for t := start; t.Before(start.Add(dur)); t = t.Add(step) {
-			day := t.UTC().Format("2006-01-02")
-			if !initialized[day] {
-				minByDay[day] = c
-				maxByDay[day] = c
-				initialized[day] = true
-			} else {
-				if c < minByDay[day] {
-					minByDay[day] = c
-				}
-				if c > maxByDay[day] {
-					maxByDay[day] = c
-				}
-			}
-		}
-	}
-	return minByDay, maxByDay
-}
-
-// aggregatePrecip sums precipitation values (mm) into daily totals.
-func aggregatePrecip(values []nwsValue) map[string]float64 {
-	byDay := make(map[string]float64)
-	for _, v := range values {
-		if v.Value == nil {
-			continue
-		}
-		distributeValueByDay(byDay, parseIntervalStart(v.ValidTime), parseIntervalDur(v.ValidTime), *v.Value, true)
-	}
-	return byDay
-}
-
-// distributeValueByDay adds a value to each calendar day that the interval spans,
-// prorating by hours when the interval crosses a midnight boundary.
-// When sum=true the value is treated as a rate (cm/interval) to be summed;
-// this is correct for accumulations like snowfall and precipitation.
-func distributeValueByDay(byDay map[string]float64, start time.Time, dur time.Duration, value float64, sum bool) {
-	if dur <= 0 || start.IsZero() {
-		return
-	}
-	end := start.Add(dur)
-	totalHours := dur.Hours()
-
-	// Walk day boundaries within [start, end).
-	cursor := start.UTC()
-	for cursor.Before(end) {
-		dayStart := time.Date(cursor.Year(), cursor.Month(), cursor.Day(), 0, 0, 0, 0, time.UTC)
-		dayEnd := dayStart.Add(24 * time.Hour)
-
-		segStart := cursor
-		segEnd := end
-		if dayEnd.Before(segEnd) {
-			segEnd = dayEnd
-		}
-		segHours := segEnd.Sub(segStart).Hours()
-		portion := value * (segHours / totalHours)
-
-		day := dayStart.Format("2006-01-02")
-		if sum {
-			byDay[day] += portion
-		}
-		cursor = segEnd
-	}
-}
 
 // parseISO8601Interval parses the NWS validTime format "2006-01-02T15:04:05+07:00/PTxH".
 func parseISO8601Interval(s string) (time.Time, time.Duration, error) {
@@ -359,23 +371,6 @@ func parseISO8601Duration(s string) (time.Duration, error) {
 	return totalDur, nil
 }
 
-// parseIntervalStart and parseIntervalDur are convenience wrappers that swallow
-// errors for use in aggregation helpers that already handle zero-value returns.
-func parseIntervalStart(s string) time.Time {
-	t, _, err := parseISO8601Interval(s)
-	if err != nil {
-		return time.Time{}
-	}
-	return t
-}
-
-func parseIntervalDur(s string) time.Duration {
-	_, d, err := parseISO8601Interval(s)
-	if err != nil {
-		return 0
-	}
-	return d
-}
 
 func gridCacheKey(lat, lon float64) string {
 	return fmt.Sprintf("%.4f,%.4f", roundTo4(lat), roundTo4(lon))
@@ -400,6 +395,8 @@ type nwsGridpointResponse struct {
 		SnowfallAmount            nwsTimeSeries `json:"snowfallAmount"`
 		Temperature               nwsTimeSeries `json:"temperature"`
 		QuantitativePrecipitation nwsTimeSeries `json:"quantitativePrecipitation"`
+		WindSpeed                 nwsTimeSeries `json:"windSpeed"`
+		WindGust                  nwsTimeSeries `json:"windGust"`
 	} `json:"properties"`
 }
 
