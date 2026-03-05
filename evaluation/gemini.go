@@ -436,6 +436,9 @@ func (e *GeminiEvaluator) Evaluate(ctx context.Context, ec EvalContext) (domain.
 	if rainRisk := FormatRainLineRisk(forecasts, resorts); rainRisk != "" {
 		weatherData += "\n" + rainRisk
 	}
+	if rideQuality := FormatRideQualityForPrompt(forecasts, resorts); rideQuality != "" {
+		weatherData += "\n" + rideQuality
+	}
 
 	renderedPrompt := RenderPrompt(promptTemplate, PromptData{
 		WeatherData:        weatherData,

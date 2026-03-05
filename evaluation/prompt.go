@@ -329,6 +329,64 @@ func FormatDetectionForPrompt(detection domain.DetectionResult) string {
 }
 
 
+// FormatRideQualityForPrompt computes and formats ride quality notes for the LLM.
+// It appends per-resort snow quality assessments (density, crystal quality, layering,
+// base risk, bluebird conditions) to the weather context.
+func FormatRideQualityForPrompt(forecasts []domain.Forecast, resorts []domain.Resort) string {
+	var b strings.Builder
+
+	for _, resort := range resorts {
+		var resortForecasts []domain.Forecast
+		for _, f := range forecasts {
+			if f.ResortID == resort.ID {
+				resortForecasts = append(resortForecasts, f)
+			}
+		}
+		if len(resortForecasts) == 0 {
+			continue
+		}
+
+		templateF := resortForecasts[0]
+		qualities := domain.AssessRideQuality(templateF.DailyData, nil, resort.Latitude, time.Now())
+
+		hasNotes := false
+		for _, q := range qualities {
+			if len(q.RideQualityNotes) > 0 {
+				hasNotes = true
+				break
+			}
+		}
+		if !hasNotes {
+			continue
+		}
+
+		fmt.Fprintf(&b, "\n### %s — Ride Quality Notes\n", resort.Name)
+		for i, q := range qualities {
+			if len(q.RideQualityNotes) == 0 {
+				continue
+			}
+			if i >= len(templateF.DailyData) {
+				break
+			}
+			d := templateF.DailyData[i]
+			snowIn := domain.CMToInches(d.SnowfallCM)
+			if snowIn < 0.5 && !q.Bluebird {
+				continue
+			}
+			densDesc := q.DensityCategory
+			if densDesc == "" {
+				densDesc = "n/a"
+			}
+			fmt.Fprintf(&b, "%s (%.1f\" %s, %.0f kg/m3):\n",
+				d.Date.Format("Jan 02"), snowIn, densDesc, q.AvgDensityKgM3)
+			for _, note := range q.RideQualityNotes {
+				fmt.Fprintf(&b, "  - %s\n", note)
+			}
+		}
+	}
+	return b.String()
+}
+
 // FormatProfileForPrompt converts a user profile into a human-readable summary.
 func FormatProfileForPrompt(p domain.UserProfile) string {
 	var b strings.Builder
