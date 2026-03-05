@@ -259,6 +259,26 @@ func parseGridpointForecast(body []byte, loc *time.Location) ([]domain.DailyFore
 		}
 	}
 
+	// Step 1b: Build per-hour wind speed lookup (dateKey+hour → km/h).
+	hourlyWind := make(map[string]float64)
+	for _, v := range resp.Properties.WindSpeed.Values {
+		if v.Value == nil {
+			continue
+		}
+		start, dur, err := parseISO8601Interval(v.ValidTime)
+		if err != nil || dur <= 0 {
+			continue
+		}
+		end := start.Add(dur)
+		hourlyVal := *v.Value / dur.Hours()
+		for t := start; t.Before(end); t = t.Add(time.Hour) {
+			local := t.In(loc)
+			dateKey := local.Format("2006-01-02")
+			hourKey := fmt.Sprintf("%s-%02d", dateKey, local.Hour())
+			hourlyWind[hourKey] = hourlyVal
+		}
+	}
+
 	// Step 2: Process precipitation with SLR-adjusted snowfall using hourly temps.
 	for _, v := range resp.Properties.QuantitativePrecipitation.Values {
 		if v.Value == nil {
@@ -288,8 +308,11 @@ func parseGridpointForecast(body []byte, loc *time.Location) ([]domain.DailyFore
 				}
 			}
 
-			snowCM := domain.SnowfallFromPrecip(hourlyMM, tempC, 0) // TODO(task4): pass real wind speed
-			density := domain.CalculateDensity(tempC, 0)
+			windKmh := hourlyWind[hourKey] // 0 if no wind data for this hour
+			windMs := windKmh / 3.6
+
+			snowCM := domain.SnowfallFromPrecip(hourlyMM, tempC, windMs)
+			density := domain.CalculateDensity(tempC, windMs)
 			slr := domain.SLRFromDensity(density)
 
 			if hourlyMM > 0 {
