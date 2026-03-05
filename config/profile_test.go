@@ -3,7 +3,7 @@ package config
 import (
 	"testing"
 
-	"github.com/seanmeyer/powder-hunter/seed"
+	"github.com/seanmeyer/powder-hunter/catalog"
 )
 
 // mapLookup returns a lookup function backed by a map. Missing keys return "".
@@ -15,7 +15,7 @@ func mapLookup(m map[string]string) func(string) string {
 
 func TestProfileFromEnv_AllDefaults(t *testing.T) {
 	p := ProfileFromEnv(mapLookup(map[string]string{}))
-	d := seed.DefaultProfile()
+	d := catalog.DefaultProfile()
 
 	if p.HomeBase != d.HomeBase {
 		t.Errorf("HomeBase = %q, want %q", p.HomeBase, d.HomeBase)
@@ -88,7 +88,7 @@ func TestProfileFromEnv_PartialOverride(t *testing.T) {
 		"PTO_DAYS":  "20",
 	}
 	p := ProfileFromEnv(mapLookup(env))
-	d := seed.DefaultProfile()
+	d := catalog.DefaultProfile()
 
 	// Overridden fields
 	if p.HomeBase != "Boulder, CO" {

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/seanmeyer/powder-hunter/domain"
-	"github.com/seanmeyer/powder-hunter/seed"
+	"github.com/seanmeyer/powder-hunter/catalog"
 )
 
 // ProfileFromEnv builds a UserProfile starting from seed defaults, overriding
@@ -13,7 +13,7 @@ import (
 // function is injected so callers can pass os.Getenv in production and a map
 // lookup in tests.
 func ProfileFromEnv(lookup func(string) string) domain.UserProfile {
-	p := seed.DefaultProfile()
+	p := catalog.DefaultProfile()
 
 	if v := lookup("HOME_BASE"); v != "" {
 		p.HomeBase = v

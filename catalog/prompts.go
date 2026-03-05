@@ -1,4 +1,4 @@
-package seed
+package catalog
 
 import "github.com/seanmeyer/powder-hunter/domain"
 

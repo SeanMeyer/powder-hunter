@@ -20,7 +20,7 @@ import (
 	"github.com/seanmeyer/powder-hunter/domain"
 	"github.com/seanmeyer/powder-hunter/evaluation"
 	"github.com/seanmeyer/powder-hunter/pipeline"
-	"github.com/seanmeyer/powder-hunter/seed"
+	"github.com/seanmeyer/powder-hunter/catalog"
 	"github.com/seanmeyer/powder-hunter/storage"
 	"github.com/seanmeyer/powder-hunter/trace"
 	"github.com/seanmeyer/powder-hunter/weather"
@@ -219,7 +219,7 @@ func autoSeed(ctx context.Context, db *storage.DB) error {
 
 	if count == 0 {
 		slog.Info("first run detected, seeding database")
-		regions := seed.Regions()
+		regions := catalog.Regions()
 		for _, r := range regions {
 			if err := db.UpsertRegion(ctx, r.Region); err != nil {
 				return fmt.Errorf("upsert region %s: %w", r.Region.ID, err)
@@ -232,7 +232,7 @@ func autoSeed(ctx context.Context, db *storage.DB) error {
 		}
 		slog.Info("seeded regions", "count", len(regions))
 
-		promptID, promptVersion, promptTemplate := seed.InitialPromptTemplate()
+		promptID, promptVersion, promptTemplate := catalog.InitialPromptTemplate()
 		if err := db.SavePromptTemplate(ctx, promptID, promptVersion, promptTemplate); err != nil {
 			return fmt.Errorf("seed prompt template: %w", err)
 		}
@@ -430,7 +430,7 @@ func runSeed(ctx context.Context, args []string) int {
 	}
 	defer db.Close()
 
-	regions := seed.Regions()
+	regions := catalog.Regions()
 	for _, r := range regions {
 		if err := db.UpsertRegion(ctx, r.Region); err != nil {
 			slog.Error("upsert region", "region", r.Region.ID, "error", err)
@@ -451,7 +451,7 @@ func runSeed(ctx context.Context, args []string) int {
 		return 1
 	}
 	if profile == nil {
-		defaultProfile := seed.DefaultProfile()
+		defaultProfile := catalog.DefaultProfile()
 		if err := db.SaveProfile(ctx, defaultProfile); err != nil {
 			slog.Error("create default profile", "error", err)
 			return 1
@@ -460,7 +460,7 @@ func runSeed(ctx context.Context, args []string) int {
 	}
 
 	// Seed the initial prompt template if it doesn't already exist.
-	promptID, promptVersion, promptTemplate := seed.InitialPromptTemplate()
+	promptID, promptVersion, promptTemplate := catalog.InitialPromptTemplate()
 	if err := db.SavePromptTemplate(ctx, promptID, promptVersion, promptTemplate); err != nil {
 		slog.Error("seed prompt template", "error", err)
 		return 1
@@ -531,7 +531,7 @@ func runProfile(ctx context.Context, args []string) int {
 }
 
 func runRegions() int {
-	regions := seed.Regions()
+	regions := catalog.Regions()
 	rows := make([]trace.RegionRow, len(regions))
 	for i, r := range regions {
 		rows[i] = trace.RegionRow{
@@ -586,8 +586,8 @@ func runTrace(ctx context.Context, args []string) int {
 	}
 
 	// Find region in seed data.
-	allRegions := seed.Regions()
-	var found *seed.RegionWithResorts
+	allRegions := catalog.Regions()
+	var found *catalog.RegionWithResorts
 	for i := range allRegions {
 		if allRegions[i].Region.ID == *regionID {
 			found = &allRegions[i]
@@ -694,7 +694,7 @@ func runTrace(ctx context.Context, args []string) int {
 		return 1
 	}
 	if profile == nil {
-		defaultProfile := seed.DefaultProfile()
+		defaultProfile := catalog.DefaultProfile()
 		if saveErr := db.SaveProfile(ctx, defaultProfile); saveErr != nil {
 			fmt.Fprintf(os.Stderr, "error: create default profile: %v\n", saveErr)
 			return 1
@@ -703,7 +703,7 @@ func runTrace(ctx context.Context, args []string) int {
 	}
 
 	// Seed the prompt template.
-	promptID, promptVersion, promptTemplate := seed.InitialPromptTemplate()
+	promptID, promptVersion, promptTemplate := catalog.InitialPromptTemplate()
 	if seedErr := db.SavePromptTemplate(ctx, promptID, promptVersion, promptTemplate); seedErr != nil {
 		fmt.Fprintf(os.Stderr, "error: seed prompt template: %v\n", seedErr)
 		return 1
@@ -747,9 +747,9 @@ func runTrace(ctx context.Context, args []string) int {
 // buildPrompt renders the LLM prompt using seed data and a default profile,
 // without requiring a database or API key. Used by --show-prompt in weather-only mode.
 func buildPrompt(region domain.Region, resorts []domain.Resort, forecasts []domain.Forecast) string {
-	_, promptVersion, promptTemplate := seed.InitialPromptTemplate()
+	_, promptVersion, promptTemplate := catalog.InitialPromptTemplate()
 
-	defaultProfile := seed.DefaultProfile()
+	defaultProfile := catalog.DefaultProfile()
 
 	detection := domain.Detect(region, forecasts)
 
