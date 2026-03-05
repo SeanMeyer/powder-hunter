@@ -92,6 +92,7 @@ type RunSummary struct {
 	SkippedUnchanged int // storms skipped due to unchanged weather
 	SkippedCooldown  int // storms skipped due to tier-based cooldown
 	SkippedBudget    int // storms skipped due to budget limit
+	EvalFailed       int // storms where evaluation errored (Gemini failure, etc.)
 }
 
 // Run executes the full pipeline: scan → evaluate → compare → post → expire.
@@ -470,6 +471,9 @@ func (p *Pipeline) Evaluate(ctx context.Context, scans []ScanResult, summary *Ru
 					"region_id", scan.Region.ID,
 					"error", evalErr,
 				)
+				mu.Lock()
+				summary.EvalFailed++
+				mu.Unlock()
 				return nil
 			}
 

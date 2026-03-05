@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
+	"math"
 	"strings"
 	"time"
 
@@ -11,6 +13,11 @@ import (
 
 	"github.com/seanmeyer/powder-hunter/domain"
 	"github.com/seanmeyer/powder-hunter/storage"
+)
+
+const (
+	geminiRetryMaxAttempts = 4
+	geminiRetryBaseDelay   = 3 * time.Second
 )
 
 const geminiModel = "gemini-3-flash-preview"
@@ -76,7 +83,7 @@ func (g *GeminiClient) EvaluateStorm(ctx context.Context, prompt string) (Gemini
 		genai.NewContentFromText(prompt, genai.RoleUser),
 	}
 
-	researchResp, err := g.client.Models.GenerateContent(ctx, g.model, researchContents, researchConfig)
+	researchResp, err := g.generateWithRetry(ctx, researchContents, researchConfig, "research")
 	if err != nil {
 		return GeminiResult{}, fmt.Errorf("gemini research step: %w", err)
 	}
@@ -102,7 +109,7 @@ numbers, dates, and findings from the research. Do not add information that isn'
 		genai.NewContentFromText(structurePrompt, genai.RoleUser),
 	}
 
-	structureResp, err := g.client.Models.GenerateContent(ctx, g.model, structureContents, structureConfig)
+	structureResp, err := g.generateWithRetry(ctx, structureContents, structureConfig, "structure")
 	if err != nil {
 		return GeminiResult{}, fmt.Errorf("gemini structure step: %w", err)
 	}
@@ -154,6 +161,45 @@ numbers, dates, and findings from the research. Do not add information that isn'
 	}
 
 	return result, nil
+}
+
+// generateWithRetry calls Gemini's GenerateContent with exponential backoff
+// on retryable errors (503, 429, UNAVAILABLE). Non-retryable errors return immediately.
+func (g *GeminiClient) generateWithRetry(ctx context.Context, contents []*genai.Content, config *genai.GenerateContentConfig, step string) (*genai.GenerateContentResponse, error) {
+	var lastErr error
+	for attempt := range geminiRetryMaxAttempts {
+		if attempt > 0 {
+			delay := time.Duration(math.Pow(2, float64(attempt-1))) * geminiRetryBaseDelay
+			slog.InfoContext(ctx, "retrying gemini call",
+				"step", step, "attempt", attempt+1, "delay", delay)
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(delay):
+			}
+		}
+
+		resp, err := g.client.Models.GenerateContent(ctx, g.model, contents, config)
+		if err != nil {
+			if isRetryableGeminiError(err) {
+				lastErr = err
+				continue
+			}
+			return nil, err
+		}
+		return resp, nil
+	}
+	return nil, fmt.Errorf("exhausted %d retries: %w", geminiRetryMaxAttempts, lastErr)
+}
+
+// isRetryableGeminiError checks if a Gemini SDK error is transient and worth retrying.
+func isRetryableGeminiError(err error) bool {
+	msg := err.Error()
+	return strings.Contains(msg, "503") ||
+		strings.Contains(msg, "429") ||
+		strings.Contains(msg, "UNAVAILABLE") ||
+		strings.Contains(msg, "RESOURCE_EXHAUSTED") ||
+		strings.Contains(msg, "high demand")
 }
 
 // stormEvalSchema defines the structured output schema Gemini must conform to.

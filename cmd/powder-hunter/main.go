@@ -194,6 +194,7 @@ func runPipeline(ctx context.Context, args []string) int {
 		"skipped_unchanged", summary.SkippedUnchanged,
 		"skipped_cooldown", summary.SkippedCooldown,
 		"skipped_budget", summary.SkippedBudget,
+		"eval_failed", summary.EvalFailed,
 	)
 	return 0
 }
