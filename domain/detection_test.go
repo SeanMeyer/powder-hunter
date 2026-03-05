@@ -8,14 +8,14 @@ import (
 // inchesToCM converts inches to centimeters for building test forecast fixtures.
 func inchesToCM(in float64) float64 { return in * 2.54 }
 
-// nearDay returns a date that falls within the near-range window (days 1-7 from today UTC).
+// nearDay returns a date at the given day offset from today UTC.
 func nearDay(offset int) time.Time {
 	now := time.Now().UTC()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 	return today.AddDate(0, 0, offset)
 }
 
-// extDay returns a date that falls within the extended-range window (days 8-16 from today UTC).
+// extDay is an alias for nearDay (same math, different semantic context).
 func extDay(offset int) time.Time {
 	return nearDay(offset)
 }
@@ -40,20 +40,27 @@ func singleDayForecast(regionID string, date time.Time, snowfallCM float64) Fore
 	}
 }
 
+func sourceForecast(regionID, source string, days []DailyForecast) Forecast {
+	return Forecast{
+		RegionID:  regionID,
+		Source:    source,
+		DailyData: days,
+	}
+}
+
 func TestDetect(t *testing.T) {
 	tests := []struct {
-		name              string
-		region            Region
-		forecasts         []Forecast
-		wantDetected      bool
-		wantWindowCount   int
-		wantNearWindow    bool // at least one near-range window expected
-		wantExtWindow     bool // at least one extended-range window expected
+		name            string
+		region          Region
+		forecasts       []Forecast
+		wantDetected    bool
+		wantWindowCount int
+		wantNearWindow  bool
+		wantExtWindow   bool
 	}{
 		{
 			name:   "local tier near-range just above threshold (6in) → detected",
 			region: regionWithFriction("local-1", FrictionLocalDrive),
-			// 6" threshold; supply 6.1" → should trigger
 			forecasts: []Forecast{
 				singleDayForecast("local-1", nearDay(3), inchesToCM(6.1)),
 			},
@@ -64,7 +71,6 @@ func TestDetect(t *testing.T) {
 		{
 			name:   "local tier near-range just below threshold (5.9in) → not detected",
 			region: regionWithFriction("local-2", FrictionLocalDrive),
-			// 6" threshold; supply 5.9" → should not trigger
 			forecasts: []Forecast{
 				singleDayForecast("local-2", nearDay(3), inchesToCM(5.9)),
 			},
@@ -74,7 +80,6 @@ func TestDetect(t *testing.T) {
 		{
 			name:   "flight tier extended-range at 35in (below 36in threshold) → not detected",
 			region: regionWithFriction("flight-1", FrictionFlight),
-			// extended threshold = 36"; supply 35"
 			forecasts: []Forecast{
 				singleDayForecast("flight-1", extDay(10), inchesToCM(35)),
 			},
@@ -84,7 +89,6 @@ func TestDetect(t *testing.T) {
 		{
 			name:   "flight tier extended-range at 37in (above 36in threshold) → detected",
 			region: regionWithFriction("flight-2", FrictionFlight),
-			// extended threshold = 36"; supply 37"
 			forecasts: []Forecast{
 				singleDayForecast("flight-2", extDay(10), inchesToCM(37)),
 			},
@@ -115,32 +119,7 @@ func TestDetect(t *testing.T) {
 			wantWindowCount: 0,
 		},
 		{
-			name:   "mixed forecast sources aggregated correctly → detected",
-			region: regionWithFriction("local-4", FrictionLocalDrive),
-			// two separate Forecast objects (different sources) on the same near-range day;
-			// each contributes 3.1" — aggregate 6.2" exceeds local 6" threshold
-			forecasts: []Forecast{
-				{
-					RegionID: "local-4",
-					Source:   "open_meteo",
-					DailyData: []DailyForecast{
-						{Date: nearDay(2), SnowfallCM: inchesToCM(3.1)},
-					},
-				},
-				{
-					RegionID: "local-4",
-					Source:   "nws",
-					DailyData: []DailyForecast{
-						{Date: nearDay(3), SnowfallCM: inchesToCM(3.1)},
-					},
-				},
-			},
-			wantDetected:    true,
-			wantWindowCount: 1,
-			wantNearWindow:  true,
-		},
-		{
-			name:   "high-friction-drive tier near threshold 18in and extended 24in → correct threshold applied",
+			name:   "high-friction-drive tier exact thresholds trigger (>=)",
 			region: regionWithFriction("hfd-1", FrictionHighFrictionDrive),
 			// supply exactly 18" near and 24" extended — both should trigger (>=)
 			forecasts: []Forecast{
@@ -153,9 +132,8 @@ func TestDetect(t *testing.T) {
 			wantExtWindow:   true,
 		},
 		{
-			name:   "only extended-range days (no near-range data) → only extended window checked",
+			name:   "only extended-range days → only extended window checked",
 			region: regionWithFriction("flight-3", FrictionFlight),
-			// extended threshold = 36"; supply 40" in extended range only
 			forecasts: []Forecast{
 				singleDayForecast("flight-3", extDay(11), inchesToCM(40)),
 			},
@@ -172,40 +150,236 @@ func TestDetect(t *testing.T) {
 			if result.Detected != tc.wantDetected {
 				t.Errorf("Detected = %v, want %v", result.Detected, tc.wantDetected)
 			}
-
 			if len(result.Windows) != tc.wantWindowCount {
 				t.Errorf("len(Windows) = %d, want %d", len(result.Windows), tc.wantWindowCount)
 			}
-
 			if result.RegionID != tc.region.ID {
 				t.Errorf("RegionID = %q, want %q", result.RegionID, tc.region.ID)
 			}
+			if tc.wantNearWindow && !hasWindow(result.Windows, true) {
+				t.Error("expected a near-range window but none found")
+			}
+			if tc.wantExtWindow && !hasWindow(result.Windows, false) {
+				t.Error("expected an extended-range window but none found")
+			}
+		})
+	}
+}
 
-			if tc.wantNearWindow {
-				found := false
+func TestDetect_SourcePreference(t *testing.T) {
+	tests := []struct {
+		name         string
+		region       Region
+		forecasts    []Forecast
+		wantDetected bool
+		wantNearIn   float64 // approximate expected near-range total; 0 = don't check
+	}{
+		{
+			name:   "NWS preferred over Open-Meteo for near-range",
+			region: regionWithFriction("sp-1", FrictionLocalDrive), // 6" near threshold
+			forecasts: []Forecast{
+				sourceForecast("sp-1", "open_meteo", []DailyForecast{
+					{Date: nearDay(2), SnowfallCM: inchesToCM(10)},
+				}),
+				sourceForecast("sp-1", "nws", []DailyForecast{
+					{Date: nearDay(2), SnowfallCM: inchesToCM(7)},
+				}),
+			},
+			wantDetected: true,
+			wantNearIn:   7.0, // NWS value used, not Open-Meteo's 10"
+		},
+		{
+			name:   "NWS below threshold, Open-Meteo above → not detected (NWS preferred)",
+			region: regionWithFriction("sp-2", FrictionLocalDrive), // 6" near threshold
+			forecasts: []Forecast{
+				sourceForecast("sp-2", "open_meteo", []DailyForecast{
+					{Date: nearDay(2), SnowfallCM: inchesToCM(8)},
+				}),
+				sourceForecast("sp-2", "nws", []DailyForecast{
+					{Date: nearDay(2), SnowfallCM: inchesToCM(4)},
+				}),
+			},
+			wantDetected: false,
+		},
+		{
+			name:   "no NWS data → falls back to Open-Meteo for near-range",
+			region: regionWithFriction("sp-3", FrictionLocalDrive), // 6" near threshold
+			forecasts: []Forecast{
+				sourceForecast("sp-3", "open_meteo", []DailyForecast{
+					{Date: nearDay(2), SnowfallCM: inchesToCM(8)},
+				}),
+			},
+			wantDetected: true,
+			wantNearIn:   8.0,
+		},
+		{
+			name:   "NWS has zero snow, Open-Meteo has data → falls back to Open-Meteo",
+			region: regionWithFriction("sp-4", FrictionLocalDrive), // 6" near threshold
+			forecasts: []Forecast{
+				sourceForecast("sp-4", "open_meteo", []DailyForecast{
+					{Date: nearDay(2), SnowfallCM: inchesToCM(8)},
+				}),
+				sourceForecast("sp-4", "nws", []DailyForecast{
+					{Date: nearDay(2), SnowfallCM: 0},
+				}),
+			},
+			wantDetected: true,
+			wantNearIn:   8.0,
+		},
+		{
+			name:   "same day from two sources → NWS preferred, no double-counting",
+			region: regionWithFriction("sp-5", FrictionLocalDrive), // 6" near threshold
+			// Both sources report 4" on the SAME day — only NWS's 4" is used
+			forecasts: []Forecast{
+				sourceForecast("sp-5", "open_meteo", []DailyForecast{
+					{Date: nearDay(2), SnowfallCM: inchesToCM(4)},
+				}),
+				sourceForecast("sp-5", "nws", []DailyForecast{
+					{Date: nearDay(2), SnowfallCM: inchesToCM(4)},
+				}),
+			},
+			wantDetected: false, // 4" < 6" threshold
+		},
+		{
+			name:   "different days from different sources → complementary data used",
+			region: regionWithFriction("sp-6", FrictionLocalDrive), // 6" near threshold
+			// Open-Meteo has 4" on day 2 (NWS has nothing), NWS has 4" on day 3
+			// Per-day preference picks the best source for each day: 4+4 = 8" > 6"
+			forecasts: []Forecast{
+				sourceForecast("sp-6", "open_meteo", []DailyForecast{
+					{Date: nearDay(2), SnowfallCM: inchesToCM(4)},
+				}),
+				sourceForecast("sp-6", "nws", []DailyForecast{
+					{Date: nearDay(3), SnowfallCM: inchesToCM(4)},
+				}),
+			},
+			wantDetected: true,
+			wantNearIn:   8.0,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := Detect(tc.region, tc.forecasts)
+
+			if result.Detected != tc.wantDetected {
+				t.Errorf("Detected = %v, want %v", result.Detected, tc.wantDetected)
+			}
+			if tc.wantNearIn > 0 {
 				for _, w := range result.Windows {
 					if w.IsNearRange {
-						found = true
-						break
+						delta := w.TotalIn - tc.wantNearIn
+						if delta < 0 {
+							delta = -delta
+						}
+						if delta > 0.1 {
+							t.Errorf("near-range TotalIn = %.1f, want ~%.1f", w.TotalIn, tc.wantNearIn)
+						}
 					}
-				}
-				if !found {
-					t.Error("expected a near-range window but none found")
-				}
-			}
-
-			if tc.wantExtWindow {
-				found := false
-				for _, w := range result.Windows {
-					if !w.IsNearRange {
-						found = true
-						break
-					}
-				}
-				if !found {
-					t.Error("expected an extended-range window but none found")
 				}
 			}
 		})
 	}
+}
+
+func TestDetect_BridgeWindows(t *testing.T) {
+	tests := []struct {
+		name         string
+		region       Region
+		forecasts    []Forecast
+		wantDetected bool
+	}{
+		{
+			name:   "storm straddling boundary detected via bridge",
+			region: regionWithFriction("bridge-1", FrictionFlight), // near=24", ext=36"
+			// 15" in near (days 5-7), 15" in extended (days 8-10)
+			// Near total: 15" < 24". Extended total: 15" < 36".
+			// Bridge [4-10] captures all 30" > 24" → detected
+			forecasts: []Forecast{
+				singleDayForecast("bridge-1", nearDay(5), inchesToCM(5)),
+				singleDayForecast("bridge-1", nearDay(6), inchesToCM(5)),
+				singleDayForecast("bridge-1", nearDay(7), inchesToCM(5)),
+				singleDayForecast("bridge-1", extDay(8), inchesToCM(5)),
+				singleDayForecast("bridge-1", extDay(9), inchesToCM(5)),
+				singleDayForecast("bridge-1", extDay(10), inchesToCM(5)),
+			},
+			wantDetected: true,
+		},
+		{
+			name:   "late boundary storm detected via second bridge",
+			region: regionWithFriction("bridge-2", FrictionFlight), // near=24", ext=36"
+			// Storm concentrated on days 7-13 with 4"/day = 28" total
+			// Near [1-7]: only day 7 = 4" < 24". Extended [8-16]: days 8-13 = 24" < 36".
+			// Bridge-early [4-10]: days 7-10 = 16" < 24". No.
+			// Bridge-late [7-13]: days 7-13 = 28" > 24". Yes!
+			forecasts: []Forecast{
+				singleDayForecast("bridge-2", nearDay(7), inchesToCM(4)),
+				singleDayForecast("bridge-2", extDay(8), inchesToCM(4)),
+				singleDayForecast("bridge-2", extDay(9), inchesToCM(4)),
+				singleDayForecast("bridge-2", extDay(10), inchesToCM(4)),
+				singleDayForecast("bridge-2", extDay(11), inchesToCM(4)),
+				singleDayForecast("bridge-2", extDay(12), inchesToCM(4)),
+				singleDayForecast("bridge-2", extDay(13), inchesToCM(4)),
+			},
+			wantDetected: true,
+		},
+		{
+			name:   "bridge not checked when near already triggers",
+			region: regionWithFriction("bridge-3", FrictionLocalDrive), // near=6"
+			// Near triggers with 8". Bridge would also trigger but shouldn't be checked.
+			forecasts: []Forecast{
+				singleDayForecast("bridge-3", nearDay(2), inchesToCM(8)),
+			},
+			wantDetected: true,
+		},
+		{
+			name:   "separate storms far apart → bridge doesn't false-trigger",
+			region: regionWithFriction("bridge-4", FrictionFlight), // near=24"
+			// 10" on day 2 and 10" on day 14 — not a boundary storm.
+			// Neither bridge window captures both.
+			forecasts: []Forecast{
+				singleDayForecast("bridge-4", nearDay(2), inchesToCM(10)),
+				singleDayForecast("bridge-4", extDay(14), inchesToCM(10)),
+			},
+			wantDetected: false,
+		},
+		{
+			name:   "diffuse snow below bridge threshold → not detected",
+			region: regionWithFriction("bridge-5", FrictionFlight), // near=24"
+			// 3"/day across days 4-10 = 21" total, below 24" threshold
+			forecasts: []Forecast{
+				singleDayForecast("bridge-5", nearDay(4), inchesToCM(3)),
+				singleDayForecast("bridge-5", nearDay(5), inchesToCM(3)),
+				singleDayForecast("bridge-5", nearDay(6), inchesToCM(3)),
+				singleDayForecast("bridge-5", nearDay(7), inchesToCM(3)),
+				singleDayForecast("bridge-5", extDay(8), inchesToCM(3)),
+				singleDayForecast("bridge-5", extDay(9), inchesToCM(3)),
+				singleDayForecast("bridge-5", extDay(10), inchesToCM(3)),
+			},
+			wantDetected: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := Detect(tc.region, tc.forecasts)
+			if result.Detected != tc.wantDetected {
+				t.Errorf("Detected = %v, want %v", result.Detected, tc.wantDetected)
+				for _, w := range result.Windows {
+					t.Logf("  window: %s–%s, %.1f\", near=%v",
+						w.StartDate.Format("day 2"), w.EndDate.Format("day 2"),
+						w.TotalIn, w.IsNearRange)
+				}
+			}
+		})
+	}
+}
+
+func hasWindow(windows []SnowfallWindow, nearRange bool) bool {
+	for _, w := range windows {
+		if w.IsNearRange == nearRange {
+			return true
+		}
+	}
+	return false
 }

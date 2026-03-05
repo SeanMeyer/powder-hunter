@@ -19,10 +19,13 @@ type Evaluation struct {
 	SnowQuality        string
 	CrowdEstimate      string
 	ClosureRisk        string
+	BestSkiDay         time.Time
+	BestSkiDayReason   string
 	WeatherSnapshot    []Forecast     // raw weather data captured at evaluation time
 	RawLLMResponse     string
 	StructuredResponse map[string]any
 	GroundingSources   []string
+	RenderedPrompt     string      // the full prompt sent (or that would be sent) to the LLM
 	ChangeClass        ChangeClass // set by comparison against prior evaluation
 	Delivered          bool
 }

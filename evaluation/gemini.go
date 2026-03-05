@@ -43,6 +43,8 @@ type GeminiResult struct {
 	SnowQuality        string
 	CrowdEstimate      string
 	ClosureRisk        string
+	BestSkiDay         time.Time
+	BestSkiDayReason   string
 	RawResponse        string
 	StructuredResponse map[string]any
 	GroundingSources   []string
@@ -88,6 +90,10 @@ func (g *GeminiClient) EvaluateStorm(ctx context.Context, prompt string) (Gemini
 	result.CrowdEstimate = stringField(structured, "crowd_estimate")
 	result.ClosureRisk = stringField(structured, "closure_risk")
 
+	bestDay, _ := time.Parse("2006-01-02", stringField(structured, "best_ski_day"))
+	result.BestSkiDay = bestDay
+	result.BestSkiDayReason = stringField(structured, "best_ski_day_reason")
+
 	result.KeyFactors = domain.KeyFactors{
 		Pros: stringSliceField(structured, "key_factors_pros"),
 		Cons: stringSliceField(structured, "key_factors_cons"),
@@ -128,6 +134,14 @@ func stormEvalSchema() *genai.Schema {
 			"snow_quality":             {Type: genai.TypeString},
 			"crowd_estimate":           {Type: genai.TypeString},
 			"closure_risk":             {Type: genai.TypeString},
+			"best_ski_day": {
+				Type:        genai.TypeString,
+				Description: "The single best date to ski in YYYY-MM-DD format, considering snowfall, clearing, and conditions",
+			},
+			"best_ski_day_reason": {
+				Type:        genai.TypeString,
+				Description: "Why this is the best day — what combination of factors makes it stand out",
+			},
 			"key_factors_pros":         {Type: genai.TypeArray, Items: &genai.Schema{Type: genai.TypeString}},
 			"key_factors_cons":         {Type: genai.TypeArray, Items: &genai.Schema{Type: genai.TypeString}},
 			"logistics_lodging":        {Type: genai.TypeString},
@@ -157,6 +171,7 @@ func stormEvalSchema() *genai.Schema {
 		Required: []string{
 			"tier", "recommendation", "strategy",
 			"snow_quality", "crowd_estimate", "closure_risk",
+			"best_ski_day", "best_ski_day_reason",
 			"key_factors_pros", "key_factors_cons",
 			"logistics_lodging", "logistics_transportation",
 			"logistics_road_conditions", "logistics_flight_cost", "logistics_car_rental",
@@ -266,19 +281,6 @@ func (e *GeminiEvaluator) Evaluate(
 		return domain.Evaluation{}, fmt.Errorf("load active prompt: %w", err)
 	}
 
-	weatherJSON, err := json.Marshal(forecasts)
-	if err != nil {
-		return domain.Evaluation{}, fmt.Errorf("marshal forecasts: %w", err)
-	}
-	resortsJSON, err := json.Marshal(resorts)
-	if err != nil {
-		return domain.Evaluation{}, fmt.Errorf("marshal resorts: %w", err)
-	}
-	profileJSON, err := json.Marshal(profile)
-	if err != nil {
-		return domain.Evaluation{}, fmt.Errorf("marshal profile: %w", err)
-	}
-
 	historyStr := "No prior evaluations"
 	if len(history) > 0 {
 		histJSON, err := json.Marshal(history)
@@ -288,11 +290,14 @@ func (e *GeminiEvaluator) Evaluate(
 		historyStr = string(histJSON)
 	}
 
+	detection := domain.Detect(region, forecasts)
+
 	renderedPrompt := RenderPrompt(promptTemplate, PromptData{
-		WeatherData:       string(weatherJSON),
+		WeatherData:       FormatWeatherForPrompt(forecasts),
 		RegionName:        region.Name,
-		Resorts:           string(resortsJSON),
-		UserProfile:       string(profileJSON),
+		Resorts:           FormatResortsForPrompt(resorts),
+		UserProfile:       FormatProfileForPrompt(profile),
+		StormWindow:       FormatDetectionForPrompt(detection),
 		EvaluationHistory: historyStr,
 		PromptVersion:     promptVersion,
 	})
@@ -305,6 +310,7 @@ func (e *GeminiEvaluator) Evaluate(
 	return domain.Evaluation{
 		EvaluatedAt:        time.Now().UTC(),
 		PromptVersion:      promptVersion,
+		RenderedPrompt:     renderedPrompt,
 		Tier:               gemResult.Tier,
 		Recommendation:     gemResult.Recommendation,
 		DayByDay:           gemResult.DayByDay,
@@ -314,6 +320,8 @@ func (e *GeminiEvaluator) Evaluate(
 		SnowQuality:        gemResult.SnowQuality,
 		CrowdEstimate:      gemResult.CrowdEstimate,
 		ClosureRisk:        gemResult.ClosureRisk,
+		BestSkiDay:         gemResult.BestSkiDay,
+		BestSkiDayReason:   gemResult.BestSkiDayReason,
 		WeatherSnapshot:    forecasts,
 		RawLLMResponse:     gemResult.RawResponse,
 		StructuredResponse: gemResult.StructuredResponse,

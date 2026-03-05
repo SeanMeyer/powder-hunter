@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"flag"
@@ -8,7 +9,9 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/seanmeyer/powder-hunter/discord"
 	"github.com/seanmeyer/powder-hunter/domain"
@@ -16,11 +19,42 @@ import (
 	"github.com/seanmeyer/powder-hunter/pipeline"
 	"github.com/seanmeyer/powder-hunter/seed"
 	"github.com/seanmeyer/powder-hunter/storage"
+	"github.com/seanmeyer/powder-hunter/trace"
 	"github.com/seanmeyer/powder-hunter/weather"
 )
 
 func main() {
+	loadEnvFile(".env")
 	os.Exit(run(context.Background(), os.Args[1:]))
+}
+
+// loadEnvFile reads KEY=VALUE lines from path and sets them as environment
+// variables. Existing env vars take precedence (are not overwritten).
+// Silently does nothing if the file doesn't exist.
+func loadEnvFile(path string) {
+	f, err := os.Open(path)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		key, value, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+		key = strings.TrimSpace(key)
+		value = strings.TrimSpace(value)
+		// Don't overwrite explicitly set env vars.
+		if _, exists := os.LookupEnv(key); !exists {
+			os.Setenv(key, value)
+		}
+	}
 }
 
 func run(ctx context.Context, args []string) int {
@@ -43,6 +77,10 @@ func run(ctx context.Context, args []string) int {
 		return runSeed(ctx, args[1:])
 	case "profile":
 		return runProfile(ctx, args[1:])
+	case "regions":
+		return runRegions()
+	case "trace":
+		return runTrace(ctx, args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n", args[0])
 		printUsage()
@@ -57,7 +95,9 @@ Commands:
   run       Execute the full pipeline (scan → evaluate → compare → post)
   replay    Re-run a past evaluation with a different prompt version
   seed      Initialize or update region/resort database
-  profile   View or update user profile`)
+  profile   View or update user profile
+  regions   List all regions from seed data
+  trace     Run pipeline for one region with human-readable debug output`)
 }
 
 func runPipeline(ctx context.Context, args []string) int {
@@ -211,15 +251,14 @@ func runReplay(ctx context.Context, args []string) int {
 		return 1
 	}
 
-	weatherJSON, _ := json.Marshal(eval.WeatherSnapshot)
-	resortsJSON, _ := json.Marshal(resorts)
-	profileJSON, _ := json.Marshal(profile)
+	replayDetection := domain.Detect(region, eval.WeatherSnapshot)
 
 	renderedPrompt := evaluation.RenderPrompt(promptTemplate, evaluation.PromptData{
-		WeatherData:       string(weatherJSON),
+		WeatherData:       evaluation.FormatWeatherForPrompt(eval.WeatherSnapshot),
 		RegionName:        region.Name,
-		Resorts:           string(resortsJSON),
-		UserProfile:       string(profileJSON),
+		Resorts:           evaluation.FormatResortsForPrompt(resorts),
+		UserProfile:       evaluation.FormatProfileForPrompt(*profile),
+		StormWindow:       evaluation.FormatDetectionForPrompt(replayDetection),
 		EvaluationHistory: "Replay — no history applied",
 		PromptVersion:     *promptVersion,
 	})
@@ -406,4 +445,210 @@ func runProfile(ctx context.Context, args []string) int {
 	}
 
 	return 0
+}
+
+func runRegions() int {
+	regions := seed.Regions()
+	rows := make([]trace.RegionRow, len(regions))
+	for i, r := range regions {
+		rows[i] = trace.RegionRow{
+			ID:          r.Region.ID,
+			Name:        r.Region.Name,
+			Tier:        string(r.Region.FrictionTier),
+			ResortCount: len(r.Resorts),
+		}
+	}
+	trace.FormatRegionsTable(os.Stdout, rows)
+	return 0
+}
+
+func runTrace(ctx context.Context, args []string) int {
+	fs := flag.NewFlagSet("trace", flag.ContinueOnError)
+	regionID := fs.String("region", "", "Region ID to trace (required)")
+	dbPath := fs.String("db", "", "SQLite database path (default: temp dir)")
+	weatherOnly := fs.Bool("weather-only", false, "Only fetch and display weather data")
+	showPrompt := fs.Bool("show-prompt", false, "Display the rendered LLM prompt")
+	if err := fs.Parse(args); err != nil {
+		return 1
+	}
+
+	if *regionID == "" {
+		fmt.Fprintln(os.Stderr, "error: --region is required")
+		fmt.Fprintln(os.Stderr, "usage: powder-hunter trace --region <id> [--weather-only] [--db <path>]")
+		return 1
+	}
+
+	// Find region in seed data.
+	allRegions := seed.Regions()
+	var found *seed.RegionWithResorts
+	for i := range allRegions {
+		if allRegions[i].Region.ID == *regionID {
+			found = &allRegions[i]
+			break
+		}
+	}
+	if found == nil {
+		fmt.Fprintf(os.Stderr, "error: region %q not found in seed data\n", *regionID)
+		fmt.Fprintln(os.Stderr, "run 'powder-hunter regions' to see available region IDs")
+		return 1
+	}
+
+	w := os.Stdout
+	trace.FormatTimestamp(w, time.Now())
+
+	// ── Weather ──────────────────────────────────────────────────────────────
+	httpClient := &http.Client{}
+	omClient := weather.NewOpenMeteoClient(httpClient)
+	nwsClient := weather.NewNWSClient(httpClient)
+	weatherSvc := weather.NewService(omClient, nwsClient)
+
+	forecasts, err := weatherSvc.FetchAll(ctx, found.Region)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: weather fetch failed: %v\n", err)
+		return 1
+	}
+
+	trace.FormatWeather(w, found.Region, found.Resorts, forecasts)
+
+	// ── Detection ────────────────────────────────────────────────────────────
+	detection := domain.Detect(found.Region, forecasts)
+	trace.FormatDetection(w, found.Region, detection)
+
+	if *weatherOnly {
+		if *showPrompt {
+			prompt := buildPrompt(found.Region, found.Resorts, forecasts)
+			trace.FormatPrompt(w, prompt)
+		}
+		trace.FormatWeatherOnly(w)
+		return 0
+	}
+
+	// ── LLM Evaluation ──────────────────────────────────────────────────────
+	apiKey := os.Getenv("GOOGLE_API_KEY")
+	if apiKey == "" {
+		fmt.Fprintln(os.Stderr, "error: GOOGLE_API_KEY environment variable is required for LLM evaluation")
+		fmt.Fprintln(os.Stderr, "use --weather-only to skip LLM evaluation")
+		return 1
+	}
+
+	// Use a temp DB if none specified, so trace works without a pre-seeded database.
+	actualDBPath := *dbPath
+	if actualDBPath == "" {
+		tmpDir, tmpErr := os.MkdirTemp("", "powder-hunter-trace-*")
+		if tmpErr != nil {
+			fmt.Fprintf(os.Stderr, "error: create temp dir: %v\n", tmpErr)
+			return 1
+		}
+		defer os.RemoveAll(tmpDir)
+		actualDBPath = filepath.Join(tmpDir, "trace.db")
+	}
+
+	db, err := storage.Open(actualDBPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: open database: %v\n", err)
+		return 1
+	}
+	defer db.Close()
+
+	// Seed the DB with regions and a default profile so the evaluator has context.
+	for _, r := range allRegions {
+		if upsertErr := db.UpsertRegion(ctx, r.Region); upsertErr != nil {
+			fmt.Fprintf(os.Stderr, "error: seed region: %v\n", upsertErr)
+			return 1
+		}
+		for _, resort := range r.Resorts {
+			if upsertErr := db.UpsertResort(ctx, resort); upsertErr != nil {
+				fmt.Fprintf(os.Stderr, "error: seed resort: %v\n", upsertErr)
+				return 1
+			}
+		}
+	}
+
+	profile, err := db.GetProfile(ctx)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: get profile: %v\n", err)
+		return 1
+	}
+	if profile == nil {
+		defaultProfile := domain.UserProfile{
+			ID:                1,
+			HomeBase:          "Denver, CO",
+			HomeLatitude:      39.7392,
+			HomeLongitude:     -104.9903,
+			PassesHeld:        []string{"ikon"},
+			RemoteWorkCapable: true,
+			TypicalPTODays:    15,
+			MinTierForPing:    domain.TierDropEverything,
+			QuietHoursStart:   "22:00",
+			QuietHoursEnd:     "07:00",
+		}
+		if saveErr := db.SaveProfile(ctx, defaultProfile); saveErr != nil {
+			fmt.Fprintf(os.Stderr, "error: create default profile: %v\n", saveErr)
+			return 1
+		}
+		profile = &defaultProfile
+	}
+
+	// Seed the prompt template.
+	promptID, promptVersion, promptTemplate := seed.InitialPromptTemplate()
+	if seedErr := db.SavePromptTemplate(ctx, promptID, promptVersion, promptTemplate); seedErr != nil {
+		fmt.Fprintf(os.Stderr, "error: seed prompt template: %v\n", seedErr)
+		return 1
+	}
+
+	geminiClient, err := evaluation.NewGeminiClient(ctx, apiKey)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: create gemini client: %v\n", err)
+		return 1
+	}
+	evaluator := evaluation.NewGeminiEvaluator(geminiClient, db)
+
+	eval, err := evaluator.Evaluate(ctx, forecasts, found.Region, found.Resorts, *profile, nil)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: LLM evaluation failed: %v\n", err)
+		return 1
+	}
+
+	if *showPrompt {
+		trace.FormatPrompt(w, eval.RenderedPrompt)
+	}
+
+	trace.FormatEvaluation(w, eval)
+
+	// ── Change Detection ────────────────────────────────────────────────────
+	// Trace always compares against an empty prior (no DB history for this storm).
+	changeClass := domain.Compare(domain.Evaluation{}, eval)
+	trace.FormatComparison(w, changeClass, "")
+
+	// ── Discord Preview ─────────────────────────────────────────────────────
+	trace.FormatDiscordPreview(w, eval, found.Region)
+
+	return 0
+}
+
+// buildPrompt renders the LLM prompt using seed data and a default profile,
+// without requiring a database or API key. Used by --show-prompt in weather-only mode.
+func buildPrompt(region domain.Region, resorts []domain.Resort, forecasts []domain.Forecast) string {
+	_, promptVersion, promptTemplate := seed.InitialPromptTemplate()
+
+	defaultProfile := domain.UserProfile{
+		HomeBase:          "Denver, CO",
+		HomeLatitude:      39.7392,
+		HomeLongitude:     -104.9903,
+		PassesHeld:        []string{"ikon"},
+		RemoteWorkCapable: true,
+		TypicalPTODays:    15,
+	}
+
+	detection := domain.Detect(region, forecasts)
+
+	return evaluation.RenderPrompt(promptTemplate, evaluation.PromptData{
+		WeatherData:       evaluation.FormatWeatherForPrompt(forecasts),
+		RegionName:        region.Name,
+		Resorts:           evaluation.FormatResortsForPrompt(resorts),
+		UserProfile:       evaluation.FormatProfileForPrompt(defaultProfile),
+		StormWindow:       evaluation.FormatDetectionForPrompt(detection),
+		EvaluationHistory: "No prior evaluations",
+		PromptVersion:     promptVersion,
+	})
 }

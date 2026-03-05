@@ -190,14 +190,14 @@ func parseGridpointForecast(body []byte) ([]domain.DailyForecast, error) {
 }
 
 // aggregateSnowfall sums interval values into daily totals.
-// NWS snowfall is reported in cm with 6-hour intervals.
+// NWS snowfallAmount is reported in mm; we convert to cm for the domain model.
 func aggregateSnowfall(values []nwsValue) map[string]float64 {
 	byDay := make(map[string]float64)
 	for _, v := range values {
 		if v.Value == nil {
 			continue
 		}
-		cm := *v.Value
+		cm := *v.Value / 10.0 // NWS API returns mm, domain uses cm
 		if cm > nwsSnowfallSanityLimitCM {
 			continue
 		}

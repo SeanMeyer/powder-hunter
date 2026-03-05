@@ -15,7 +15,7 @@ type Fetcher interface {
 }
 
 // Service fetches weather for a region from all applicable sources.
-// US regions get both Open-Meteo (16-day) and NWS (days 1-3).
+// US regions get both Open-Meteo (16-day) and NWS (~7 day gridpoint data).
 // Canadian regions get only Open-Meteo.
 type Service struct {
 	openMeteo *OpenMeteoClient
