@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"math"
+	"time"
+)
 
 // Forecast holds parsed daily weather data from a single source fetch.
 // Each forecast is tied to a specific resort's coordinates and elevation.
@@ -120,6 +123,38 @@ func CalculateSLR(tempC float64) float64 {
 	default:
 		return 20 // cold smoke
 	}
+}
+
+const (
+	// Vionnet density clamps prevent unrealistic values at temperature/wind extremes.
+	densityFloor   = 40.0  // kg/m3 — coldest realistic snow (25:1 SLR)
+	densityCeiling = 250.0 // kg/m3 — heaviest realistic wet snow (4:1 SLR)
+)
+
+// CalculateDensity returns fresh snow density in kg/m3 using the Vionnet et al. (2012)
+// formula: density = 109 + 6*T + 26*sqrt(u), clamped to [40, 250] kg/m3.
+// Returns 0 for rain (temp above 1.67°C / 35°F).
+func CalculateDensity(tempC float64, windSpeedMs float64) float64 {
+	if tempC > slrThresholdRainC {
+		return 0
+	}
+	density := 109.0 + 6.0*tempC + 26.0*math.Sqrt(windSpeedMs)
+	if density < densityFloor {
+		return densityFloor
+	}
+	if density > densityCeiling {
+		return densityCeiling
+	}
+	return density
+}
+
+// SLRFromDensity converts snow density (kg/m3) to snow-to-liquid ratio.
+// Returns 0 if density is 0 (rain).
+func SLRFromDensity(density float64) float64 {
+	if density <= 0 {
+		return 0
+	}
+	return 1000.0 / density
 }
 
 // SnowfallFromPrecip returns snowfall in cm for a given hour's precipitation (mm) and

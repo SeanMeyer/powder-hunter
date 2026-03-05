@@ -210,3 +210,63 @@ func TestComputeConsensus(t *testing.T) {
 		}
 	})
 }
+
+func TestCalculateDensity(t *testing.T) {
+	tests := []struct {
+		name        string
+		tempC       float64
+		windSpeedMs float64
+		wantDensity float64
+	}{
+		{"moderate calm", -8.0, 2.0, 97.8},
+		{"cold windy", -15.0, 10.0, 101.2},
+		{"warm wet", -2.0, 5.0, 155.1},
+		{"cold calm powder", -15.0, 2.0, 55.8},
+		{"cold very windy", -15.0, 15.0, 119.7},
+		{"zero wind moderate cold", -10.0, 0.0, 49.0},
+		{"very cold calm clamps to floor", -22.0, 1.0, 40.0},
+		{"extreme cold clamps to floor", -30.0, 0.0, 40.0},
+		{"warm high wind clamps to ceiling", 0.0, 30.0, 250.0},
+		{"rain returns zero density", 2.0, 5.0, 0.0},
+		{"rain at threshold", 1.67, 5.0, 0.0},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := CalculateDensity(tc.tempC, tc.windSpeedMs)
+			delta := got - tc.wantDensity
+			if delta < 0 {
+				delta = -delta
+			}
+			if delta > 0.5 {
+				t.Errorf("CalculateDensity(%v, %v) = %.1f, want %.1f", tc.tempC, tc.windSpeedMs, got, tc.wantDensity)
+			}
+		})
+	}
+}
+
+func TestSLRFromDensity(t *testing.T) {
+	tests := []struct {
+		name    string
+		density float64
+		wantSLR float64
+	}{
+		{"100 kg/m3 → 10:1", 100.0, 10.0},
+		{"50 kg/m3 → 20:1", 50.0, 20.0},
+		{"200 kg/m3 → 5:1", 200.0, 5.0},
+		{"zero density → zero SLR", 0.0, 0.0},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := SLRFromDensity(tc.density)
+			delta := got - tc.wantSLR
+			if delta < 0 {
+				delta = -delta
+			}
+			if delta > 0.01 {
+				t.Errorf("SLRFromDensity(%v) = %.2f, want %.2f", tc.density, got, tc.wantSLR)
+			}
+		})
+	}
+}
