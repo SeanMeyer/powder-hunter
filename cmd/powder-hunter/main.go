@@ -113,6 +113,7 @@ func runPipeline(ctx context.Context, args []string) int {
 	verbose := fs.Bool("verbose", false, "Enable debug-level logging")
 	loop := fs.Bool("loop", false, "Run pipeline repeatedly on an interval")
 	interval := fs.Duration("interval", 12*time.Hour, "Time between pipeline runs (requires --loop)")
+	budget := fs.Float64("budget", 0, "Monthly budget limit in USD (0 = disabled)")
 	if err := fs.Parse(args); err != nil {
 		return 1
 	}
@@ -156,6 +157,13 @@ func runPipeline(ctx context.Context, args []string) int {
 
 	p := pipeline.New(weatherSvc, db, evaluator, slog.Default())
 	p.WithDryRun(*dryRun)
+	p.WithCostTracker(db)
+	if *budget > 0 {
+		p.WithBudgetConfig(pipeline.BudgetConfig{
+			MonthlyLimitUSD:  *budget,
+			WarningThreshold: 0.8,
+		})
+	}
 
 	if !*dryRun && webhookURL != "" {
 		poster := discord.NewWebhookClient(webhookURL, &http.Client{})
@@ -183,6 +191,9 @@ func runPipeline(ctx context.Context, args []string) int {
 		"evaluated", summary.Evaluated,
 		"posted", summary.Posted,
 		"expired", summary.Expired,
+		"skipped_unchanged", summary.SkippedUnchanged,
+		"skipped_cooldown", summary.SkippedCooldown,
+		"skipped_budget", summary.SkippedBudget,
 	)
 	return 0
 }
@@ -202,6 +213,9 @@ func runLoop(ctx context.Context, p *pipeline.Pipeline, region string, interval 
 				"evaluated", summary.Evaluated,
 				"posted", summary.Posted,
 				"expired", summary.Expired,
+				"skipped_unchanged", summary.SkippedUnchanged,
+				"skipped_cooldown", summary.SkippedCooldown,
+				"skipped_budget", summary.SkippedBudget,
 				"next_run", time.Now().Add(interval).Format(time.RFC3339),
 			)
 		}

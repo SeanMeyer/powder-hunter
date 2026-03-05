@@ -172,7 +172,7 @@ func TestPipeline_HappyPath(t *testing.T) {
 	p := pipeline.New(nil, db, fakeEval, discardLogger())
 	p.WithPoster(fakePoster)
 
-	evals, err := p.Evaluate(ctx, scans)
+	evals, err := p.Evaluate(ctx, scans, &pipeline.RunSummary{})
 	if err != nil {
 		t.Fatalf("evaluate: %v", err)
 	}
@@ -234,7 +234,7 @@ func TestPipeline_ThresholdFiltering(t *testing.T) {
 	p := pipeline.New(nil, db, fakeEval, discardLogger())
 	p.WithPoster(fakePoster)
 
-	evals, err := p.Evaluate(ctx, scans)
+	evals, err := p.Evaluate(ctx, scans, &pipeline.RunSummary{})
 	if err != nil {
 		t.Fatalf("evaluate: %v", err)
 	}
@@ -317,7 +317,7 @@ func TestPipeline_ErrorIsolation(t *testing.T) {
 	p := pipeline.New(nil, db, fakeEval, discardLogger())
 	p.WithPoster(fakePoster)
 
-	evals, err := p.Evaluate(ctx, scans)
+	evals, err := p.Evaluate(ctx, scans, &pipeline.RunSummary{})
 	if err != nil {
 		t.Fatalf("evaluate: %v", err)
 	}
@@ -406,7 +406,7 @@ func TestPipeline_StormLifecycle(t *testing.T) {
 	p := pipeline.New(nil, db, fakeEval, discardLogger())
 	p.WithPoster(fakePoster)
 
-	evals, err := p.Evaluate(ctx, scans)
+	evals, err := p.Evaluate(ctx, scans, &pipeline.RunSummary{})
 	if err != nil {
 		t.Fatalf("evaluate: %v", err)
 	}
@@ -522,7 +522,7 @@ func TestPipeline_DryRun(t *testing.T) {
 	p.WithDryRun(true)
 	p.WithPoster(fakePoster)
 
-	evals, _ := p.Evaluate(ctx, scans)
+	evals, _ := p.Evaluate(ctx, scans, &pipeline.RunSummary{})
 	compared, _ := p.Compare(ctx, evals)
 	if err := p.Post(ctx, compared); err != nil {
 		t.Fatalf("post: %v", err)
@@ -598,7 +598,7 @@ func TestPipeline_MultiModelConsensusAndAFD(t *testing.T) {
 	p := pipeline.New(nil, db, fakeEval, discardLogger())
 	p.WithDryRun(true)
 
-	evals, err := p.Evaluate(ctx, scans)
+	evals, err := p.Evaluate(ctx, scans, &pipeline.RunSummary{})
 	if err != nil {
 		t.Fatalf("evaluate: %v", err)
 	}
@@ -626,5 +626,587 @@ func TestPipeline_MultiModelConsensusAndAFD(t *testing.T) {
 	}
 	if len(call.Forecasts) != 2 {
 		t.Errorf("expected 2 forecasts passed to evaluator, got %d", len(call.Forecasts))
+	}
+}
+
+// --- Cost Optimization Tests ---
+
+func TestPipeline_SkipUnchangedWeather(t *testing.T) {
+	ctx := context.Background()
+	db := setupDB(t)
+	seedProfile(t, ctx, db)
+
+	regionA := testRegion("region-a")
+	seedRegion(t, ctx, db, regionA)
+
+	now := time.Now().UTC()
+	tomorrow := now.AddDate(0, 0, 1)
+
+	forecasts := []domain.Forecast{aboveThresholdForecast(regionA.ID)}
+
+	stormID, err := db.CreateStorm(ctx, domain.Storm{
+		RegionID: regionA.ID, WindowStart: tomorrow,
+		WindowEnd: tomorrow.AddDate(0, 0, 6), State: domain.StormEvaluated,
+		CurrentTier: domain.TierWorthALook, DetectedAt: now.AddDate(0, 0, -1),
+	})
+	if err != nil {
+		t.Fatalf("create storm: %v", err)
+	}
+
+	// Seed a prior evaluation with the same weather snapshot.
+	_, err = db.SaveEvaluation(ctx, domain.Evaluation{
+		StormID:         stormID,
+		EvaluatedAt:     now.Add(-1 * time.Hour), // evaluated 1 hour ago
+		Tier:            domain.TierWorthALook,
+		ChangeClass:     domain.ChangeNew,
+		WeatherSnapshot: forecasts, // same forecasts as current
+	})
+	if err != nil {
+		t.Fatalf("save prior evaluation: %v", err)
+	}
+
+	storm, _ := db.FindOverlappingStorm(ctx, regionA.ID, tomorrow, tomorrow.AddDate(0, 0, 6))
+	scans := []pipeline.ScanResult{
+		{
+			Region:    regionA,
+			Storm:     *storm,
+			Forecasts: forecasts,
+			IsNew:     false,
+		},
+	}
+
+	fakeEval := &evaluation.FakeEvaluator{
+		Results: map[string]domain.Evaluation{
+			regionA.ID: {Tier: domain.TierWorthALook},
+		},
+	}
+
+	p := pipeline.New(nil, db, fakeEval, discardLogger())
+	summary := pipeline.RunSummary{}
+	evals, err := p.Evaluate(ctx, scans, &summary)
+	if err != nil {
+		t.Fatalf("evaluate: %v", err)
+	}
+
+	// Storm should be skipped because weather hasn't changed and cooldown hasn't elapsed.
+	if len(evals) != 0 {
+		t.Errorf("expected 0 evals (unchanged weather + cooldown), got %d", len(evals))
+	}
+	if len(fakeEval.EvaluateCalls) != 0 {
+		t.Errorf("expected 0 evaluator calls, got %d", len(fakeEval.EvaluateCalls))
+	}
+	// Should be counted as cooldown skip (weather unchanged + within 12h cooldown for WORTH_A_LOOK).
+	if summary.SkippedCooldown != 1 {
+		t.Errorf("expected 1 cooldown skip, got %d (unchanged=%d, budget=%d)",
+			summary.SkippedCooldown, summary.SkippedUnchanged, summary.SkippedBudget)
+	}
+}
+
+func TestPipeline_ProceedWhenWeatherChanged(t *testing.T) {
+	ctx := context.Background()
+	db := setupDB(t)
+	seedProfile(t, ctx, db)
+
+	regionA := testRegion("region-a")
+	seedRegion(t, ctx, db, regionA)
+
+	now := time.Now().UTC()
+	tomorrow := now.AddDate(0, 0, 1)
+
+	stormID, err := db.CreateStorm(ctx, domain.Storm{
+		RegionID: regionA.ID, WindowStart: tomorrow,
+		WindowEnd: tomorrow.AddDate(0, 0, 6), State: domain.StormEvaluated,
+		CurrentTier: domain.TierOnTheRadar, DetectedAt: now.AddDate(0, 0, -1),
+	})
+	if err != nil {
+		t.Fatalf("create storm: %v", err)
+	}
+
+	// Prior eval with low snowfall.
+	_, err = db.SaveEvaluation(ctx, domain.Evaluation{
+		StormID:     stormID,
+		EvaluatedAt: now.Add(-1 * time.Hour),
+		Tier:        domain.TierOnTheRadar,
+		ChangeClass: domain.ChangeNew,
+		WeatherSnapshot: []domain.Forecast{{
+			RegionID: regionA.ID, Source: "open_meteo", FetchedAt: now.Add(-2 * time.Hour),
+			DailyData: []domain.DailyForecast{
+				{Date: tomorrow, SnowfallCM: 5.0, TemperatureMinC: -2, TemperatureMaxC: 1},
+			},
+		}},
+	})
+	if err != nil {
+		t.Fatalf("save prior evaluation: %v", err)
+	}
+
+	// Current forecasts with significantly more snow (>2" delta).
+	currentForecasts := []domain.Forecast{{
+		RegionID: regionA.ID, Source: "open_meteo", FetchedAt: now,
+		DailyData: []domain.DailyForecast{
+			{Date: tomorrow, SnowfallCM: 5.0 + 10*2.54, TemperatureMinC: -2, TemperatureMaxC: 1}, // +10" more
+		},
+	}}
+
+	storm, _ := db.FindOverlappingStorm(ctx, regionA.ID, tomorrow, tomorrow.AddDate(0, 0, 6))
+	scans := []pipeline.ScanResult{
+		{
+			Region:    regionA,
+			Storm:     *storm,
+			Forecasts: currentForecasts,
+			IsNew:     false,
+		},
+	}
+
+	fakeEval := &evaluation.FakeEvaluator{
+		Results: map[string]domain.Evaluation{
+			regionA.ID: {Tier: domain.TierDropEverything},
+		},
+	}
+
+	p := pipeline.New(nil, db, fakeEval, discardLogger())
+	summary := pipeline.RunSummary{}
+	evals, err := p.Evaluate(ctx, scans, &summary)
+	if err != nil {
+		t.Fatalf("evaluate: %v", err)
+	}
+
+	// Weather changed materially — should proceed despite cooldown.
+	if len(evals) != 1 {
+		t.Fatalf("expected 1 eval (weather changed), got %d", len(evals))
+	}
+	if len(fakeEval.EvaluateCalls) != 1 {
+		t.Errorf("expected 1 evaluator call, got %d", len(fakeEval.EvaluateCalls))
+	}
+}
+
+func TestPipeline_FirstEvalAlwaysProceeds(t *testing.T) {
+	ctx := context.Background()
+	db := setupDB(t)
+	seedProfile(t, ctx, db)
+
+	regionA := testRegion("region-a")
+	seedRegion(t, ctx, db, regionA)
+
+	now := time.Now().UTC()
+	tomorrow := now.AddDate(0, 0, 1)
+
+	stormID, err := db.CreateStorm(ctx, domain.Storm{
+		RegionID: regionA.ID, WindowStart: tomorrow,
+		WindowEnd: tomorrow.AddDate(0, 0, 6), State: domain.StormDetected, DetectedAt: now,
+	})
+	if err != nil {
+		t.Fatalf("create storm: %v", err)
+	}
+
+	// No prior evaluation — this is a first eval.
+	scans := []pipeline.ScanResult{
+		{
+			Region:    regionA,
+			Storm:     domain.Storm{ID: stormID, RegionID: regionA.ID, State: domain.StormDetected, WindowStart: tomorrow, WindowEnd: tomorrow.AddDate(0, 0, 6), DetectedAt: now},
+			Forecasts: []domain.Forecast{aboveThresholdForecast(regionA.ID)},
+			IsNew:     true,
+		},
+	}
+
+	fakeEval := &evaluation.FakeEvaluator{
+		Results: map[string]domain.Evaluation{
+			regionA.ID: {Tier: domain.TierDropEverything},
+		},
+	}
+
+	p := pipeline.New(nil, db, fakeEval, discardLogger())
+	summary := pipeline.RunSummary{}
+	evals, err := p.Evaluate(ctx, scans, &summary)
+	if err != nil {
+		t.Fatalf("evaluate: %v", err)
+	}
+
+	if len(evals) != 1 {
+		t.Fatalf("expected 1 eval (first eval always proceeds), got %d", len(evals))
+	}
+	if summary.SkippedUnchanged+summary.SkippedCooldown+summary.SkippedBudget != 0 {
+		t.Errorf("expected 0 skips for first eval, got unchanged=%d cooldown=%d budget=%d",
+			summary.SkippedUnchanged, summary.SkippedCooldown, summary.SkippedBudget)
+	}
+}
+
+func TestPipeline_CooldownOnTheRadar(t *testing.T) {
+	ctx := context.Background()
+	db := setupDB(t)
+	seedProfile(t, ctx, db)
+
+	regionA := testRegion("region-a")
+	seedRegion(t, ctx, db, regionA)
+
+	now := time.Now().UTC()
+	tomorrow := now.AddDate(0, 0, 1)
+	forecasts := []domain.Forecast{aboveThresholdForecast(regionA.ID)}
+
+	stormID, _ := db.CreateStorm(ctx, domain.Storm{
+		RegionID: regionA.ID, WindowStart: tomorrow,
+		WindowEnd: tomorrow.AddDate(0, 0, 6), State: domain.StormEvaluated,
+		CurrentTier: domain.TierOnTheRadar, DetectedAt: now.AddDate(0, 0, -2),
+	})
+
+	// ON_THE_RADAR evaluated 13h ago — within 24h cooldown.
+	db.SaveEvaluation(ctx, domain.Evaluation{
+		StormID: stormID, EvaluatedAt: now.Add(-13 * time.Hour),
+		Tier: domain.TierOnTheRadar, ChangeClass: domain.ChangeNew,
+		WeatherSnapshot: forecasts,
+	})
+
+	storm, _ := db.FindOverlappingStorm(ctx, regionA.ID, tomorrow, tomorrow.AddDate(0, 0, 6))
+	scans := []pipeline.ScanResult{{Region: regionA, Storm: *storm, Forecasts: forecasts, IsNew: false}}
+
+	fakeEval := &evaluation.FakeEvaluator{}
+	p := pipeline.New(nil, db, fakeEval, discardLogger())
+	summary := pipeline.RunSummary{}
+	evals, _ := p.Evaluate(ctx, scans, &summary)
+
+	if len(evals) != 0 {
+		t.Errorf("ON_THE_RADAR 13h ago should be skipped, got %d evals", len(evals))
+	}
+	if summary.SkippedCooldown != 1 {
+		t.Errorf("expected 1 cooldown skip, got %d", summary.SkippedCooldown)
+	}
+}
+
+func TestPipeline_DropEverythingUnchangedWeatherStillSkipped(t *testing.T) {
+	ctx := context.Background()
+	db := setupDB(t)
+	seedProfile(t, ctx, db)
+
+	regionA := testRegion("region-a")
+	seedRegion(t, ctx, db, regionA)
+
+	now := time.Now().UTC()
+	tomorrow := now.AddDate(0, 0, 1)
+	forecasts := []domain.Forecast{aboveThresholdForecast(regionA.ID)}
+
+	stormID, _ := db.CreateStorm(ctx, domain.Storm{
+		RegionID: regionA.ID, WindowStart: tomorrow,
+		WindowEnd: tomorrow.AddDate(0, 0, 6), State: domain.StormEvaluated,
+		CurrentTier: domain.TierDropEverything, DetectedAt: now.AddDate(0, 0, -2),
+	})
+
+	// DROP_EVERYTHING evaluated 13h ago, same weather.
+	db.SaveEvaluation(ctx, domain.Evaluation{
+		StormID: stormID, EvaluatedAt: now.Add(-13 * time.Hour),
+		Tier: domain.TierDropEverything, ChangeClass: domain.ChangeNew,
+		WeatherSnapshot: forecasts,
+	})
+
+	storm, _ := db.FindOverlappingStorm(ctx, regionA.ID, tomorrow, tomorrow.AddDate(0, 0, 6))
+	scans := []pipeline.ScanResult{{Region: regionA, Storm: *storm, Forecasts: forecasts, IsNew: false}}
+
+	fakeEval := &evaluation.FakeEvaluator{
+		Results: map[string]domain.Evaluation{regionA.ID: {Tier: domain.TierDropEverything}},
+	}
+	p := pipeline.New(nil, db, fakeEval, discardLogger())
+	summary := pipeline.RunSummary{}
+	evals, _ := p.Evaluate(ctx, scans, &summary)
+
+	// DROP_EVERYTHING has no cooldown, but weather unchanged → still re-evaluates
+	// because cooldown=0 means "cooldown elapsed" immediately.
+	if len(evals) != 1 {
+		t.Errorf("DROP_EVERYTHING with no cooldown should proceed (cooldown=0), got %d evals", len(evals))
+	}
+}
+
+func TestPipeline_DropEverythingChangedWeatherProceeds(t *testing.T) {
+	ctx := context.Background()
+	db := setupDB(t)
+	seedProfile(t, ctx, db)
+
+	regionA := testRegion("region-a")
+	seedRegion(t, ctx, db, regionA)
+
+	now := time.Now().UTC()
+	tomorrow := now.AddDate(0, 0, 1)
+
+	stormID, _ := db.CreateStorm(ctx, domain.Storm{
+		RegionID: regionA.ID, WindowStart: tomorrow,
+		WindowEnd: tomorrow.AddDate(0, 0, 6), State: domain.StormEvaluated,
+		CurrentTier: domain.TierDropEverything, DetectedAt: now.AddDate(0, 0, -2),
+	})
+
+	// Prior eval with little snow.
+	db.SaveEvaluation(ctx, domain.Evaluation{
+		StormID: stormID, EvaluatedAt: now.Add(-13 * time.Hour),
+		Tier: domain.TierDropEverything, ChangeClass: domain.ChangeNew,
+		WeatherSnapshot: []domain.Forecast{{
+			RegionID: regionA.ID, Source: "open_meteo", FetchedAt: now.Add(-14 * time.Hour),
+			DailyData: []domain.DailyForecast{{Date: tomorrow, SnowfallCM: 5.0}},
+		}},
+	})
+
+	// Much more snow now.
+	currentForecasts := []domain.Forecast{{
+		RegionID: regionA.ID, Source: "open_meteo", FetchedAt: now,
+		DailyData: []domain.DailyForecast{{Date: tomorrow, SnowfallCM: 5.0 + 15*2.54}},
+	}}
+
+	storm, _ := db.FindOverlappingStorm(ctx, regionA.ID, tomorrow, tomorrow.AddDate(0, 0, 6))
+	scans := []pipeline.ScanResult{{Region: regionA, Storm: *storm, Forecasts: currentForecasts, IsNew: false}}
+
+	fakeEval := &evaluation.FakeEvaluator{
+		Results: map[string]domain.Evaluation{regionA.ID: {Tier: domain.TierDropEverything}},
+	}
+	p := pipeline.New(nil, db, fakeEval, discardLogger())
+	summary := pipeline.RunSummary{}
+	evals, _ := p.Evaluate(ctx, scans, &summary)
+
+	if len(evals) != 1 {
+		t.Fatalf("DROP_EVERYTHING with changed weather should proceed, got %d evals", len(evals))
+	}
+}
+
+func TestPipeline_WeatherChangeOverridesCooldown(t *testing.T) {
+	ctx := context.Background()
+	db := setupDB(t)
+	seedProfile(t, ctx, db)
+
+	regionA := testRegion("region-a")
+	seedRegion(t, ctx, db, regionA)
+
+	now := time.Now().UTC()
+	tomorrow := now.AddDate(0, 0, 1)
+
+	stormID, _ := db.CreateStorm(ctx, domain.Storm{
+		RegionID: regionA.ID, WindowStart: tomorrow,
+		WindowEnd: tomorrow.AddDate(0, 0, 6), State: domain.StormEvaluated,
+		CurrentTier: domain.TierWorthALook, DetectedAt: now.AddDate(0, 0, -2),
+	})
+
+	// WORTH_A_LOOK evaluated 6h ago (within 12h cooldown), but weather changed.
+	db.SaveEvaluation(ctx, domain.Evaluation{
+		StormID: stormID, EvaluatedAt: now.Add(-6 * time.Hour),
+		Tier: domain.TierWorthALook, ChangeClass: domain.ChangeNew,
+		WeatherSnapshot: []domain.Forecast{{
+			RegionID: regionA.ID, Source: "open_meteo", FetchedAt: now.Add(-7 * time.Hour),
+			DailyData: []domain.DailyForecast{{Date: tomorrow, SnowfallCM: 5.0}},
+		}},
+	})
+
+	// Significantly different weather.
+	currentForecasts := []domain.Forecast{{
+		RegionID: regionA.ID, Source: "open_meteo", FetchedAt: now,
+		DailyData: []domain.DailyForecast{{Date: tomorrow, SnowfallCM: 5.0 + 10*2.54}},
+	}}
+
+	storm, _ := db.FindOverlappingStorm(ctx, regionA.ID, tomorrow, tomorrow.AddDate(0, 0, 6))
+	scans := []pipeline.ScanResult{{Region: regionA, Storm: *storm, Forecasts: currentForecasts, IsNew: false}}
+
+	fakeEval := &evaluation.FakeEvaluator{
+		Results: map[string]domain.Evaluation{regionA.ID: {Tier: domain.TierDropEverything}},
+	}
+	p := pipeline.New(nil, db, fakeEval, discardLogger())
+	summary := pipeline.RunSummary{}
+	evals, _ := p.Evaluate(ctx, scans, &summary)
+
+	if len(evals) != 1 {
+		t.Fatalf("weather change should override cooldown, got %d evals", len(evals))
+	}
+}
+
+func TestPipeline_CooldownElapsedProceeds(t *testing.T) {
+	ctx := context.Background()
+	db := setupDB(t)
+	seedProfile(t, ctx, db)
+
+	regionA := testRegion("region-a")
+	seedRegion(t, ctx, db, regionA)
+
+	now := time.Now().UTC()
+	tomorrow := now.AddDate(0, 0, 1)
+	forecasts := []domain.Forecast{aboveThresholdForecast(regionA.ID)}
+
+	stormID, _ := db.CreateStorm(ctx, domain.Storm{
+		RegionID: regionA.ID, WindowStart: tomorrow,
+		WindowEnd: tomorrow.AddDate(0, 0, 6), State: domain.StormEvaluated,
+		CurrentTier: domain.TierOnTheRadar, DetectedAt: now.AddDate(0, 0, -3),
+	})
+
+	// ON_THE_RADAR evaluated 25h ago — past 24h cooldown.
+	db.SaveEvaluation(ctx, domain.Evaluation{
+		StormID: stormID, EvaluatedAt: now.Add(-25 * time.Hour),
+		Tier: domain.TierOnTheRadar, ChangeClass: domain.ChangeNew,
+		WeatherSnapshot: forecasts,
+	})
+
+	storm, _ := db.FindOverlappingStorm(ctx, regionA.ID, tomorrow, tomorrow.AddDate(0, 0, 6))
+	scans := []pipeline.ScanResult{{Region: regionA, Storm: *storm, Forecasts: forecasts, IsNew: false}}
+
+	fakeEval := &evaluation.FakeEvaluator{
+		Results: map[string]domain.Evaluation{regionA.ID: {Tier: domain.TierOnTheRadar}},
+	}
+	p := pipeline.New(nil, db, fakeEval, discardLogger())
+	summary := pipeline.RunSummary{}
+	evals, _ := p.Evaluate(ctx, scans, &summary)
+
+	if len(evals) != 1 {
+		t.Errorf("ON_THE_RADAR 25h ago (past cooldown) should proceed, got %d evals", len(evals))
+	}
+}
+
+// --- Budget Tests ---
+
+// fakeCostTracker implements pipeline.CostTracker for testing.
+type fakeCostTracker struct {
+	spent float64
+	calls int
+	records []costRecord
+}
+
+type costRecord struct {
+	stormID  int64
+	regionID string
+	cost     float64
+	success  bool
+}
+
+func (f *fakeCostTracker) RecordCost(_ context.Context, stormID int64, regionID string, estimatedCost float64, success bool) error {
+	f.records = append(f.records, costRecord{stormID, regionID, estimatedCost, success})
+	return nil
+}
+
+func (f *fakeCostTracker) MonthlySpend(_ context.Context) (float64, int, error) {
+	return f.spent, f.calls, nil
+}
+
+func TestPipeline_BudgetNotSet_ProceedsNormally(t *testing.T) {
+	ctx := context.Background()
+	db := setupDB(t)
+	seedProfile(t, ctx, db)
+
+	regionA := testRegion("region-a")
+	seedRegion(t, ctx, db, regionA)
+
+	now := time.Now().UTC()
+	tomorrow := now.AddDate(0, 0, 1)
+
+	stormID, _ := db.CreateStorm(ctx, domain.Storm{
+		RegionID: regionA.ID, WindowStart: tomorrow,
+		WindowEnd: tomorrow.AddDate(0, 0, 6), State: domain.StormDetected, DetectedAt: now,
+	})
+
+	scans := []pipeline.ScanResult{{
+		Region:    regionA,
+		Storm:     domain.Storm{ID: stormID, RegionID: regionA.ID, State: domain.StormDetected, WindowStart: tomorrow, WindowEnd: tomorrow.AddDate(0, 0, 6), DetectedAt: now},
+		Forecasts: []domain.Forecast{aboveThresholdForecast(regionA.ID)},
+		IsNew:     true,
+	}}
+
+	fakeEval := &evaluation.FakeEvaluator{
+		Results: map[string]domain.Evaluation{regionA.ID: {Tier: domain.TierDropEverything}},
+	}
+	// No cost tracker, no budget — should proceed.
+	p := pipeline.New(nil, db, fakeEval, discardLogger())
+	summary := pipeline.RunSummary{}
+	evals, _ := p.Evaluate(ctx, scans, &summary)
+
+	if len(evals) != 1 {
+		t.Errorf("no budget: expected 1 eval, got %d", len(evals))
+	}
+	if summary.SkippedBudget != 0 {
+		t.Errorf("no budget: expected 0 budget skips, got %d", summary.SkippedBudget)
+	}
+}
+
+func TestPipeline_BudgetExceeded_SkipsNonFirstEval(t *testing.T) {
+	ctx := context.Background()
+	db := setupDB(t)
+	seedProfile(t, ctx, db)
+
+	regionA := testRegion("region-a")
+	seedRegion(t, ctx, db, regionA)
+
+	now := time.Now().UTC()
+	tomorrow := now.AddDate(0, 0, 1)
+	forecasts := []domain.Forecast{aboveThresholdForecast(regionA.ID)}
+
+	stormID, _ := db.CreateStorm(ctx, domain.Storm{
+		RegionID: regionA.ID, WindowStart: tomorrow,
+		WindowEnd: tomorrow.AddDate(0, 0, 6), State: domain.StormEvaluated,
+		CurrentTier: domain.TierWorthALook, DetectedAt: now.AddDate(0, 0, -2),
+	})
+
+	// Prior eval exists (not first eval), weather changed.
+	db.SaveEvaluation(ctx, domain.Evaluation{
+		StormID: stormID, EvaluatedAt: now.Add(-1 * time.Hour),
+		Tier: domain.TierWorthALook, ChangeClass: domain.ChangeNew,
+		WeatherSnapshot: []domain.Forecast{{
+			RegionID: regionA.ID, Source: "open_meteo", FetchedAt: now.Add(-2 * time.Hour),
+			DailyData: []domain.DailyForecast{{Date: tomorrow, SnowfallCM: 2.0}},
+		}},
+	})
+
+	storm, _ := db.FindOverlappingStorm(ctx, regionA.ID, tomorrow, tomorrow.AddDate(0, 0, 6))
+	scans := []pipeline.ScanResult{{Region: regionA, Storm: *storm, Forecasts: forecasts, IsNew: false}}
+
+	fakeEval := &evaluation.FakeEvaluator{}
+	ct := &fakeCostTracker{spent: 5.0, calls: 333} // over budget
+
+	p := pipeline.New(nil, db, fakeEval, discardLogger())
+	p.WithCostTracker(ct)
+	p.WithBudgetConfig(pipeline.BudgetConfig{MonthlyLimitUSD: 5.0, WarningThreshold: 0.8})
+
+	summary := pipeline.RunSummary{}
+	evals, _ := p.Evaluate(ctx, scans, &summary)
+
+	if len(evals) != 0 {
+		t.Errorf("budget exceeded: expected 0 evals, got %d", len(evals))
+	}
+	if summary.SkippedBudget != 1 {
+		t.Errorf("expected 1 budget skip, got %d", summary.SkippedBudget)
+	}
+}
+
+func TestPipeline_BudgetExceeded_FirstEvalStillProceeds(t *testing.T) {
+	ctx := context.Background()
+	db := setupDB(t)
+	seedProfile(t, ctx, db)
+
+	regionA := testRegion("region-a")
+	seedRegion(t, ctx, db, regionA)
+
+	now := time.Now().UTC()
+	tomorrow := now.AddDate(0, 0, 1)
+
+	stormID, _ := db.CreateStorm(ctx, domain.Storm{
+		RegionID: regionA.ID, WindowStart: tomorrow,
+		WindowEnd: tomorrow.AddDate(0, 0, 6), State: domain.StormDetected, DetectedAt: now,
+	})
+
+	// No prior evaluation — first eval.
+	scans := []pipeline.ScanResult{{
+		Region:    regionA,
+		Storm:     domain.Storm{ID: stormID, RegionID: regionA.ID, State: domain.StormDetected, WindowStart: tomorrow, WindowEnd: tomorrow.AddDate(0, 0, 6), DetectedAt: now},
+		Forecasts: []domain.Forecast{aboveThresholdForecast(regionA.ID)},
+		IsNew:     true,
+	}}
+
+	fakeEval := &evaluation.FakeEvaluator{
+		Results: map[string]domain.Evaluation{regionA.ID: {Tier: domain.TierDropEverything}},
+	}
+	ct := &fakeCostTracker{spent: 20.0, calls: 1333} // way over budget
+
+	p := pipeline.New(nil, db, fakeEval, discardLogger())
+	p.WithCostTracker(ct)
+	p.WithBudgetConfig(pipeline.BudgetConfig{MonthlyLimitUSD: 5.0, WarningThreshold: 0.8})
+
+	summary := pipeline.RunSummary{}
+	evals, _ := p.Evaluate(ctx, scans, &summary)
+
+	// First eval must proceed even when budget is exceeded (FR-005).
+	if len(evals) != 1 {
+		t.Fatalf("first eval should proceed despite budget, got %d evals", len(evals))
+	}
+	if summary.SkippedBudget != 0 {
+		t.Errorf("first eval: expected 0 budget skips, got %d", summary.SkippedBudget)
+	}
+	// Cost should be recorded.
+	if len(ct.records) != 1 {
+		t.Errorf("expected 1 cost record, got %d", len(ct.records))
 	}
 }

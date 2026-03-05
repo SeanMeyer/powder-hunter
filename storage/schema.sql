@@ -88,5 +88,15 @@ CREATE TABLE IF NOT EXISTS prompt_templates (
     PRIMARY KEY (id, version)
 );
 
+CREATE TABLE IF NOT EXISTS eval_costs (
+    id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+    storm_id           INTEGER NOT NULL REFERENCES storms(id),
+    region_id          TEXT NOT NULL,
+    evaluated_at       TEXT NOT NULL,
+    estimated_cost_usd REAL NOT NULL,
+    success            INTEGER NOT NULL DEFAULT 1
+);
+
 CREATE INDEX IF NOT EXISTS idx_storms_region_state ON storms(region_id, state);
 CREATE INDEX IF NOT EXISTS idx_evaluations_storm ON evaluations(storm_id);
+CREATE INDEX IF NOT EXISTS idx_eval_costs_month ON eval_costs(evaluated_at);

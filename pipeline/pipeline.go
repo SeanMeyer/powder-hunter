@@ -19,18 +19,44 @@ import (
 const scanConcurrency = 5
 const evalConcurrency = 3
 
+// CostTracker records and queries Gemini API call costs.
+type CostTracker interface {
+	RecordCost(ctx context.Context, stormID int64, regionID string, estimatedCost float64, success bool) error
+	MonthlySpend(ctx context.Context) (float64, int, error)
+}
+
+// BudgetConfig controls monthly spend limits. A zero MonthlyLimitUSD disables budget enforcement.
+type BudgetConfig struct {
+	MonthlyLimitUSD  float64
+	WarningThreshold float64 // fraction of budget that triggers a warning (default 0.8)
+}
+
 // Pipeline is the top-level scan-and-detect orchestrator.
 type Pipeline struct {
-	weather   *weather.Service
-	store     *storage.DB
-	evaluator evaluation.Evaluator
-	poster    discord.Poster
-	dryRun    bool
-	logger    *slog.Logger
+	weather      *weather.Service
+	store        *storage.DB
+	evaluator    evaluation.Evaluator
+	poster       discord.Poster
+	dryRun       bool
+	logger       *slog.Logger
+	costTracker  CostTracker
+	budgetConfig BudgetConfig
 }
 
 func New(weather *weather.Service, store *storage.DB, evaluator evaluation.Evaluator, logger *slog.Logger) *Pipeline {
-	return &Pipeline{weather: weather, store: store, evaluator: evaluator, logger: logger}
+	return &Pipeline{weather: weather, store: store, evaluator: evaluator, logger: logger, budgetConfig: BudgetConfig{WarningThreshold: 0.8}}
+}
+
+// WithCostTracker attaches a cost tracker for budget management.
+func (p *Pipeline) WithCostTracker(ct CostTracker) *Pipeline {
+	p.costTracker = ct
+	return p
+}
+
+// WithBudgetConfig sets the monthly budget limit.
+func (p *Pipeline) WithBudgetConfig(bc BudgetConfig) *Pipeline {
+	p.budgetConfig = bc
+	return p
 }
 
 // WithPoster attaches a Discord poster and returns the pipeline for chaining.
@@ -59,10 +85,13 @@ type ScanResult struct {
 
 // RunSummary holds per-stage counts from a completed pipeline execution.
 type RunSummary struct {
-	Scanned   int
-	Evaluated int
-	Posted    int
-	Expired   int
+	Scanned          int
+	Evaluated        int
+	Posted           int
+	Expired          int
+	SkippedUnchanged int // storms skipped due to unchanged weather
+	SkippedCooldown  int // storms skipped due to tier-based cooldown
+	SkippedBudget    int // storms skipped due to budget limit
 }
 
 // Run executes the full pipeline: scan → evaluate → compare → post → expire.
@@ -75,7 +104,10 @@ func (p *Pipeline) Run(ctx context.Context, regionFilter string) (RunSummary, er
 		return RunSummary{}, fmt.Errorf("scan: %w", err)
 	}
 
-	evals, err := p.Evaluate(ctx, scans)
+	var summary RunSummary
+	summary.Scanned = len(scans)
+
+	evals, err := p.Evaluate(ctx, scans, &summary)
 	if err != nil {
 		return RunSummary{}, fmt.Errorf("evaluate: %w", err)
 	}
@@ -94,12 +126,10 @@ func (p *Pipeline) Run(ctx context.Context, regionFilter string) (RunSummary, er
 		p.logger.WarnContext(ctx, "expire stage error", "error", err)
 	}
 
-	return RunSummary{
-		Scanned:   len(scans),
-		Evaluated: len(evals),
-		Posted:    len(compared),
-		Expired:   expiredCount,
-	}, nil
+	summary.Evaluated = len(evals)
+	summary.Posted = len(compared)
+	summary.Expired = expiredCount
+	return summary, nil
 }
 
 // Scan fetches weather for all regions, detects storms, and persists new/updated storms.
@@ -309,16 +339,45 @@ type EvalResult struct {
 }
 
 // Evaluate scores each scanned storm using the configured evaluator. Runs up to
-// evalConcurrency evaluations concurrently. The resulting evaluations are NOT
-// persisted here — Compare adds the change class and saves them in a single write.
+// evalConcurrency evaluations concurrently. Before calling the evaluator, each
+// storm is checked against the gating logic (weather-change detection, tier
+// cooldown, budget). Skipped storms are counted in the summary.
+// The resulting evaluations are NOT persisted here — Compare adds the change
+// class and saves them in a single write.
 // Errors for individual regions are logged and skipped.
-func (p *Pipeline) Evaluate(ctx context.Context, scans []ScanResult) ([]EvalResult, error) {
+func (p *Pipeline) Evaluate(ctx context.Context, scans []ScanResult, summary *RunSummary) ([]EvalResult, error) {
 	profile, err := p.store.GetProfile(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("load user profile: %w", err)
 	}
 	if profile == nil {
 		return nil, fmt.Errorf("no user profile configured; run 'powder-hunter seed' first")
+	}
+
+	// Check budget once at the start of the Evaluate stage.
+	budgetExceeded := false
+	if p.costTracker != nil && p.budgetConfig.MonthlyLimitUSD > 0 {
+		spent, calls, budgetErr := p.costTracker.MonthlySpend(ctx)
+		if budgetErr != nil {
+			p.logger.WarnContext(ctx, "check monthly spend failed, proceeding without budget enforcement",
+				"error", budgetErr)
+		} else {
+			if spent >= p.budgetConfig.MonthlyLimitUSD {
+				budgetExceeded = true
+			}
+			threshold := p.budgetConfig.WarningThreshold
+			if threshold <= 0 {
+				threshold = 0.8
+			}
+			if spent >= p.budgetConfig.MonthlyLimitUSD*threshold && !budgetExceeded {
+				p.logger.WarnContext(ctx, "monthly budget approaching limit",
+					"budget_usd", p.budgetConfig.MonthlyLimitUSD,
+					"spent_usd", spent,
+					"remaining_usd", p.budgetConfig.MonthlyLimitUSD-spent,
+					"calls_this_month", calls,
+				)
+			}
+		}
 	}
 
 	type evalEntry struct {
@@ -336,6 +395,47 @@ func (p *Pipeline) Evaluate(ctx context.Context, scans []ScanResult) ([]EvalResu
 		g.Go(func() error {
 			sem <- struct{}{}
 			defer func() { <-sem }()
+
+			// Gating: check whether this storm should be re-evaluated.
+			lastEval, lastEvalErr := p.store.GetLatestEvaluation(gctx, scan.Storm.ID)
+			if lastEvalErr != nil {
+				p.logger.WarnContext(gctx, "load latest eval for gating failed, proceeding with evaluation",
+					"storm_id", scan.Storm.ID, "error", lastEvalErr)
+			}
+
+			isFirstEval := lastEval == nil
+			var weatherChange domain.WeatherChangeSummary
+			var timeSinceLastEval time.Duration
+			currentTier := scan.Storm.CurrentTier
+
+			if !isFirstEval {
+				weatherChange = domain.ForecastsChanged(lastEval.WeatherSnapshot, scan.Forecasts)
+				timeSinceLastEval = time.Since(lastEval.EvaluatedAt)
+			} else {
+				weatherChange = domain.WeatherChangeSummary{Changed: true, Reason: "first evaluation"}
+			}
+
+			decision := ShouldEvaluate(isFirstEval, currentTier, timeSinceLastEval, weatherChange, budgetExceeded)
+
+			if !decision.ShouldEvaluate {
+				p.logger.InfoContext(gctx, "evaluation skipped",
+					"region_id", scan.Region.ID,
+					"storm_id", scan.Storm.ID,
+					"skip_reason", string(decision.Reason),
+					"hours_since_last_eval", timeSinceLastEval.Hours(),
+				)
+				mu.Lock()
+				switch decision.Reason {
+				case domain.SkipUnchangedWeather:
+					summary.SkippedUnchanged++
+				case domain.SkipCooldown:
+					summary.SkippedCooldown++
+				case domain.SkipBudgetExceeded:
+					summary.SkippedBudget++
+				}
+				mu.Unlock()
+				return nil
+			}
 
 			_, resorts, regionErr := p.store.GetRegionWithResorts(gctx, scan.Region.ID)
 			if regionErr != nil {
@@ -374,6 +474,14 @@ func (p *Pipeline) Evaluate(ctx context.Context, scans []ScanResult) ([]EvalResu
 			}
 
 			eval.StormID = scan.Storm.ID
+
+			// Record cost after successful evaluation.
+			if p.costTracker != nil {
+				if costErr := p.costTracker.RecordCost(gctx, scan.Storm.ID, scan.Region.ID, 0.015, true); costErr != nil {
+					p.logger.WarnContext(gctx, "record eval cost failed",
+						"storm_id", scan.Storm.ID, "error", costErr)
+				}
+			}
 
 			p.logger.InfoContext(gctx, "storm evaluated",
 				"region_id", scan.Region.ID,
