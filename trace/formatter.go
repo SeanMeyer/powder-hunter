@@ -360,6 +360,29 @@ func FormatAFD(w io.Writer, d *domain.ForecastDiscussion, forecasts []domain.For
 	fmt.Fprintln(w)
 }
 
+// FormatRideQualityNotes renders ride quality assessment notes after weather data.
+// Only days with meaningful snow (>=0.5") or bluebird conditions are shown.
+func FormatRideQualityNotes(w io.Writer, qualities []domain.SnowQuality, days []domain.DailyForecast) {
+	for i, q := range qualities {
+		if len(q.RideQualityNotes) == 0 {
+			continue
+		}
+		if i < len(days) {
+			snowIn := domain.CMToInches(days[i].SnowfallCM)
+			if snowIn < 0.5 && !q.Bluebird {
+				continue
+			}
+		}
+		if i >= len(days) {
+			break
+		}
+		fmt.Fprintf(w, "\n  Ride quality (%s):\n", days[i].Date.Format("Jan 02"))
+		for _, note := range q.RideQualityNotes {
+			fmt.Fprintf(w, "    - %s\n", note)
+		}
+	}
+}
+
 func sourceLabel(source string) string {
 	switch source {
 	case "open_meteo":
