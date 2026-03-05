@@ -513,12 +513,12 @@ func runTrace(ctx context.Context, args []string) int {
 	}
 	trace.FormatConsensus(w, resortConsensus, found.Resorts)
 
-	// ── NWS Forecast Discussion ─────────────────────────────────────────────
-	trace.FormatAFD(w, fetchResult.Discussion)
-
 	// ── Detection ────────────────────────────────────────────────────────────
 	detection := domain.Detect(found.Region, forecasts)
 	trace.FormatDetection(w, found.Region, detection)
+
+	// ── NWS Forecast Discussion ─────────────────────────────────────────────
+	trace.FormatAFD(w, fetchResult.Discussion, detection)
 
 	if *weatherOnly {
 		if *showPrompt {

@@ -334,14 +334,34 @@ func FormatConsensus(w io.Writer, rc map[string]domain.ModelConsensus, resorts [
 }
 
 // FormatAFD renders the NWS Area Forecast Discussion in the trace output.
-func FormatAFD(w io.Writer, d *domain.ForecastDiscussion) {
+// When detection windows are provided, it notes whether the AFD likely covers
+// the storm window dates (AFDs typically discuss the next ~7 days).
+func FormatAFD(w io.Writer, d *domain.ForecastDiscussion, detection domain.DetectionResult) {
 	fmt.Fprintf(w, "═══ NWS FORECAST DISCUSSION ═══\n")
 	if d == nil || d.Text == "" {
 		fmt.Fprintf(w, "Not available (non-US region or fetch failed)\n\n")
 		return
 	}
 
-	fmt.Fprintf(w, "WFO: %s (issued %s)\n\n", d.WFO, d.IssuedAt.Format("2006-01-02 15:04 MST"))
+	fmt.Fprintf(w, "WFO: %s (issued %s)\n", d.WFO, d.IssuedAt.Format("2006-01-02 15:04 MST"))
+
+	if detection.Detected && len(detection.Windows) > 0 {
+		earliest := detection.Windows[0].StartDate
+		for _, win := range detection.Windows[1:] {
+			if win.StartDate.Before(earliest) {
+				earliest = win.StartDate
+			}
+		}
+		afdCoverage := d.IssuedAt.AddDate(0, 0, 7)
+		if earliest.After(afdCoverage) {
+			daysOut := int(earliest.Sub(d.IssuedAt).Hours()/24) + 1
+			fmt.Fprintf(w, "⚠ Storm window starts %d days after AFD issuance — may not be covered\n", daysOut)
+		} else {
+			fmt.Fprintf(w, "✓ AFD covers storm window dates\n")
+		}
+	}
+
+	fmt.Fprintln(w)
 	text := d.Text
 	if len(text) > 2000 {
 		text = text[:2000] + "\n... [truncated]"

@@ -50,16 +50,17 @@ N resorts of raw forecast data to the LLM is too much — it needs consolidated 
 
 ## 3. AFD Date Relevance (accuracy)
 
-**Status**: Not started
+**Status**: Complete
 
 **Problem**: The AFD we fetch is the *latest* discussion from the WFO, which may
 not cover the dates of the detected storm window. NWS issues AFDs 2-4x daily and
 they discuss the next 5-7 days. If the storm is 10 days out, the current AFD may
 not mention it at all.
 
-**Fix**: Verify the AFD's issuance date and content overlap with the storm window.
-Options:
-- Check if AFD issuance is within 24h and storm window starts within ~7 days
-- Search AFD text for mentions of the storm dates
-- Fetch multiple recent AFDs and include the most relevant one
-- Note in the prompt when AFD may not cover the storm window dates
+**Fix**: Added relevance checking based on AFD issuance date vs storm window start.
+- `FormatDiscussionForPrompt` now accepts `DetectionResult` and adds a caveat note
+  when the storm window starts beyond the AFD's ~7-day coverage horizon, telling
+  the LLM to weight numerical forecast data more heavily
+- `FormatAFD` (trace output) shows "✓ AFD covers storm window dates" or
+  "⚠ Storm window starts N days after AFD issuance — may not be covered"
+- Detection is now computed before AFD rendering in the trace command

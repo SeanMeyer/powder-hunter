@@ -477,13 +477,51 @@ func FormatConsensusForPrompt(c domain.ModelConsensus) string {
 }
 
 // FormatDiscussionForPrompt converts a NWS forecast discussion into prompt context.
-func FormatDiscussionForPrompt(d *domain.ForecastDiscussion) string {
+// When detection windows are provided, it checks whether the AFD's coverage
+// (typically ~7 days from issuance) overlaps with the storm window dates and
+// adds a caveat note if it doesn't.
+func FormatDiscussionForPrompt(d *domain.ForecastDiscussion, detection domain.DetectionResult) string {
 	if d == nil || d.Text == "" {
 		return "No NWS forecast discussion available for this region."
 	}
 
 	var b strings.Builder
 	fmt.Fprintf(&b, "**WFO: %s** (issued %s)\n\n", d.WFO, d.IssuedAt.Format("2006-01-02 15:04 MST"))
+
+	if caveat := afdRelevanceCaveat(d, detection); caveat != "" {
+		fmt.Fprintf(&b, "NOTE: %s\n\n", caveat)
+	}
+
 	b.WriteString(d.Text)
 	return b.String()
+}
+
+// afdRelevanceCaveat checks whether the AFD likely covers the detected storm
+// window. NWS AFDs typically discuss weather for the next 5-7 days from
+// issuance. If the earliest storm window starts beyond that horizon, the AFD
+// may not contain relevant information about the storm.
+func afdRelevanceCaveat(d *domain.ForecastDiscussion, detection domain.DetectionResult) string {
+	if !detection.Detected || len(detection.Windows) == 0 {
+		return ""
+	}
+
+	const afdHorizonDays = 7
+
+	earliest := detection.Windows[0].StartDate
+	for _, w := range detection.Windows[1:] {
+		if w.StartDate.Before(earliest) {
+			earliest = w.StartDate
+		}
+	}
+
+	afdCoverage := d.IssuedAt.AddDate(0, 0, afdHorizonDays)
+	if earliest.After(afdCoverage) {
+		daysOut := int(earliest.Sub(d.IssuedAt).Hours()/24) + 1
+		return fmt.Sprintf("This AFD was issued %d days before the storm window starts. "+
+			"AFDs typically cover ~7 days, so this discussion may not address the detected storm. "+
+			"Weight numerical forecast data more heavily than this discussion for timing beyond day 7.",
+			daysOut)
+	}
+
+	return ""
 }

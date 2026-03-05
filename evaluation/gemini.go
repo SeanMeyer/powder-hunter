@@ -306,7 +306,7 @@ func (e *GeminiEvaluator) Evaluate(ctx context.Context, ec EvalContext) (domain.
 		EvaluationHistory:  historyStr,
 		PromptVersion:      promptVersion,
 		ModelConsensus:     FormatResortConsensusForPrompt(ec.ResortConsensus, resorts),
-		ForecastDiscussion: FormatDiscussionForPrompt(ec.Discussion),
+		ForecastDiscussion: FormatDiscussionForPrompt(ec.Discussion, detection),
 	})
 
 	gemResult, err := e.gemini.EvaluateStorm(ctx, renderedPrompt)
