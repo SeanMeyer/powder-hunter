@@ -49,48 +49,52 @@ func TestCalculateSLR(t *testing.T) {
 
 func TestSnowfallFromPrecip(t *testing.T) {
 	tests := []struct {
-		name     string
-		precipMM float64
-		tempC    float64
-		wantCM   float64
+		name        string
+		precipMM    float64
+		tempC       float64
+		windSpeedMs float64
+		wantCM      float64
 	}{
-		// Zero precip → zero snow regardless of temp.
-		{"zero precip cold", 0.0, -15.0, 0.0},
-		{"negative precip", -1.0, -5.0, 0.0},
-
-		// Rain → zero snow.
-		{"rain at 5°C", 10.0, 5.0, 0.0},
-
-		// Cold smoke: 0.5" liquid (12.7mm) at -11°C ≈ 12°F → 20:1 SLR.
-		// 12.7mm / 10 * 20 = 25.4 cm ≈ 10"
-		{"cold smoke 0.5in liquid", 12.7, -11.0, 25.4},
-
-		// Wet snow: 1" liquid (25.4mm) at -2°C ≈ 28°F → 10:1 SLR.
-		// 25.4mm / 10 * 10 = 25.4 cm ≈ 10"
-		{"wet snow 1in liquid", 25.4, -2.0, 25.4},
-
-		// Dry powder: 1" liquid (25.4mm) at -5°C → 15:1 SLR.
-		// 25.4mm / 10 * 15 = 38.1 cm ≈ 15"
-		{"dry powder 1in liquid", 25.4, -5.0, 38.1},
-
-		// Mixed: 1" liquid (25.4mm) at 1.0°C → 5:1 SLR.
-		// 25.4mm / 10 * 5 = 12.7 cm ≈ 5"
-		{"mixed 1in liquid", 25.4, 1.0, 12.7},
-
-		// Small precip at cold temp.
-		// 1mm at -15°C → 20:1 → 1/10 * 20 = 2.0 cm
-		{"small precip cold smoke", 1.0, -15.0, 2.0},
+		{"zero precip cold", 0.0, -15.0, 5.0, 0.0},
+		{"negative precip", -1.0, -5.0, 5.0, 0.0},
+		{"rain at 5C", 10.0, 5.0, 3.0, 0.0},
+		// Cold calm: 12.7mm at -11C, 2 m/s
+		// density = 109 + 6*(-11) + 26*sqrt(2) = 109 - 66 + 36.77 = 79.77
+		// SLR = 1000/79.77 = 12.54
+		// snow = 12.7/10 * 12.54 = 15.9 cm
+		{"cold calm 0.5in liquid", 12.7, -11.0, 2.0, 15.9},
+		// Cold windy: 12.7mm at -11C, 10 m/s
+		// density = 109 - 66 + 26*3.162 = 125.2
+		// SLR = 1000/125.2 = 7.99
+		// snow = 12.7/10 * 7.99 = 10.1 cm
+		{"cold windy 0.5in liquid", 12.7, -11.0, 10.0, 10.1},
+		// Wet snow: 25.4mm at -2C, 3 m/s
+		// density = 109 - 12 + 26*1.732 = 142.0
+		// SLR = 1000/142.0 = 7.04
+		// snow = 25.4/10 * 7.04 = 17.9 cm
+		{"wet snow 1in liquid", 25.4, -2.0, 3.0, 17.9},
+		// Very cold calm (hits density floor): 1mm at -25C, 1 m/s
+		// density = 109 - 150 + 26*1.0 = -15 → clamped to 40
+		// SLR = 1000/40 = 25.0
+		// snow = 1/10 * 25.0 = 2.5 cm
+		{"very cold hits density floor", 1.0, -25.0, 1.0, 2.5},
+		// Calm moderate: 5mm at -8C, 0 m/s
+		// density = 109 - 48 + 0 = 61.0
+		// SLR = 1000/61 = 16.39
+		// snow = 5/10 * 16.39 = 8.2 cm
+		{"calm moderate cold", 5.0, -8.0, 0.0, 8.2},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got := SnowfallFromPrecip(tc.precipMM, tc.tempC)
+			got := SnowfallFromPrecip(tc.precipMM, tc.tempC, tc.windSpeedMs)
 			delta := got - tc.wantCM
 			if delta < 0 {
 				delta = -delta
 			}
-			if delta > 0.01 {
-				t.Errorf("SnowfallFromPrecip(%v, %v) = %v, want %v", tc.precipMM, tc.tempC, got, tc.wantCM)
+			if delta > 0.2 {
+				t.Errorf("SnowfallFromPrecip(%v, %v, %v) = %.2f, want ~%.2f",
+					tc.precipMM, tc.tempC, tc.windSpeedMs, got, tc.wantCM)
 			}
 		})
 	}

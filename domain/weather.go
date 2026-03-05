@@ -157,16 +157,18 @@ func SLRFromDensity(density float64) float64 {
 	return 1000.0 / density
 }
 
-// SnowfallFromPrecip returns snowfall in cm for a given hour's precipitation (mm) and
-// temperature (°C). Applies SLR and unit conversion: precipMM / 10.0 * SLR (mm→cm × ratio).
-func SnowfallFromPrecip(precipMM float64, tempC float64) float64 {
+// SnowfallFromPrecip returns snowfall in cm for a given hour's precipitation (mm),
+// temperature (°C), and wind speed (m/s). Uses Vionnet density model with
+// unit conversion: precipMM / 10.0 * SLR (mm→cm × ratio).
+func SnowfallFromPrecip(precipMM float64, tempC float64, windSpeedMs float64) float64 {
 	if precipMM <= 0 {
 		return 0
 	}
-	slr := CalculateSLR(tempC)
-	if slr == 0 {
-		return 0
+	density := CalculateDensity(tempC, windSpeedMs)
+	if density <= 0 {
+		return 0 // rain
 	}
+	slr := SLRFromDensity(density)
 	return precipMM / 10.0 * slr
 }
 
