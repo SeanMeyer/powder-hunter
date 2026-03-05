@@ -28,8 +28,9 @@ type CostTracker interface {
 
 // BudgetConfig controls monthly spend limits. A zero MonthlyLimitUSD disables budget enforcement.
 type BudgetConfig struct {
-	MonthlyLimitUSD  float64
-	WarningThreshold float64 // fraction of budget that triggers a warning (default 0.8)
+	MonthlyLimitUSD      float64
+	WarningThreshold     float64 // fraction of budget that triggers a warning (default 0.8)
+	EstimatedCostPerEval float64 // per-call cost estimate used by RecordCost (default 0.015)
 }
 
 // Pipeline is the top-level scan-and-detect orchestrator.
@@ -494,7 +495,11 @@ func (p *Pipeline) Evaluate(ctx context.Context, scans []ScanResult, summary *Ru
 
 			// Record cost after successful evaluation.
 			if p.costTracker != nil {
-				if costErr := p.costTracker.RecordCost(gctx, scan.Storm.ID, scan.Region.ID, 0.015, true); costErr != nil {
+				cost := p.budgetConfig.EstimatedCostPerEval
+				if cost == 0 {
+					cost = 0.015
+				}
+				if costErr := p.costTracker.RecordCost(gctx, scan.Storm.ID, scan.Region.ID, cost, true); costErr != nil {
 					p.logger.WarnContext(gctx, "record eval cost failed",
 						"storm_id", scan.Storm.ID, "error", costErr)
 				}
