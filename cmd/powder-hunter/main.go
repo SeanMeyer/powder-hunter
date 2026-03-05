@@ -138,19 +138,19 @@ func runPipeline(ctx context.Context, args []string) int {
 
 	apiKey := os.Getenv("GOOGLE_API_KEY")
 	if apiKey == "" {
-		slog.Error("GOOGLE_API_KEY environment variable is required")
+		slog.Error("GOOGLE_API_KEY is required — get a free key at https://aistudio.google.com/apikey")
 		return 1
 	}
 
 	webhookURL := os.Getenv("DISCORD_WEBHOOK_URL")
 	if webhookURL == "" && !*dryRun {
-		slog.Error("DISCORD_WEBHOOK_URL environment variable is required (or use --dry-run)")
+		slog.Error("DISCORD_WEBHOOK_URL is required (or use --dry-run) — create one at Discord: Server Settings > Integrations > Webhooks")
 		return 1
 	}
 
 	profile := config.ProfileFromEnv(os.Getenv)
 	if profile.HomeBase == "" || profile.HomeLatitude == 0 || profile.HomeLongitude == 0 {
-		slog.Error("HOME_BASE, HOME_LATITUDE, and HOME_LONGITUDE are required. Set them in .env or as environment variables.")
+		slog.Error("HOME_BASE, HOME_LATITUDE, and HOME_LONGITUDE are required — set them in .env (see .env.example)")
 		return 1
 	}
 
@@ -317,7 +317,7 @@ func runReplay(ctx context.Context, args []string) int {
 
 	apiKey := os.Getenv("GOOGLE_API_KEY")
 	if apiKey == "" {
-		slog.Error("GOOGLE_API_KEY environment variable is required")
+		slog.Error("GOOGLE_API_KEY is required — get a free key at https://aistudio.google.com/apikey")
 		return 1
 	}
 
@@ -671,7 +671,7 @@ func runTrace(ctx context.Context, args []string) int {
 	// ── LLM Evaluation ──────────────────────────────────────────────────────
 	apiKey := os.Getenv("GOOGLE_API_KEY")
 	if apiKey == "" {
-		fmt.Fprintln(os.Stderr, "error: GOOGLE_API_KEY environment variable is required for LLM evaluation")
+		fmt.Fprintln(os.Stderr, "error: GOOGLE_API_KEY is required for LLM evaluation — get a free key at https://aistudio.google.com/apikey")
 		fmt.Fprintln(os.Stderr, "use --weather-only to skip LLM evaluation")
 		return 1
 	}
