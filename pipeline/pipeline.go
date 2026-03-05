@@ -835,6 +835,18 @@ func (p *Pipeline) PostGrouped(ctx context.Context, groups []GroupedResult) (int
 			continue
 		}
 
+		// Post full detail for each region as follow-up messages in the thread.
+		for _, r := range g.Results {
+			if err := p.poster.PostUpdate(ctx, r.Evaluation, r.Region, threadID); err != nil {
+				p.logger.WarnContext(ctx, "grouped detail post failed",
+					"region_id", r.Region.ID,
+					"storm_id", r.Storm.ID,
+					"thread_id", threadID,
+					"error", err,
+				)
+			}
+		}
+
 		// Update all storms in the group with the shared thread ID.
 		for _, r := range g.Results {
 			updatedStorm := r.Storm
