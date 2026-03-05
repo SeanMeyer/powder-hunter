@@ -3,7 +3,10 @@ package weather
 import (
 	"context"
 	"log/slog"
+	"math"
+	"net/http"
 	"sync"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 
@@ -137,4 +140,52 @@ func (s *Service) FetchAll(ctx context.Context, region domain.Region, resorts []
 		Forecasts:  forecasts,
 		Discussion: discussion,
 	}, nil
+}
+
+const (
+	retryMaxAttempts = 3
+	retryBaseDelay   = 2 * time.Second
+)
+
+// retryDo executes an HTTP request with exponential backoff for transient failures.
+// Retries on: 429 (rate limit), 5xx (server errors), and network errors.
+// Non-retryable status codes (4xx other than 429) return immediately.
+func retryDo(ctx context.Context, client *http.Client, req *http.Request) (*http.Response, error) {
+	var lastErr error
+	for attempt := range retryMaxAttempts {
+		if attempt > 0 {
+			delay := time.Duration(math.Pow(2, float64(attempt-1))) * retryBaseDelay
+			slog.InfoContext(ctx, "retrying request",
+				"url", req.URL.String(), "attempt", attempt+1, "delay", delay)
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(delay):
+			}
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500 {
+			resp.Body.Close()
+			lastErr = &retryableStatusError{StatusCode: resp.StatusCode, URL: req.URL.String()}
+			continue
+		}
+
+		return resp, nil
+	}
+	return nil, lastErr
+}
+
+type retryableStatusError struct {
+	StatusCode int
+	URL        string
+}
+
+func (e *retryableStatusError) Error() string {
+	return "retryable HTTP " + http.StatusText(e.StatusCode) + " from " + e.URL
 }

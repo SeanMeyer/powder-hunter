@@ -135,7 +135,7 @@ func (c *NWSClient) get(ctx context.Context, url string) ([]byte, int, error) {
 	req.Header.Set("User-Agent", nwsUserAgent)
 	req.Header.Set("Accept", "application/geo+json")
 
-	resp, err := c.client.Do(req)
+	resp, err := retryDo(ctx, c.client, req)
 	if err != nil {
 		return nil, 0, fmt.Errorf("http get %s: %w", url, err)
 	}

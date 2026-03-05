@@ -160,14 +160,14 @@ daily forecast data to identify the actual best days to ski, and plan travel dat
 
 ## Instructions
 
-Using your search tools, research the following for each resort in this region:
-- Current operating status: days of operation, any reduced schedules, lift closures, or operational changes
-- Recent snow reports and current base depth
-- Road conditions and access alerts
-- Any relevant news that could affect the skiing experience (staffing issues, terrain restrictions, events)
+For EACH resort listed above, search for it by name to find:
+- Its current operating schedule from the resort's own website (which days are they open? what hours? any reduced schedule?)
+- Recent snow reports, current base depth, and conditions updates
+- Recent news articles or reports about the resort (closures, construction, operational changes, events)
+- Road conditions and access alerts for the routes to the resort
 
-Go beyond the forecast data — the on-the-ground reality at each resort matters as much as the weather.
-Verify forecast accuracy with multiple sources where possible.
+Do not rely on your training data for resort operations — schedules change mid-season. Actually search for
+current information. The on-the-ground reality at each resort matters as much as the weather forecast.
 
 Return a JSON object matching this exact schema. All fields are required.
 

@@ -81,7 +81,7 @@ func (c *OpenMeteoClient) FetchForResort(ctx context.Context, q openMeteoQuery) 
 		return nil, fmt.Errorf("building open-meteo request for %s: %w", label, err)
 	}
 
-	resp, err := c.client.Do(req)
+	resp, err := retryDo(ctx, c.client, req)
 	if err != nil {
 		slog.ErrorContext(ctx, "open-meteo request failed", "resort_id", label, "error", err)
 		return nil, fmt.Errorf("open-meteo request for %s: %w", label, err)
