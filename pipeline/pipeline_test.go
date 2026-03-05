@@ -1210,3 +1210,380 @@ func TestPipeline_BudgetExceeded_FirstEvalStillProceeds(t *testing.T) {
 		t.Errorf("expected 1 cost record, got %d", len(ct.records))
 	}
 }
+
+// --- Grouping Tests ---
+
+// fakeComparer implements evaluation.Comparer for testing.
+type fakeComparer struct {
+	result evaluation.ComparisonResult
+	calls  []evaluation.CompareContext
+}
+
+func (f *fakeComparer) CompareRegions(ctx context.Context, cc evaluation.CompareContext) (evaluation.ComparisonResult, error) {
+	f.calls = append(f.calls, cc)
+	return f.result, nil
+}
+
+func TestPipeline_GroupSingletonPassthrough(t *testing.T) {
+	ctx := context.Background()
+	db := setupDB(t)
+	seedProfile(t, ctx, db)
+
+	r := testRegion("ak-valdez")
+	r.MacroRegion = "ak_chugach"
+	seedRegion(t, ctx, db, r)
+
+	now := time.Now().UTC()
+	tomorrow := now.AddDate(0, 0, 1)
+
+	stormID, err := db.CreateStorm(ctx, domain.Storm{
+		RegionID: r.ID, WindowStart: tomorrow,
+		WindowEnd: tomorrow.AddDate(0, 0, 6), State: domain.StormDetected, DetectedAt: now,
+	})
+	if err != nil {
+		t.Fatalf("create storm: %v", err)
+	}
+
+	scans := []pipeline.ScanResult{
+		{
+			Region:    r,
+			Storm:     domain.Storm{ID: stormID, RegionID: r.ID, State: domain.StormDetected, WindowStart: tomorrow, WindowEnd: tomorrow.AddDate(0, 0, 6), DetectedAt: now},
+			Forecasts: []domain.Forecast{aboveThresholdForecast(r.ID)},
+			IsNew:     true,
+		},
+	}
+
+	fakeEval := &evaluation.FakeEvaluator{
+		Results: map[string]domain.Evaluation{
+			r.ID: {Tier: domain.TierDropEverything, Recommendation: "Go to Valdez."},
+		},
+	}
+	fakePoster := &discord.FakePoster{NextThreadID: "thread-singleton"}
+
+	p := pipeline.New(nil, db, fakeEval, discardLogger())
+	p.WithPoster(fakePoster)
+
+	summary := pipeline.RunSummary{}
+	evals, err := p.Evaluate(ctx, scans, &summary)
+	if err != nil {
+		t.Fatalf("evaluate: %v", err)
+	}
+
+	compared, err := p.Compare(ctx, evals)
+	if err != nil {
+		t.Fatalf("compare: %v", err)
+	}
+
+	grouped := p.Group(ctx, compared, &summary)
+
+	posted, err := p.PostGrouped(ctx, grouped)
+	if err != nil {
+		t.Fatalf("post grouped: %v", err)
+	}
+
+	// Singleton group uses PostNew, not PostGrouped.
+	if len(fakePoster.PostedNew) != 1 {
+		t.Errorf("expected 1 PostNew call for singleton, got %d", len(fakePoster.PostedNew))
+	}
+	if len(fakePoster.PostedGrouped) != 0 {
+		t.Errorf("expected 0 PostGrouped calls for singleton, got %d", len(fakePoster.PostedGrouped))
+	}
+	if summary.Grouped != 1 {
+		t.Errorf("expected summary.Grouped == 1, got %d", summary.Grouped)
+	}
+	if summary.Comparisons != 0 {
+		t.Errorf("expected summary.Comparisons == 0, got %d", summary.Comparisons)
+	}
+	if posted != 1 {
+		t.Errorf("expected 1 posted, got %d", posted)
+	}
+}
+
+func TestPipeline_GroupMultiRegion(t *testing.T) {
+	ctx := context.Background()
+	db := setupDB(t)
+	seedProfile(t, ctx, db)
+
+	// 3 regions, all same MacroRegion and FrictionTier.
+	regions := make([]domain.Region, 3)
+	regionIDs := []string{"wa-central", "wa-north", "wa-south"}
+	for i, id := range regionIDs {
+		r := testRegion(id)
+		r.MacroRegion = "pnw_cascades"
+		r.FrictionTier = domain.FrictionFlight
+		regions[i] = r
+		seedRegion(t, ctx, db, r)
+	}
+
+	now := time.Now().UTC()
+	tomorrow := now.AddDate(0, 0, 1)
+	tiers := []domain.Tier{domain.TierDropEverything, domain.TierWorthALook, domain.TierOnTheRadar}
+
+	scans := make([]pipeline.ScanResult, 3)
+	evalResults := make(map[string]domain.Evaluation)
+	for i, r := range regions {
+		stormID, err := db.CreateStorm(ctx, domain.Storm{
+			RegionID: r.ID, WindowStart: tomorrow,
+			WindowEnd: tomorrow.AddDate(0, 0, 6), State: domain.StormDetected, DetectedAt: now,
+		})
+		if err != nil {
+			t.Fatalf("create storm %d: %v", i, err)
+		}
+
+		scans[i] = pipeline.ScanResult{
+			Region:    r,
+			Storm:     domain.Storm{ID: stormID, RegionID: r.ID, State: domain.StormDetected, WindowStart: tomorrow, WindowEnd: tomorrow.AddDate(0, 0, 6), DetectedAt: now},
+			Forecasts: []domain.Forecast{aboveThresholdForecast(r.ID)},
+			IsNew:     true,
+		}
+		evalResults[r.ID] = domain.Evaluation{Tier: tiers[i], Recommendation: "Region " + r.ID}
+	}
+
+	fakeEval := &evaluation.FakeEvaluator{Results: evalResults}
+	fakePoster := &discord.FakePoster{NextThreadID: "thread-grouped"}
+	fc := &fakeComparer{
+		result: evaluation.ComparisonResult{
+			TopPickRegion: "wa-central",
+			TopPickName:   "Test wa-central",
+			Reasoning:     "Best snow overall.",
+		},
+	}
+
+	p := pipeline.New(nil, db, fakeEval, discardLogger())
+	p.WithPoster(fakePoster)
+	p.WithComparer(fc)
+
+	summary := pipeline.RunSummary{}
+	evals, err := p.Evaluate(ctx, scans, &summary)
+	if err != nil {
+		t.Fatalf("evaluate: %v", err)
+	}
+	if len(evals) != 3 {
+		t.Fatalf("expected 3 evals, got %d", len(evals))
+	}
+
+	compared, err := p.Compare(ctx, evals)
+	if err != nil {
+		t.Fatalf("compare: %v", err)
+	}
+	if len(compared) != 3 {
+		t.Fatalf("expected 3 compared, got %d", len(compared))
+	}
+
+	grouped := p.Group(ctx, compared, &summary)
+
+	posted, err := p.PostGrouped(ctx, grouped)
+	if err != nil {
+		t.Fatalf("post grouped: %v", err)
+	}
+
+	// All 3 in one group → PostGrouped, not PostNew.
+	if len(fakePoster.PostedGrouped) != 1 {
+		t.Errorf("expected 1 PostGrouped call, got %d", len(fakePoster.PostedGrouped))
+	}
+	if len(fakePoster.PostedNew) != 0 {
+		t.Errorf("expected 0 PostNew calls for multi-region group, got %d", len(fakePoster.PostedNew))
+	}
+	if summary.Grouped != 1 {
+		t.Errorf("expected summary.Grouped == 1, got %d", summary.Grouped)
+	}
+	if summary.Comparisons != 1 {
+		t.Errorf("expected summary.Comparisons == 1, got %d", summary.Comparisons)
+	}
+	if posted != 3 {
+		t.Errorf("expected 3 posted (all members), got %d", posted)
+	}
+
+	// Verify the grouped post contains all 3 evaluations.
+	if len(fakePoster.PostedGrouped) == 1 {
+		gp := fakePoster.PostedGrouped[0].Group
+		if len(gp.Evaluations) != 3 {
+			t.Errorf("expected 3 evaluations in grouped post, got %d", len(gp.Evaluations))
+		}
+	}
+
+	// Verify the comparer was called once with 3 summaries.
+	if len(fc.calls) != 1 {
+		t.Fatalf("expected 1 comparer call, got %d", len(fc.calls))
+	}
+	if len(fc.calls[0].Summaries) != 3 {
+		t.Errorf("expected 3 summaries in compare call, got %d", len(fc.calls[0].Summaries))
+	}
+}
+
+func TestPipeline_GroupFrictionSplit(t *testing.T) {
+	ctx := context.Background()
+	db := setupDB(t)
+	seedProfile(t, ctx, db)
+
+	// 2 regions in same MacroRegion but different friction tiers.
+	rLocal := testRegion("co-front-a")
+	rLocal.MacroRegion = "co_front_range"
+	rLocal.FrictionTier = domain.FrictionLocalDrive
+
+	rRegional := testRegion("co-front-b")
+	rRegional.MacroRegion = "co_front_range"
+	rRegional.FrictionTier = domain.FrictionRegionalDrive
+
+	seedRegion(t, ctx, db, rLocal)
+	seedRegion(t, ctx, db, rRegional)
+
+	now := time.Now().UTC()
+	tomorrow := now.AddDate(0, 0, 1)
+
+	var scans []pipeline.ScanResult
+	evalResults := make(map[string]domain.Evaluation)
+	for _, r := range []domain.Region{rLocal, rRegional} {
+		stormID, err := db.CreateStorm(ctx, domain.Storm{
+			RegionID: r.ID, WindowStart: tomorrow,
+			WindowEnd: tomorrow.AddDate(0, 0, 6), State: domain.StormDetected, DetectedAt: now,
+		})
+		if err != nil {
+			t.Fatalf("create storm for %s: %v", r.ID, err)
+		}
+		scans = append(scans, pipeline.ScanResult{
+			Region:    r,
+			Storm:     domain.Storm{ID: stormID, RegionID: r.ID, State: domain.StormDetected, WindowStart: tomorrow, WindowEnd: tomorrow.AddDate(0, 0, 6), DetectedAt: now},
+			Forecasts: []domain.Forecast{aboveThresholdForecast(r.ID)},
+			IsNew:     true,
+		})
+		evalResults[r.ID] = domain.Evaluation{Tier: domain.TierWorthALook, Recommendation: "Check " + r.ID}
+	}
+
+	fakeEval := &evaluation.FakeEvaluator{Results: evalResults}
+	fakePoster := &discord.FakePoster{NextThreadID: "thread-split"}
+
+	p := pipeline.New(nil, db, fakeEval, discardLogger())
+	p.WithPoster(fakePoster)
+
+	summary := pipeline.RunSummary{}
+	evals, err := p.Evaluate(ctx, scans, &summary)
+	if err != nil {
+		t.Fatalf("evaluate: %v", err)
+	}
+
+	compared, err := p.Compare(ctx, evals)
+	if err != nil {
+		t.Fatalf("compare: %v", err)
+	}
+
+	grouped := p.Group(ctx, compared, &summary)
+
+	_, err = p.PostGrouped(ctx, grouped)
+	if err != nil {
+		t.Fatalf("post grouped: %v", err)
+	}
+
+	// Different friction tiers → 2 singleton groups, each uses PostNew.
+	if len(fakePoster.PostedNew) != 2 {
+		t.Errorf("expected 2 PostNew calls (friction split), got %d", len(fakePoster.PostedNew))
+	}
+	if len(fakePoster.PostedGrouped) != 0 {
+		t.Errorf("expected 0 PostGrouped calls (friction split), got %d", len(fakePoster.PostedGrouped))
+	}
+	if summary.Grouped != 2 {
+		t.Errorf("expected summary.Grouped == 2, got %d", summary.Grouped)
+	}
+	if summary.Comparisons != 0 {
+		t.Errorf("expected summary.Comparisons == 0, got %d", summary.Comparisons)
+	}
+}
+
+func TestPipeline_GroupNonOverlappingWindows(t *testing.T) {
+	ctx := context.Background()
+	db := setupDB(t)
+	seedProfile(t, ctx, db)
+
+	// 2 regions in same MacroRegion and same friction, but non-overlapping windows.
+	rA := testRegion("pnw-a")
+	rA.MacroRegion = "pnw_cascades"
+	rA.FrictionTier = domain.FrictionFlight
+
+	rB := testRegion("pnw-b")
+	rB.MacroRegion = "pnw_cascades"
+	rB.FrictionTier = domain.FrictionFlight
+
+	seedRegion(t, ctx, db, rA)
+	seedRegion(t, ctx, db, rB)
+
+	now := time.Now().UTC()
+	// Storm A: next week (days 1-7).
+	windowAStart := now.AddDate(0, 0, 1)
+	windowAEnd := now.AddDate(0, 0, 7)
+	// Storm B: two weeks from now (days 14-20), no overlap with A.
+	windowBStart := now.AddDate(0, 0, 14)
+	windowBEnd := now.AddDate(0, 0, 20)
+
+	stormAID, err := db.CreateStorm(ctx, domain.Storm{
+		RegionID: rA.ID, WindowStart: windowAStart,
+		WindowEnd: windowAEnd, State: domain.StormDetected, DetectedAt: now,
+	})
+	if err != nil {
+		t.Fatalf("create storm A: %v", err)
+	}
+	stormBID, err := db.CreateStorm(ctx, domain.Storm{
+		RegionID: rB.ID, WindowStart: windowBStart,
+		WindowEnd: windowBEnd, State: domain.StormDetected, DetectedAt: now,
+	})
+	if err != nil {
+		t.Fatalf("create storm B: %v", err)
+	}
+
+	scans := []pipeline.ScanResult{
+		{
+			Region:    rA,
+			Storm:     domain.Storm{ID: stormAID, RegionID: rA.ID, State: domain.StormDetected, WindowStart: windowAStart, WindowEnd: windowAEnd, DetectedAt: now},
+			Forecasts: []domain.Forecast{aboveThresholdForecast(rA.ID)},
+			IsNew:     true,
+		},
+		{
+			Region:    rB,
+			Storm:     domain.Storm{ID: stormBID, RegionID: rB.ID, State: domain.StormDetected, WindowStart: windowBStart, WindowEnd: windowBEnd, DetectedAt: now},
+			Forecasts: []domain.Forecast{aboveThresholdForecast(rB.ID)},
+			IsNew:     true,
+		},
+	}
+
+	fakeEval := &evaluation.FakeEvaluator{
+		Results: map[string]domain.Evaluation{
+			rA.ID: {Tier: domain.TierDropEverything, Recommendation: "Storm A"},
+			rB.ID: {Tier: domain.TierWorthALook, Recommendation: "Storm B"},
+		},
+	}
+	fakePoster := &discord.FakePoster{NextThreadID: "thread-window-split"}
+
+	p := pipeline.New(nil, db, fakeEval, discardLogger())
+	p.WithPoster(fakePoster)
+
+	summary := pipeline.RunSummary{}
+	evals, err := p.Evaluate(ctx, scans, &summary)
+	if err != nil {
+		t.Fatalf("evaluate: %v", err)
+	}
+
+	compared, err := p.Compare(ctx, evals)
+	if err != nil {
+		t.Fatalf("compare: %v", err)
+	}
+
+	grouped := p.Group(ctx, compared, &summary)
+
+	_, err = p.PostGrouped(ctx, grouped)
+	if err != nil {
+		t.Fatalf("post grouped: %v", err)
+	}
+
+	// Non-overlapping windows → 2 singleton groups, each uses PostNew.
+	if len(fakePoster.PostedNew) != 2 {
+		t.Errorf("expected 2 PostNew calls (window split), got %d", len(fakePoster.PostedNew))
+	}
+	if len(fakePoster.PostedGrouped) != 0 {
+		t.Errorf("expected 0 PostGrouped calls (window split), got %d", len(fakePoster.PostedGrouped))
+	}
+	if summary.Grouped != 2 {
+		t.Errorf("expected summary.Grouped == 2, got %d", summary.Grouped)
+	}
+	if summary.Comparisons != 0 {
+		t.Errorf("expected summary.Comparisons == 0, got %d", summary.Comparisons)
+	}
+}
