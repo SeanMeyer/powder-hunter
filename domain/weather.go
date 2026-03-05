@@ -99,31 +99,10 @@ func AFDCoversSnowDays(d *ForecastDiscussion, forecasts []Forecast) bool {
 	return false
 }
 
-// SLR temperature thresholds in Celsius (exact conversions from Fahrenheit bands).
-// Contiguous ranges: >1.67°C rain, [0, 1.67°C] mixed, [-3.89, 0) wet, [-9.44, -3.89) dry, <-9.44 cold smoke.
+// Rain/snow temperature threshold in Celsius.
 const (
-	slrThresholdRainC      = 1.6667  // 35°F — above this is rain
-	slrThresholdMixedC     = 0.0     // 32°F — above this (up to rain) is mixed
-	slrThresholdWetC       = -3.8889 // 25°F — above this (up to mixed) is wet snow
-	slrThresholdDryC       = -9.4444 // 15°F — above this (up to wet) is dry powder
+	slrThresholdRainC = 1.6667 // 35°F — above this is rain
 )
-
-// CalculateSLR returns the snow-to-liquid ratio for a given temperature in Celsius.
-// Five contiguous bands per spec: rain (0), mixed (5), wet (10), dry (15), cold smoke (20).
-func CalculateSLR(tempC float64) float64 {
-	switch {
-	case tempC > slrThresholdRainC:
-		return 0 // rain — no snow
-	case tempC >= slrThresholdMixedC:
-		return 5 // mixed/very wet
-	case tempC >= slrThresholdWetC:
-		return 10 // wet snow
-	case tempC >= slrThresholdDryC:
-		return 15 // dry powder
-	default:
-		return 20 // cold smoke
-	}
-}
 
 const (
 	// Vionnet density clamps prevent unrealistic values at temperature/wind extremes.

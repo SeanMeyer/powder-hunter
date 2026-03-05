@@ -5,48 +5,6 @@ import (
 	"time"
 )
 
-func TestCalculateSLR(t *testing.T) {
-	tests := []struct {
-		name    string
-		tempC   float64
-		wantSLR float64
-	}{
-		// Rain band: > 1.67°C (> 35°F)
-		{"hot rain (10°C)", 10.0, 0},
-		{"just above rain threshold (2°C)", 2.0, 0},
-		{"rain boundary (1.67°C + epsilon)", 1.67, 0},
-
-		// Mixed band: [0°C, 1.67°C] (32-35°F)
-		{"mixed at 1.66°C", 1.66, 5},
-		{"mixed at 1.0°C", 1.0, 5},
-		{"mixed at 0°C (lower boundary)", 0.0, 5},
-
-		// Wet snow band: [-3.89°C, 0°C) (25-31°F)
-		{"wet snow just below 0°C", -0.01, 10},
-		{"wet snow at -2°C", -2.0, 10},
-		{"wet snow at -3.88°C", -3.88, 10},
-
-		// Dry powder band: [-9.44°C, -3.89°C) (15-24°F)
-		{"dry powder at -3.89°C (boundary)", -3.89, 15},
-		{"dry powder at -5°C", -5.0, 15},
-		{"dry powder at -9.43°C", -9.43, 15},
-
-		// Cold smoke band: < -9.44°C (< 15°F)
-		{"cold smoke at -9.45°C", -9.45, 20},
-		{"cold smoke at -15°C", -15.0, 20},
-		{"cold smoke at -30°C", -30.0, 20},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			got := CalculateSLR(tc.tempC)
-			if got != tc.wantSLR {
-				t.Errorf("CalculateSLR(%v) = %v, want %v", tc.tempC, got, tc.wantSLR)
-			}
-		})
-	}
-}
-
 func TestSnowfallFromPrecip(t *testing.T) {
 	tests := []struct {
 		name        string
