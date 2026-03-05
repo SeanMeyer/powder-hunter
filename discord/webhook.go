@@ -133,7 +133,10 @@ func (w *WebhookClient) doPost(ctx context.Context, url string, data []byte) ([]
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, true, fmt.Errorf("read discord response body: %w", err)
+	}
 
 	switch {
 	case resp.StatusCode == http.StatusTooManyRequests:

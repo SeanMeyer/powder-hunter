@@ -58,6 +58,9 @@ func loadEnvFile(path string) {
 			os.Setenv(key, value)
 		}
 	}
+	if err := scanner.Err(); err != nil {
+		slog.Warn("error reading .env file", "error", err)
+	}
 }
 
 func run(ctx context.Context, args []string) int {
