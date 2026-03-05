@@ -117,4 +117,4 @@ Click the container icon in the Docker tab and select **Update**. Unraid will pu
 
 ## Contributing
 
-Contributions are welcome! Please open an issue to discuss changes before submitting a PR.
+Contributions are welcome — just open a PR.
