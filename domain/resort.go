@@ -41,6 +41,7 @@ type Region struct {
 	Country             string  // "US" or "CA"
 	Timezone            string  // IANA timezone (e.g. "America/Los_Angeles")
 	Logistics           RegionLogistics
+	MacroRegion         string  // static grouping for storm correlation (e.g. "pnw_cascades")
 }
 
 // RegionLogistics captures travel context for LLM evaluation prompts.

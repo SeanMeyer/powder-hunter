@@ -6,7 +6,11 @@
       "country": "US",
       "timezone": "America/Denver",
       "friction_tier": "local_drive",
-      "coords": { "lat": 39.6042, "lon": -106.1417 },
+      "macro_region": "co_front_range",
+      "coords": {
+        "lat": 39.6042,
+        "lon": -106.1417
+      },
       "logistics": {
         "nearest_airport": "DEN",
         "drive_time_hours": 1.5,
@@ -17,14 +21,19 @@
         {
           "id": "winter_park",
           "name": "Winter Park",
-          "coords": { "lat": 39.8868, "lon": -105.7625 },
+          "coords": {
+            "lat": 39.8868,
+            "lon": -105.7625
+          },
           "stats": {
             "summit_elevation_ft": 12060,
             "base_elevation_ft": 9000,
             "vertical_drop_ft": 3060,
             "skiable_acres": 3081,
             "lifts": 24,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "Denver's local mountain. Famous for endless moguls and great tree skiing.",
@@ -38,14 +47,19 @@
         {
           "id": "arapahoe_basin",
           "name": "Arapahoe Basin",
-          "coords": { "lat": 39.6425, "lon": -105.8719 },
+          "coords": {
+            "lat": 39.6425,
+            "lon": -105.8719
+          },
           "stats": {
             "summit_elevation_ft": 13050,
             "base_elevation_ft": 10780,
             "vertical_drop_ft": 2270,
             "skiable_acres": 1428,
             "lifts": 9,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "High-alpine soul mountain with the longest season in Colorado.",
@@ -59,14 +73,19 @@
         {
           "id": "loveland",
           "name": "Loveland",
-          "coords": { "lat": 39.6800, "lon": -105.8970 },
+          "coords": {
+            "lat": 39.68,
+            "lon": -105.897
+          },
           "stats": {
             "summit_elevation_ft": 13010,
             "base_elevation_ft": 10800,
             "vertical_drop_ft": 2210,
             "skiable_acres": 1800,
             "lifts": 7,
-            "pass_affiliations": ["indy"]
+            "pass_affiliations": [
+              "indy"
+            ]
           },
           "metadata": {
             "reputation": "No-frills, old-school local favorite situated directly on the Continental Divide.",
@@ -80,14 +99,19 @@
         {
           "id": "copper_mountain",
           "name": "Copper Mountain",
-          "coords": { "lat": 39.5017, "lon": -106.1564 },
+          "coords": {
+            "lat": 39.5017,
+            "lon": -106.1564
+          },
           "stats": {
             "summit_elevation_ft": 12313,
             "base_elevation_ft": 9712,
             "vertical_drop_ft": 2738,
             "skiable_acres": 2507,
             "lifts": 23,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "Perfectly naturally-separated terrain from beginner to expert.",
@@ -101,14 +125,19 @@
         {
           "id": "breckenridge",
           "name": "Breckenridge",
-          "coords": { "lat": 39.4808, "lon": -106.0667 },
+          "coords": {
+            "lat": 39.4808,
+            "lon": -106.0667
+          },
           "stats": {
             "summit_elevation_ft": 12998,
             "base_elevation_ft": 9600,
             "vertical_drop_ft": 3398,
             "skiable_acres": 2908,
             "lifts": 35,
-            "pass_affiliations": ["epic"]
+            "pass_affiliations": [
+              "epic"
+            ]
           },
           "metadata": {
             "reputation": "Massive resort attached to a historic mining town. Incredible high alpine.",
@@ -122,14 +151,19 @@
         {
           "id": "keystone",
           "name": "Keystone",
-          "coords": { "lat": 39.6051, "lon": -105.9447 },
+          "coords": {
+            "lat": 39.6051,
+            "lon": -105.9447
+          },
           "stats": {
             "summit_elevation_ft": 12408,
             "base_elevation_ft": 9280,
             "vertical_drop_ft": 3128,
             "skiable_acres": 3149,
             "lifts": 20,
-            "pass_affiliations": ["epic"]
+            "pass_affiliations": [
+              "epic"
+            ]
           },
           "metadata": {
             "reputation": "Family-heavy frontside with a massive, rugged footprint in the back.",
@@ -143,14 +177,19 @@
         {
           "id": "vail",
           "name": "Vail",
-          "coords": { "lat": 39.6061, "lon": -106.3549 },
+          "coords": {
+            "lat": 39.6061,
+            "lon": -106.3549
+          },
           "stats": {
             "summit_elevation_ft": 11570,
             "base_elevation_ft": 8120,
             "vertical_drop_ft": 3450,
             "skiable_acres": 5317,
             "lifts": 32,
-            "pass_affiliations": ["epic"]
+            "pass_affiliations": [
+              "epic"
+            ]
           },
           "metadata": {
             "reputation": "Sprawling luxury mega-resort with world-famous Back Bowls.",
@@ -164,14 +203,19 @@
         {
           "id": "beaver_creek",
           "name": "Beaver Creek",
-          "coords": { "lat": 39.6044, "lon": -106.5167 },
+          "coords": {
+            "lat": 39.6044,
+            "lon": -106.5167
+          },
           "stats": {
             "summit_elevation_ft": 11440,
             "base_elevation_ft": 8100,
             "vertical_drop_ft": 3340,
             "skiable_acres": 2082,
             "lifts": 25,
-            "pass_affiliations": ["epic"]
+            "pass_affiliations": [
+              "epic"
+            ]
           },
           "metadata": {
             "reputation": "Luxury grooming and free cookies, often overlooked by powder chasers.",
@@ -190,7 +234,11 @@
       "country": "US",
       "timezone": "America/Denver",
       "friction_tier": "regional_drive",
-      "coords": { "lat": 39.186, "lon": -106.818 },
+      "macro_region": "co_roaring_fork",
+      "coords": {
+        "lat": 39.186,
+        "lon": -106.818
+      },
       "logistics": {
         "nearest_airport": "ASE",
         "drive_time_hours": 3.5,
@@ -201,14 +249,20 @@
         {
           "id": "snowmass",
           "name": "Snowmass",
-          "coords": { "lat": 39.2066, "lon": -106.9450 },
+          "coords": {
+            "lat": 39.2066,
+            "lon": -106.945
+          },
           "stats": {
             "summit_elevation_ft": 12510,
             "base_elevation_ft": 8104,
             "vertical_drop_ft": 4406,
             "skiable_acres": 3342,
             "lifts": 20,
-            "pass_affiliations": ["ikon", "mountain_collective"]
+            "pass_affiliations": [
+              "ikon",
+              "mountain_collective"
+            ]
           },
           "metadata": {
             "reputation": "The sprawling giant of the Aspen area. Something for everyone.",
@@ -222,14 +276,20 @@
         {
           "id": "aspen_mountain",
           "name": "Aspen Mountain",
-          "coords": { "lat": 39.1867, "lon": -106.8182 },
+          "coords": {
+            "lat": 39.1867,
+            "lon": -106.8182
+          },
           "stats": {
             "summit_elevation_ft": 11212,
             "base_elevation_ft": 7945,
             "vertical_drop_ft": 3267,
             "skiable_acres": 675,
             "lifts": 8,
-            "pass_affiliations": ["ikon", "mountain_collective"]
+            "pass_affiliations": [
+              "ikon",
+              "mountain_collective"
+            ]
           },
           "metadata": {
             "reputation": "Classic steep skiing dumping right into the heart of downtown Aspen.",
@@ -243,14 +303,20 @@
         {
           "id": "aspen_highlands",
           "name": "Aspen Highlands",
-          "coords": { "lat": 39.1819, "lon": -106.8564 },
+          "coords": {
+            "lat": 39.1819,
+            "lon": -106.8564
+          },
           "stats": {
             "summit_elevation_ft": 11675,
             "base_elevation_ft": 8040,
             "vertical_drop_ft": 3635,
             "skiable_acres": 1040,
             "lifts": 5,
-            "pass_affiliations": ["ikon", "mountain_collective"]
+            "pass_affiliations": [
+              "ikon",
+              "mountain_collective"
+            ]
           },
           "metadata": {
             "reputation": "The crown jewel of Colorado steep skiing.",
@@ -264,14 +330,20 @@
         {
           "id": "buttermilk",
           "name": "Buttermilk",
-          "coords": { "lat": 39.2046, "lon": -106.8643 },
+          "coords": {
+            "lat": 39.2046,
+            "lon": -106.8643
+          },
           "stats": {
             "summit_elevation_ft": 9900,
             "base_elevation_ft": 7870,
             "vertical_drop_ft": 2030,
             "skiable_acres": 435,
             "lifts": 6,
-            "pass_affiliations": ["ikon", "mountain_collective"]
+            "pass_affiliations": [
+              "ikon",
+              "mountain_collective"
+            ]
           },
           "metadata": {
             "reputation": "Home of the X-Games, but primarily known as a beginner mountain.",
@@ -285,7 +357,10 @@
         {
           "id": "sunlight",
           "name": "Sunlight",
-          "coords": { "lat": 39.4005, "lon": -107.3377 },
+          "coords": {
+            "lat": 39.4005,
+            "lon": -107.3377
+          },
           "stats": {
             "summit_elevation_ft": 9895,
             "base_elevation_ft": 7885,
@@ -311,7 +386,11 @@
       "country": "US",
       "timezone": "America/Denver",
       "friction_tier": "regional_drive",
-      "coords": { "lat": 40.457, "lon": -106.804 },
+      "macro_region": "co_steamboat",
+      "coords": {
+        "lat": 40.457,
+        "lon": -106.804
+      },
       "logistics": {
         "nearest_airport": "HDN",
         "drive_time_hours": 3.0,
@@ -322,14 +401,19 @@
         {
           "id": "steamboat",
           "name": "Steamboat",
-          "coords": { "lat": 40.4608, "lon": -106.7437 },
+          "coords": {
+            "lat": 40.4608,
+            "lon": -106.7437
+          },
           "stats": {
             "summit_elevation_ft": 10568,
             "base_elevation_ft": 6900,
             "vertical_drop_ft": 3668,
             "skiable_acres": 3741,
             "lifts": 23,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "The 'Champagne Powder' capital of Colorado.",
@@ -348,7 +432,11 @@
       "country": "US",
       "timezone": "America/Denver",
       "friction_tier": "high_friction_drive",
-      "coords": { "lat": 37.937, "lon": -107.812 },
+      "macro_region": "co_southern",
+      "coords": {
+        "lat": 37.937,
+        "lon": -107.812
+      },
       "logistics": {
         "nearest_airport": "MTJ",
         "drive_time_hours": 6.5,
@@ -359,14 +447,19 @@
         {
           "id": "telluride",
           "name": "Telluride",
-          "coords": { "lat": 37.9365, "lon": -107.8463 },
+          "coords": {
+            "lat": 37.9365,
+            "lon": -107.8463
+          },
           "stats": {
             "summit_elevation_ft": 13150,
             "base_elevation_ft": 8725,
             "vertical_drop_ft": 4425,
             "skiable_acres": 2000,
             "lifts": 19,
-            "pass_affiliations": ["epic"]
+            "pass_affiliations": [
+              "epic"
+            ]
           },
           "metadata": {
             "reputation": "The most beautiful mountain town in America with jaw-dropping extreme terrain.",
@@ -380,7 +473,10 @@
         {
           "id": "purgatory",
           "name": "Purgatory",
-          "coords": { "lat": 37.6290, "lon": -107.8143 },
+          "coords": {
+            "lat": 37.629,
+            "lon": -107.8143
+          },
           "stats": {
             "summit_elevation_ft": 10822,
             "base_elevation_ft": 8793,
@@ -401,7 +497,10 @@
         {
           "id": "silverton",
           "name": "Silverton",
-          "coords": { "lat": 37.8845, "lon": -107.6657 },
+          "coords": {
+            "lat": 37.8845,
+            "lon": -107.6657
+          },
           "stats": {
             "summit_elevation_ft": 13487,
             "base_elevation_ft": 10400,
@@ -427,7 +526,11 @@
       "country": "US",
       "timezone": "America/Denver",
       "friction_tier": "regional_drive",
-      "coords": { "lat": 37.472, "lon": -106.793 },
+      "macro_region": "co_southern",
+      "coords": {
+        "lat": 37.472,
+        "lon": -106.793
+      },
       "logistics": {
         "nearest_airport": "DRO",
         "drive_time_hours": 4.5,
@@ -438,7 +541,10 @@
         {
           "id": "wolf_creek",
           "name": "Wolf Creek",
-          "coords": { "lat": 37.4720, "lon": -106.7934 },
+          "coords": {
+            "lat": 37.472,
+            "lon": -106.7934
+          },
           "stats": {
             "summit_elevation_ft": 11904,
             "base_elevation_ft": 10300,
@@ -464,7 +570,11 @@
       "country": "US",
       "timezone": "America/Denver",
       "friction_tier": "regional_drive",
-      "coords": { "lat": 38.899, "lon": -106.965 },
+      "macro_region": "co_western_slope",
+      "coords": {
+        "lat": 38.899,
+        "lon": -106.965
+      },
       "logistics": {
         "nearest_airport": "GUC",
         "drive_time_hours": 3.5,
@@ -475,14 +585,19 @@
         {
           "id": "crested_butte",
           "name": "Crested Butte",
-          "coords": { "lat": 38.8997, "lon": -106.9658 },
+          "coords": {
+            "lat": 38.8997,
+            "lon": -106.9658
+          },
           "stats": {
             "summit_elevation_ft": 12162,
             "base_elevation_ft": 9375,
             "vertical_drop_ft": 2787,
             "skiable_acres": 1547,
             "lifts": 15,
-            "pass_affiliations": ["epic"]
+            "pass_affiliations": [
+              "epic"
+            ]
           },
           "metadata": {
             "reputation": "Extreme, rocky steeps and a fiercely independent town culture.",
@@ -496,7 +611,10 @@
         {
           "id": "monarch",
           "name": "Monarch",
-          "coords": { "lat": 38.5379, "lon": -106.3314 },
+          "coords": {
+            "lat": 38.5379,
+            "lon": -106.3314
+          },
           "stats": {
             "summit_elevation_ft": 11952,
             "base_elevation_ft": 10790,
@@ -522,7 +640,11 @@
       "country": "US",
       "timezone": "America/Denver",
       "friction_tier": "regional_drive",
-      "coords": { "lat": 39.069, "lon": -108.150 },
+      "macro_region": "co_western_slope",
+      "coords": {
+        "lat": 39.069,
+        "lon": -108.15
+      },
       "logistics": {
         "nearest_airport": "GJT",
         "drive_time_hours": 4.0,
@@ -533,14 +655,19 @@
         {
           "id": "powderhorn",
           "name": "Powderhorn",
-          "coords": { "lat": 39.0693, "lon": -108.1500 },
+          "coords": {
+            "lat": 39.0693,
+            "lon": -108.15
+          },
           "stats": {
             "summit_elevation_ft": 9850,
             "base_elevation_ft": 8200,
             "vertical_drop_ft": 1650,
             "skiable_acres": 1600,
             "lifts": 5,
-            "pass_affiliations": ["indy"]
+            "pass_affiliations": [
+              "indy"
+            ]
           },
           "metadata": {
             "reputation": "Unique, flat-topped mountain riding on the edge of the desert.",
@@ -559,7 +686,11 @@
       "country": "US",
       "timezone": "America/Denver",
       "friction_tier": "high_friction_drive",
-      "coords": { "lat": 40.584, "lon": -111.637 },
+      "macro_region": "wasatch",
+      "coords": {
+        "lat": 40.584,
+        "lon": -111.637
+      },
       "logistics": {
         "nearest_airport": "SLC",
         "drive_time_hours": 8.5,
@@ -570,14 +701,20 @@
         {
           "id": "snowbird",
           "name": "Snowbird",
-          "coords": { "lat": 40.581, "lon": -111.656 },
+          "coords": {
+            "lat": 40.581,
+            "lon": -111.656
+          },
           "stats": {
             "summit_elevation_ft": 11000,
             "base_elevation_ft": 7760,
             "vertical_drop_ft": 3240,
             "skiable_acres": 2500,
             "lifts": 14,
-            "pass_affiliations": ["ikon", "mountain_collective"]
+            "pass_affiliations": [
+              "ikon",
+              "mountain_collective"
+            ]
           },
           "metadata": {
             "reputation": "The king of Utah freeride. Massive, steep, and aggressive.",
@@ -591,14 +728,20 @@
         {
           "id": "alta",
           "name": "Alta",
-          "coords": { "lat": 40.588, "lon": -111.638 },
+          "coords": {
+            "lat": 40.588,
+            "lon": -111.638
+          },
           "stats": {
             "summit_elevation_ft": 11068,
             "base_elevation_ft": 8530,
             "vertical_drop_ft": 2538,
             "skiable_acres": 2614,
             "lifts": 11,
-            "pass_affiliations": ["ikon", "mountain_collective"]
+            "pass_affiliations": [
+              "ikon",
+              "mountain_collective"
+            ]
           },
           "metadata": {
             "reputation": "Old school, skiers-only legendary traverse-accessed powder.",
@@ -617,7 +760,11 @@
       "country": "US",
       "timezone": "America/Denver",
       "friction_tier": "high_friction_drive",
-      "coords": { "lat": 40.603, "lon": -111.583 },
+      "macro_region": "wasatch",
+      "coords": {
+        "lat": 40.603,
+        "lon": -111.583
+      },
       "logistics": {
         "nearest_airport": "SLC",
         "drive_time_hours": 8.0,
@@ -628,14 +775,19 @@
         {
           "id": "brighton",
           "name": "Brighton",
-          "coords": { "lat": 40.598, "lon": -111.581 },
+          "coords": {
+            "lat": 40.598,
+            "lon": -111.581
+          },
           "stats": {
             "summit_elevation_ft": 10500,
             "base_elevation_ft": 8755,
             "vertical_drop_ft": 1745,
             "skiable_acres": 1050,
             "lifts": 7,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "Local's favorite, massive snowboard culture, playful terrain.",
@@ -649,14 +801,19 @@
         {
           "id": "solitude",
           "name": "Solitude",
-          "coords": { "lat": 40.619, "lon": -111.591 },
+          "coords": {
+            "lat": 40.619,
+            "lon": -111.591
+          },
           "stats": {
             "summit_elevation_ft": 10488,
             "base_elevation_ft": 7988,
             "vertical_drop_ft": 2500,
             "skiable_acres": 1200,
             "lifts": 9,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "The 'quiet' Cottonwood resort, though less quiet since joining Ikon.",
@@ -675,7 +832,11 @@
       "country": "US",
       "timezone": "America/Denver",
       "friction_tier": "high_friction_drive",
-      "coords": { "lat": 40.651, "lon": -111.508 },
+      "macro_region": "wasatch",
+      "coords": {
+        "lat": 40.651,
+        "lon": -111.508
+      },
       "logistics": {
         "nearest_airport": "SLC",
         "drive_time_hours": 7.5,
@@ -686,14 +847,19 @@
         {
           "id": "park_city_mountain",
           "name": "Park City",
-          "coords": { "lat": 40.651, "lon": -111.508 },
+          "coords": {
+            "lat": 40.651,
+            "lon": -111.508
+          },
           "stats": {
             "summit_elevation_ft": 10026,
             "base_elevation_ft": 6800,
             "vertical_drop_ft": 3226,
             "skiable_acres": 7300,
             "lifts": 41,
-            "pass_affiliations": ["epic"]
+            "pass_affiliations": [
+              "epic"
+            ]
           },
           "metadata": {
             "reputation": "Sprawling, luxury mega-resort attached to an incredible town.",
@@ -707,14 +873,19 @@
         {
           "id": "deer_valley",
           "name": "Deer Valley",
-          "coords": { "lat": 40.623, "lon": -111.482 },
+          "coords": {
+            "lat": 40.623,
+            "lon": -111.482
+          },
           "stats": {
             "summit_elevation_ft": 9570,
             "base_elevation_ft": 6570,
             "vertical_drop_ft": 3000,
             "skiable_acres": 2026,
             "lifts": 21,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "Ultra-luxury, impeccable grooming, and a skiers-only strict policy.",
@@ -728,7 +899,10 @@
         {
           "id": "sundance",
           "name": "Sundance",
-          "coords": { "lat": 40.393, "lon": -111.588 },
+          "coords": {
+            "lat": 40.393,
+            "lon": -111.588
+          },
           "stats": {
             "summit_elevation_ft": 8250,
             "base_elevation_ft": 6100,
@@ -754,7 +928,11 @@
       "country": "US",
       "timezone": "America/Denver",
       "friction_tier": "high_friction_drive",
-      "coords": { "lat": 41.250, "lon": -111.833 },
+      "macro_region": "wasatch",
+      "coords": {
+        "lat": 41.25,
+        "lon": -111.833
+      },
       "logistics": {
         "nearest_airport": "SLC",
         "drive_time_hours": 7.0,
@@ -765,14 +943,20 @@
         {
           "id": "snowbasin",
           "name": "Snowbasin",
-          "coords": { "lat": 41.216, "lon": -111.856 },
+          "coords": {
+            "lat": 41.216,
+            "lon": -111.856
+          },
           "stats": {
             "summit_elevation_ft": 9390,
             "base_elevation_ft": 6391,
             "vertical_drop_ft": 3002,
             "skiable_acres": 3000,
             "lifts": 13,
-            "pass_affiliations": ["ikon", "mountain_collective"]
+            "pass_affiliations": [
+              "ikon",
+              "mountain_collective"
+            ]
           },
           "metadata": {
             "reputation": "Olympic downhill runs and incredibly opulent day lodges.",
@@ -786,7 +970,10 @@
         {
           "id": "powder_mountain",
           "name": "Powder Mountain",
-          "coords": { "lat": 41.379, "lon": -111.780 },
+          "coords": {
+            "lat": 41.379,
+            "lon": -111.78
+          },
           "stats": {
             "summit_elevation_ft": 8900,
             "base_elevation_ft": 6900,
@@ -807,14 +994,19 @@
         {
           "id": "beaver_mountain",
           "name": "Beaver Mountain",
-          "coords": { "lat": 41.965, "lon": -111.540 },
+          "coords": {
+            "lat": 41.965,
+            "lon": -111.54
+          },
           "stats": {
             "summit_elevation_ft": 8860,
             "base_elevation_ft": 7200,
             "vertical_drop_ft": 1700,
             "skiable_acres": 880,
             "lifts": 6,
-            "pass_affiliations": ["indy"]
+            "pass_affiliations": [
+              "indy"
+            ]
           },
           "metadata": {
             "reputation": "Family-owned, deeply local mountain near the Idaho border.",
@@ -833,7 +1025,11 @@
       "country": "US",
       "timezone": "America/Denver",
       "friction_tier": "high_friction_drive",
-      "coords": { "lat": 38.300, "lon": -112.350 },
+      "macro_region": "ut_southern",
+      "coords": {
+        "lat": 38.3,
+        "lon": -112.35
+      },
       "logistics": {
         "nearest_airport": "SLC",
         "drive_time_hours": 8.0,
@@ -844,14 +1040,19 @@
         {
           "id": "eagle_point",
           "name": "Eagle Point",
-          "coords": { "lat": 38.319, "lon": -112.384 },
+          "coords": {
+            "lat": 38.319,
+            "lon": -112.384
+          },
           "stats": {
             "summit_elevation_ft": 10600,
             "base_elevation_ft": 9100,
             "vertical_drop_ft": 1500,
             "skiable_acres": 650,
             "lifts": 5,
-            "pass_affiliations": ["indy"]
+            "pass_affiliations": [
+              "indy"
+            ]
           },
           "metadata": {
             "reputation": "Tiny, isolated gem that only opens Friday-Monday.",
@@ -865,7 +1066,10 @@
         {
           "id": "brian_head",
           "name": "Brian Head",
-          "coords": { "lat": 37.696, "lon": -112.849 },
+          "coords": {
+            "lat": 37.696,
+            "lon": -112.849
+          },
           "stats": {
             "summit_elevation_ft": 10920,
             "base_elevation_ft": 9600,
@@ -891,7 +1095,11 @@
       "country": "US",
       "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
-      "coords": { "lat": 39.250, "lon": -120.150 },
+      "macro_region": "sierra_nevada",
+      "coords": {
+        "lat": 39.25,
+        "lon": -120.15
+      },
       "logistics": {
         "nearest_airport": "RNO",
         "drive_time_hours": 16.0,
@@ -902,14 +1110,19 @@
         {
           "id": "palisades_tahoe",
           "name": "Palisades Tahoe",
-          "coords": { "lat": 39.196, "lon": -120.235 },
+          "coords": {
+            "lat": 39.196,
+            "lon": -120.235
+          },
           "stats": {
             "summit_elevation_ft": 9050,
             "base_elevation_ft": 6200,
             "vertical_drop_ft": 2850,
             "skiable_acres": 3600,
             "lifts": 29,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "The mecca of extreme freeride and cliff drops. Home of 'Squallywood'.",
@@ -923,14 +1136,19 @@
         {
           "id": "northstar",
           "name": "Northstar",
-          "coords": { "lat": 39.274, "lon": -120.121 },
+          "coords": {
+            "lat": 39.274,
+            "lon": -120.121
+          },
           "stats": {
             "summit_elevation_ft": 8610,
             "base_elevation_ft": 6330,
             "vertical_drop_ft": 2280,
             "skiable_acres": 3170,
             "lifts": 20,
-            "pass_affiliations": ["epic"]
+            "pass_affiliations": [
+              "epic"
+            ]
           },
           "metadata": {
             "reputation": "Family-friendly, luxury groomers, and world-class terrain parks. Nicknamed 'Flatstar'.",
@@ -944,7 +1162,10 @@
         {
           "id": "sugar_bowl",
           "name": "Sugar Bowl",
-          "coords": { "lat": 39.303, "lon": -120.334 },
+          "coords": {
+            "lat": 39.303,
+            "lon": -120.334
+          },
           "stats": {
             "summit_elevation_ft": 8383,
             "base_elevation_ft": 6883,
@@ -965,7 +1186,10 @@
         {
           "id": "mt_rose",
           "name": "Mt. Rose",
-          "coords": { "lat": 39.314, "lon": -119.886 },
+          "coords": {
+            "lat": 39.314,
+            "lon": -119.886
+          },
           "stats": {
             "summit_elevation_ft": 9700,
             "base_elevation_ft": 8260,
@@ -986,7 +1210,10 @@
         {
           "id": "homewood",
           "name": "Homewood",
-          "coords": { "lat": 39.083, "lon": -120.161 },
+          "coords": {
+            "lat": 39.083,
+            "lon": -120.161
+          },
           "stats": {
             "summit_elevation_ft": 7880,
             "base_elevation_ft": 6230,
@@ -1007,7 +1234,10 @@
         {
           "id": "diamond_peak",
           "name": "Diamond Peak",
-          "coords": { "lat": 39.243, "lon": -119.923 },
+          "coords": {
+            "lat": 39.243,
+            "lon": -119.923
+          },
           "stats": {
             "summit_elevation_ft": 8540,
             "base_elevation_ft": 6700,
@@ -1033,7 +1263,11 @@
       "country": "US",
       "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
-      "coords": { "lat": 38.866, "lon": -120.016 },
+      "macro_region": "sierra_nevada",
+      "coords": {
+        "lat": 38.866,
+        "lon": -120.016
+      },
       "logistics": {
         "nearest_airport": "RNO",
         "drive_time_hours": 16.5,
@@ -1044,14 +1278,19 @@
         {
           "id": "heavenly",
           "name": "Heavenly",
-          "coords": { "lat": 38.935, "lon": -119.940 },
+          "coords": {
+            "lat": 38.935,
+            "lon": -119.94
+          },
           "stats": {
             "summit_elevation_ft": 10067,
             "base_elevation_ft": 6540,
             "vertical_drop_ft": 3475,
             "skiable_acres": 4800,
             "lifts": 28,
-            "pass_affiliations": ["epic"]
+            "pass_affiliations": [
+              "epic"
+            ]
           },
           "metadata": {
             "reputation": "Massive footprint straddling the CA/NV border. Unbeatable lake views.",
@@ -1065,14 +1304,19 @@
         {
           "id": "kirkwood",
           "name": "Kirkwood",
-          "coords": { "lat": 38.684, "lon": -120.068 },
+          "coords": {
+            "lat": 38.684,
+            "lon": -120.068
+          },
           "stats": {
             "summit_elevation_ft": 9800,
             "base_elevation_ft": 7800,
             "vertical_drop_ft": 2000,
             "skiable_acres": 2300,
             "lifts": 15,
-            "pass_affiliations": ["epic"]
+            "pass_affiliations": [
+              "epic"
+            ]
           },
           "metadata": {
             "reputation": "The undisputed hardcore freeride mountain of South Tahoe.",
@@ -1086,7 +1330,10 @@
         {
           "id": "sierra_at_tahoe",
           "name": "Sierra-at-Tahoe",
-          "coords": { "lat": 38.800, "lon": -120.080 },
+          "coords": {
+            "lat": 38.8,
+            "lon": -120.08
+          },
           "stats": {
             "summit_elevation_ft": 8852,
             "base_elevation_ft": 6640,
@@ -1112,7 +1359,11 @@
       "country": "US",
       "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
-      "coords": { "lat": 37.630, "lon": -119.032 },
+      "macro_region": "sierra_nevada",
+      "coords": {
+        "lat": 37.63,
+        "lon": -119.032
+      },
       "logistics": {
         "nearest_airport": "MMH",
         "drive_time_hours": 15.0,
@@ -1123,14 +1374,19 @@
         {
           "id": "mammoth",
           "name": "Mammoth",
-          "coords": { "lat": 37.630, "lon": -119.032 },
+          "coords": {
+            "lat": 37.63,
+            "lon": -119.032
+          },
           "stats": {
             "summit_elevation_ft": 11053,
             "base_elevation_ft": 7953,
             "vertical_drop_ft": 3100,
             "skiable_acres": 3500,
             "lifts": 25,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "A massive, high-alpine volcano with a season that frequently stretches into July or August.",
@@ -1144,14 +1400,19 @@
         {
           "id": "june_mountain",
           "name": "June Mountain",
-          "coords": { "lat": 37.763, "lon": -119.091 },
+          "coords": {
+            "lat": 37.763,
+            "lon": -119.091
+          },
           "stats": {
             "summit_elevation_ft": 10090,
             "base_elevation_ft": 7545,
             "vertical_drop_ft": 2545,
             "skiable_acres": 1500,
             "lifts": 7,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "Mammoth's quiet, family-friendly little sister.",
@@ -1170,7 +1431,11 @@
       "country": "US",
       "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
-      "coords": { "lat": 38.000, "lon": -119.500 },
+      "macro_region": "sierra_nevada",
+      "coords": {
+        "lat": 38.0,
+        "lon": -119.5
+      },
       "logistics": {
         "nearest_airport": "FAT",
         "drive_time_hours": 18.0,
@@ -1181,7 +1446,10 @@
         {
           "id": "bear_valley",
           "name": "Bear Valley",
-          "coords": { "lat": 38.498, "lon": -120.040 },
+          "coords": {
+            "lat": 38.498,
+            "lon": -120.04
+          },
           "stats": {
             "summit_elevation_ft": 8500,
             "base_elevation_ft": 6600,
@@ -1202,7 +1470,10 @@
         {
           "id": "dodge_ridge",
           "name": "Dodge Ridge",
-          "coords": { "lat": 38.188, "lon": -119.986 },
+          "coords": {
+            "lat": 38.188,
+            "lon": -119.986
+          },
           "stats": {
             "summit_elevation_ft": 8200,
             "base_elevation_ft": 6600,
@@ -1223,7 +1494,10 @@
         {
           "id": "china_peak",
           "name": "China Peak",
-          "coords": { "lat": 37.230, "lon": -119.155 },
+          "coords": {
+            "lat": 37.23,
+            "lon": -119.155
+          },
           "stats": {
             "summit_elevation_ft": 8709,
             "base_elevation_ft": 7030,
@@ -1249,7 +1523,11 @@
       "country": "US",
       "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
-      "coords": { "lat": 47.422, "lon": -121.413 },
+      "macro_region": "pnw_cascades",
+      "coords": {
+        "lat": 47.422,
+        "lon": -121.413
+      },
       "logistics": {
         "nearest_airport": "SEA",
         "drive_time_hours": 20.0,
@@ -1260,14 +1538,19 @@
         {
           "id": "stevens_pass",
           "name": "Stevens Pass",
-          "coords": { "lat": 47.745, "lon": -121.089 },
+          "coords": {
+            "lat": 47.745,
+            "lon": -121.089
+          },
           "stats": {
             "summit_elevation_ft": 5845,
             "base_elevation_ft": 4061,
             "vertical_drop_ft": 1784,
             "skiable_acres": 1125,
             "lifts": 10,
-            "pass_affiliations": ["epic"]
+            "pass_affiliations": [
+              "epic"
+            ]
           },
           "metadata": {
             "reputation": "Playful, heavily-featured terrain with a massive night skiing culture.",
@@ -1281,14 +1564,19 @@
         {
           "id": "alpental",
           "name": "Snoqualmie: Alpental",
-          "coords": { "lat": 47.443, "lon": -121.423 },
+          "coords": {
+            "lat": 47.443,
+            "lon": -121.423
+          },
           "stats": {
             "summit_elevation_ft": 5420,
             "base_elevation_ft": 3140,
             "vertical_drop_ft": 2280,
             "skiable_acres": 875,
             "lifts": 4,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "A tiny, fiercely steep micro-resort famous for its rugged backcountry gates.",
@@ -1302,14 +1590,19 @@
         {
           "id": "summit_at_snoqualmie",
           "name": "Snoqualmie: Summit",
-          "coords": { "lat": 47.423, "lon": -121.414 },
+          "coords": {
+            "lat": 47.423,
+            "lon": -121.414
+          },
           "stats": {
             "summit_elevation_ft": 3865,
             "base_elevation_ft": 2610,
             "vertical_drop_ft": 1255,
             "skiable_acres": 1119,
             "lifts": 15,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "Seattle's closest local hill. Very flat, heavily beginner-focused.",
@@ -1328,7 +1621,11 @@
       "country": "US",
       "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
-      "coords": { "lat": 46.935, "lon": -121.474 },
+      "macro_region": "pnw_cascades",
+      "coords": {
+        "lat": 46.935,
+        "lon": -121.474
+      },
       "logistics": {
         "nearest_airport": "SEA",
         "drive_time_hours": 19.0,
@@ -1339,14 +1636,19 @@
         {
           "id": "crystal_mountain",
           "name": "Crystal Mountain WA",
-          "coords": { "lat": 46.935, "lon": -121.474 },
+          "coords": {
+            "lat": 46.935,
+            "lon": -121.474
+          },
           "stats": {
             "summit_elevation_ft": 7012,
             "base_elevation_ft": 4400,
             "vertical_drop_ft": 2602,
             "skiable_acres": 2300,
             "lifts": 10,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "The premier big-mountain resort in Washington. Massive alpine terrain.",
@@ -1360,7 +1662,10 @@
         {
           "id": "white_pass",
           "name": "White Pass",
-          "coords": { "lat": 46.638, "lon": -121.391 },
+          "coords": {
+            "lat": 46.638,
+            "lon": -121.391
+          },
           "stats": {
             "summit_elevation_ft": 6500,
             "base_elevation_ft": 4500,
@@ -1386,7 +1691,11 @@
       "country": "US",
       "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
-      "coords": { "lat": 48.861, "lon": -121.660 },
+      "macro_region": "pnw_cascades",
+      "coords": {
+        "lat": 48.861,
+        "lon": -121.66
+      },
       "logistics": {
         "nearest_airport": "BLI",
         "drive_time_hours": 24.0,
@@ -1397,7 +1706,10 @@
         {
           "id": "mt_baker",
           "name": "Mt. Baker",
-          "coords": { "lat": 48.861, "lon": -121.660 },
+          "coords": {
+            "lat": 48.861,
+            "lon": -121.66
+          },
           "stats": {
             "summit_elevation_ft": 5089,
             "base_elevation_ft": 3600,
@@ -1423,7 +1735,11 @@
       "country": "US",
       "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
-      "coords": { "lat": 47.954, "lon": -117.563 },
+      "macro_region": "pnw_interior",
+      "coords": {
+        "lat": 47.954,
+        "lon": -117.563
+      },
       "logistics": {
         "nearest_airport": "GEG",
         "drive_time_hours": 16.0,
@@ -1434,7 +1750,10 @@
         {
           "id": "49_degrees_north",
           "name": "49 Degrees North",
-          "coords": { "lat": 48.300, "lon": -117.563 },
+          "coords": {
+            "lat": 48.3,
+            "lon": -117.563
+          },
           "stats": {
             "summit_elevation_ft": 5774,
             "base_elevation_ft": 3923,
@@ -1455,7 +1774,10 @@
         {
           "id": "mission_ridge",
           "name": "Mission Ridge",
-          "coords": { "lat": 47.292, "lon": -120.399 },
+          "coords": {
+            "lat": 47.292,
+            "lon": -120.399
+          },
           "stats": {
             "summit_elevation_ft": 6820,
             "base_elevation_ft": 4570,
@@ -1476,7 +1798,10 @@
         {
           "id": "mt_spokane",
           "name": "Mt. Spokane",
-          "coords": { "lat": 47.921, "lon": -117.098 },
+          "coords": {
+            "lat": 47.921,
+            "lon": -117.098
+          },
           "stats": {
             "summit_elevation_ft": 5889,
             "base_elevation_ft": 3818,
@@ -1502,7 +1827,11 @@
       "country": "US",
       "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
-      "coords": { "lat": 45.330, "lon": -121.710 },
+      "macro_region": "pnw_cascades",
+      "coords": {
+        "lat": 45.33,
+        "lon": -121.71
+      },
       "logistics": {
         "nearest_airport": "PDX",
         "drive_time_hours": 18.0,
@@ -1513,7 +1842,10 @@
         {
           "id": "mt_hood_meadows",
           "name": "Mount Hood Meadows",
-          "coords": { "lat": 45.330, "lon": -121.666 },
+          "coords": {
+            "lat": 45.33,
+            "lon": -121.666
+          },
           "stats": {
             "summit_elevation_ft": 7300,
             "base_elevation_ft": 4523,
@@ -1534,7 +1866,10 @@
         {
           "id": "timberline",
           "name": "Timberline Lodge",
-          "coords": { "lat": 45.331, "lon": -121.710 },
+          "coords": {
+            "lat": 45.331,
+            "lon": -121.71
+          },
           "stats": {
             "summit_elevation_ft": 8540,
             "base_elevation_ft": 4000,
@@ -1555,7 +1890,10 @@
         {
           "id": "mt_hood_skibowl",
           "name": "Mount Hood Skibowl",
-          "coords": { "lat": 45.302, "lon": -121.772 },
+          "coords": {
+            "lat": 45.302,
+            "lon": -121.772
+          },
           "stats": {
             "summit_elevation_ft": 5100,
             "base_elevation_ft": 3723,
@@ -1581,7 +1919,11 @@
       "country": "US",
       "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
-      "coords": { "lat": 43.979, "lon": -121.688 },
+      "macro_region": "pnw_interior",
+      "coords": {
+        "lat": 43.979,
+        "lon": -121.688
+      },
       "logistics": {
         "nearest_airport": "RDM",
         "drive_time_hours": 17.0,
@@ -1592,14 +1934,19 @@
         {
           "id": "mt_bachelor",
           "name": "Mount Bachelor",
-          "coords": { "lat": 43.979, "lon": -121.688 },
+          "coords": {
+            "lat": 43.979,
+            "lon": -121.688
+          },
           "stats": {
             "summit_elevation_ft": 9065,
             "base_elevation_ft": 5700,
             "vertical_drop_ft": 3365,
             "skiable_acres": 4323,
             "lifts": 12,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "A massive, perfectly conical volcano. A snowboarder's paradise.",
@@ -1613,7 +1960,10 @@
         {
           "id": "hoodoo",
           "name": "Hoodoo",
-          "coords": { "lat": 44.406, "lon": -121.874 },
+          "coords": {
+            "lat": 44.406,
+            "lon": -121.874
+          },
           "stats": {
             "summit_elevation_ft": 5703,
             "base_elevation_ft": 4668,
@@ -1634,7 +1984,10 @@
         {
           "id": "willamette_pass",
           "name": "Willamette Pass",
-          "coords": { "lat": 43.595, "lon": -122.036 },
+          "coords": {
+            "lat": 43.595,
+            "lon": -122.036
+          },
           "stats": {
             "summit_elevation_ft": 6683,
             "base_elevation_ft": 5120,
@@ -1660,7 +2013,11 @@
       "country": "US",
       "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
-      "coords": { "lat": 44.962, "lon": -118.239 },
+      "macro_region": "pnw_interior",
+      "coords": {
+        "lat": 44.962,
+        "lon": -118.239
+      },
       "logistics": {
         "nearest_airport": "BOI",
         "drive_time_hours": 14.0,
@@ -1671,7 +2028,10 @@
         {
           "id": "anthony_lakes",
           "name": "Anthony Lakes",
-          "coords": { "lat": 44.962, "lon": -118.239 },
+          "coords": {
+            "lat": 44.962,
+            "lon": -118.239
+          },
           "stats": {
             "summit_elevation_ft": 8000,
             "base_elevation_ft": 7100,
@@ -1697,7 +2057,11 @@
       "country": "US",
       "timezone": "America/Denver",
       "friction_tier": "flight",
-      "coords": { "lat": 43.587, "lon": -110.827 },
+      "macro_region": "snake_river_tetons",
+      "coords": {
+        "lat": 43.587,
+        "lon": -110.827
+      },
       "logistics": {
         "nearest_airport": "JAC",
         "drive_time_hours": 8.5,
@@ -1708,14 +2072,20 @@
         {
           "id": "jackson_hole",
           "name": "Jackson Hole",
-          "coords": { "lat": 43.587, "lon": -110.827 },
+          "coords": {
+            "lat": 43.587,
+            "lon": -110.827
+          },
           "stats": {
             "summit_elevation_ft": 10450,
             "base_elevation_ft": 6311,
             "vertical_drop_ft": 4139,
             "skiable_acres": 2500,
             "lifts": 13,
-            "pass_affiliations": ["ikon", "mountain_collective"]
+            "pass_affiliations": [
+              "ikon",
+              "mountain_collective"
+            ]
           },
           "metadata": {
             "reputation": "One of the most legendary extreme freeride mountains on earth.",
@@ -1729,14 +2099,19 @@
         {
           "id": "grand_targhee",
           "name": "Grand Targhee",
-          "coords": { "lat": 43.788, "lon": -110.957 },
+          "coords": {
+            "lat": 43.788,
+            "lon": -110.957
+          },
           "stats": {
             "summit_elevation_ft": 9862,
             "base_elevation_ft": 7851,
             "vertical_drop_ft": 2011,
             "skiable_acres": 2602,
             "lifts": 6,
-            "pass_affiliations": ["mountain_collective"]
+            "pass_affiliations": [
+              "mountain_collective"
+            ]
           },
           "metadata": {
             "reputation": "The 'back side' of the Tetons. Flat, but catches unbelievable amounts of snow.",
@@ -1750,7 +2125,10 @@
         {
           "id": "snow_king",
           "name": "Snow King",
-          "coords": { "lat": 43.472, "lon": -110.760 },
+          "coords": {
+            "lat": 43.472,
+            "lon": -110.76
+          },
           "stats": {
             "summit_elevation_ft": 7808,
             "base_elevation_ft": 6237,
@@ -1776,7 +2154,11 @@
       "country": "US",
       "timezone": "America/Denver",
       "friction_tier": "flight",
-      "coords": { "lat": 45.280, "lon": -111.400 },
+      "macro_region": "northern_rockies",
+      "coords": {
+        "lat": 45.28,
+        "lon": -111.4
+      },
       "logistics": {
         "nearest_airport": "BZN",
         "drive_time_hours": 10.5,
@@ -1787,14 +2169,20 @@
         {
           "id": "big_sky",
           "name": "Big Sky",
-          "coords": { "lat": 45.280, "lon": -111.400 },
+          "coords": {
+            "lat": 45.28,
+            "lon": -111.4
+          },
           "stats": {
             "summit_elevation_ft": 11166,
             "base_elevation_ft": 6800,
             "vertical_drop_ft": 4366,
             "skiable_acres": 5850,
             "lifts": 38,
-            "pass_affiliations": ["ikon", "mountain_collective"]
+            "pass_affiliations": [
+              "ikon",
+              "mountain_collective"
+            ]
           },
           "metadata": {
             "reputation": "The sprawling giant of American skiing. Massive, rugged, and rocky.",
@@ -1808,7 +2196,10 @@
         {
           "id": "bridger_bowl",
           "name": "Bridger Bowl",
-          "coords": { "lat": 45.816, "lon": -110.938 },
+          "coords": {
+            "lat": 45.816,
+            "lon": -110.938
+          },
           "stats": {
             "summit_elevation_ft": 8700,
             "base_elevation_ft": 6100,
@@ -1829,7 +2220,10 @@
         {
           "id": "yellowstone_club",
           "name": "Yellowstone Club",
-          "coords": { "lat": 45.234, "lon": -111.439 },
+          "coords": {
+            "lat": 45.234,
+            "lon": -111.439
+          },
           "stats": {
             "summit_elevation_ft": 9860,
             "base_elevation_ft": 7160,
@@ -1855,7 +2249,11 @@
       "country": "US",
       "timezone": "America/Denver",
       "friction_tier": "flight",
-      "coords": { "lat": 48.480, "lon": -114.350 },
+      "macro_region": "northern_rockies",
+      "coords": {
+        "lat": 48.48,
+        "lon": -114.35
+      },
       "logistics": {
         "nearest_airport": "FCA",
         "drive_time_hours": 14.0,
@@ -1866,7 +2264,10 @@
         {
           "id": "whitefish",
           "name": "Whitefish",
-          "coords": { "lat": 48.480, "lon": -114.350 },
+          "coords": {
+            "lat": 48.48,
+            "lon": -114.35
+          },
           "stats": {
             "summit_elevation_ft": 6817,
             "base_elevation_ft": 4464,
@@ -1887,7 +2288,10 @@
         {
           "id": "montana_snowbowl",
           "name": "Montana Snowbowl",
-          "coords": { "lat": 47.014, "lon": -114.004 },
+          "coords": {
+            "lat": 47.014,
+            "lon": -114.004
+          },
           "stats": {
             "summit_elevation_ft": 7600,
             "base_elevation_ft": 5000,
@@ -1908,7 +2312,10 @@
         {
           "id": "discovery",
           "name": "Discovery",
-          "coords": { "lat": 46.261, "lon": -113.242 },
+          "coords": {
+            "lat": 46.261,
+            "lon": -113.242
+          },
           "stats": {
             "summit_elevation_ft": 8158,
             "base_elevation_ft": 6488,
@@ -1929,7 +2336,10 @@
         {
           "id": "lost_trail",
           "name": "Lost Trail",
-          "coords": { "lat": 45.694, "lon": -113.948 },
+          "coords": {
+            "lat": 45.694,
+            "lon": -113.948
+          },
           "stats": {
             "summit_elevation_ft": 8200,
             "base_elevation_ft": 6400,
@@ -1950,7 +2360,10 @@
         {
           "id": "red_lodge",
           "name": "Red Lodge",
-          "coords": { "lat": 45.180, "lon": -109.288 },
+          "coords": {
+            "lat": 45.18,
+            "lon": -109.288
+          },
           "stats": {
             "summit_elevation_ft": 9416,
             "base_elevation_ft": 7016,
@@ -1971,7 +2384,10 @@
         {
           "id": "great_divide",
           "name": "Great Divide",
-          "coords": { "lat": 46.750, "lon": -112.300 },
+          "coords": {
+            "lat": 46.75,
+            "lon": -112.3
+          },
           "stats": {
             "summit_elevation_ft": 7330,
             "base_elevation_ft": 5830,
@@ -1992,14 +2408,19 @@
         {
           "id": "blacktail",
           "name": "Blacktail",
-          "coords": { "lat": 48.016, "lon": -114.368 },
+          "coords": {
+            "lat": 48.016,
+            "lon": -114.368
+          },
           "stats": {
             "summit_elevation_ft": 6780,
             "base_elevation_ft": 5340,
             "vertical_drop_ft": 1440,
             "skiable_acres": 1000,
             "lifts": 4,
-            "pass_affiliations": ["indy"]
+            "pass_affiliations": [
+              "indy"
+            ]
           },
           "metadata": {
             "reputation": "An 'upside-down' mountain with stunning views of Flathead Lake.",
@@ -2018,7 +2439,11 @@
       "country": "US",
       "timezone": "America/Boise",
       "friction_tier": "flight",
-      "coords": { "lat": 48.367, "lon": -116.623 },
+      "macro_region": "northern_rockies",
+      "coords": {
+        "lat": 48.367,
+        "lon": -116.623
+      },
       "logistics": {
         "nearest_airport": "GEG",
         "drive_time_hours": 15.0,
@@ -2029,14 +2454,19 @@
         {
           "id": "schweitzer",
           "name": "Schweitzer",
-          "coords": { "lat": 48.367, "lon": -116.623 },
+          "coords": {
+            "lat": 48.367,
+            "lon": -116.623
+          },
           "stats": {
             "summit_elevation_ft": 6400,
             "base_elevation_ft": 3960,
             "vertical_drop_ft": 2440,
             "skiable_acres": 2900,
             "lifts": 10,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "Massive, highly underrated resort with views of Lake Pend Oreille.",
@@ -2050,7 +2480,10 @@
         {
           "id": "silver_mountain",
           "name": "Silver Mountain",
-          "coords": { "lat": 47.500, "lon": -116.136 },
+          "coords": {
+            "lat": 47.5,
+            "lon": -116.136
+          },
           "stats": {
             "summit_elevation_ft": 6300,
             "base_elevation_ft": 4100,
@@ -2071,7 +2504,10 @@
         {
           "id": "lookout_pass",
           "name": "Lookout Pass",
-          "coords": { "lat": 47.456, "lon": -115.698 },
+          "coords": {
+            "lat": 47.456,
+            "lon": -115.698
+          },
           "stats": {
             "summit_elevation_ft": 6160,
             "base_elevation_ft": 4510,
@@ -2097,7 +2533,11 @@
       "country": "US",
       "timezone": "America/Boise",
       "friction_tier": "flight",
-      "coords": { "lat": 43.766, "lon": -116.100 },
+      "macro_region": "snake_river_tetons",
+      "coords": {
+        "lat": 43.766,
+        "lon": -116.1
+      },
       "logistics": {
         "nearest_airport": "BOI",
         "drive_time_hours": 12.0,
@@ -2108,14 +2548,20 @@
         {
           "id": "sun_valley",
           "name": "Sun Valley",
-          "coords": { "lat": 43.654, "lon": -114.351 },
+          "coords": {
+            "lat": 43.654,
+            "lon": -114.351
+          },
           "stats": {
             "summit_elevation_ft": 9150,
             "base_elevation_ft": 5750,
             "vertical_drop_ft": 3400,
             "skiable_acres": 2533,
             "lifts": 18,
-            "pass_affiliations": ["ikon", "mountain_collective"]
+            "pass_affiliations": [
+              "ikon",
+              "mountain_collective"
+            ]
           },
           "metadata": {
             "reputation": "America's first destination ski resort. Pure luxury and perfectly pitched cruisers.",
@@ -2129,7 +2575,10 @@
         {
           "id": "bogus_basin",
           "name": "Bogus Basin",
-          "coords": { "lat": 43.766, "lon": -116.100 },
+          "coords": {
+            "lat": 43.766,
+            "lon": -116.1
+          },
           "stats": {
             "summit_elevation_ft": 7582,
             "base_elevation_ft": 5782,
@@ -2150,14 +2599,19 @@
         {
           "id": "brundage",
           "name": "Brundage",
-          "coords": { "lat": 45.004, "lon": -116.158 },
+          "coords": {
+            "lat": 45.004,
+            "lon": -116.158
+          },
           "stats": {
             "summit_elevation_ft": 7640,
             "base_elevation_ft": 5719,
             "vertical_drop_ft": 1921,
             "skiable_acres": 1920,
             "lifts": 6,
-            "pass_affiliations": ["indy"]
+            "pass_affiliations": [
+              "indy"
+            ]
           },
           "metadata": {
             "reputation": "Hidden powder gem in central Idaho.",
@@ -2171,14 +2625,19 @@
         {
           "id": "tamarack",
           "name": "Tamarack",
-          "coords": { "lat": 44.542, "lon": -116.113 },
+          "coords": {
+            "lat": 44.542,
+            "lon": -116.113
+          },
           "stats": {
             "summit_elevation_ft": 7700,
             "base_elevation_ft": 4900,
             "vertical_drop_ft": 2800,
             "skiable_acres": 1100,
             "lifts": 7,
-            "pass_affiliations": ["indy"]
+            "pass_affiliations": [
+              "indy"
+            ]
           },
           "metadata": {
             "reputation": "A reborn luxury resort with fantastic fall lines.",
@@ -2192,14 +2651,19 @@
         {
           "id": "pebble_creek",
           "name": "Pebble Creek",
-          "coords": { "lat": 42.784, "lon": -112.155 },
+          "coords": {
+            "lat": 42.784,
+            "lon": -112.155
+          },
           "stats": {
             "summit_elevation_ft": 8560,
             "base_elevation_ft": 6360,
             "vertical_drop_ft": 2200,
             "skiable_acres": 1100,
             "lifts": 3,
-            "pass_affiliations": ["indy"]
+            "pass_affiliations": [
+              "indy"
+            ]
           },
           "metadata": {
             "reputation": "A shockingly steep local mountain in southern Idaho.",
@@ -2213,14 +2677,19 @@
         {
           "id": "soldier_mountain",
           "name": "Soldier Mountain",
-          "coords": { "lat": 43.486, "lon": -114.831 },
+          "coords": {
+            "lat": 43.486,
+            "lon": -114.831
+          },
           "stats": {
             "summit_elevation_ft": 7177,
             "base_elevation_ft": 5756,
             "vertical_drop_ft": 1421,
             "skiable_acres": 1142,
             "lifts": 3,
-            "pass_affiliations": ["indy"]
+            "pass_affiliations": [
+              "indy"
+            ]
           },
           "metadata": {
             "reputation": "Tiny, beloved local hill (once owned by Bruce Willis).",
@@ -2239,7 +2708,11 @@
       "country": "US",
       "timezone": "America/Denver",
       "friction_tier": "regional_drive",
-      "coords": { "lat": 36.596, "lon": -105.454 },
+      "macro_region": "nm_northern",
+      "coords": {
+        "lat": 36.596,
+        "lon": -105.454
+      },
       "logistics": {
         "nearest_airport": "ABQ",
         "drive_time_hours": 4.5,
@@ -2250,14 +2723,20 @@
         {
           "id": "taos_ski_valley",
           "name": "Taos Ski Valley",
-          "coords": { "lat": 36.596, "lon": -105.454 },
+          "coords": {
+            "lat": 36.596,
+            "lon": -105.454
+          },
           "stats": {
             "summit_elevation_ft": 12481,
             "base_elevation_ft": 9200,
             "vertical_drop_ft": 3100,
             "skiable_acres": 1294,
             "lifts": 14,
-            "pass_affiliations": ["ikon", "mountain_collective"]
+            "pass_affiliations": [
+              "ikon",
+              "mountain_collective"
+            ]
           },
           "metadata": {
             "reputation": "A fiercely steep, expert-focused mountain with European alpine vibes.",
@@ -2271,7 +2750,10 @@
         {
           "id": "ski_santa_fe",
           "name": "Ski Santa Fe",
-          "coords": { "lat": 35.795, "lon": -105.794 },
+          "coords": {
+            "lat": 35.795,
+            "lon": -105.794
+          },
           "stats": {
             "summit_elevation_ft": 12075,
             "base_elevation_ft": 10350,
@@ -2292,7 +2774,10 @@
         {
           "id": "angel_fire",
           "name": "Angel Fire Resort",
-          "coords": { "lat": 36.388, "lon": -105.274 },
+          "coords": {
+            "lat": 36.388,
+            "lon": -105.274
+          },
           "stats": {
             "summit_elevation_ft": 10677,
             "base_elevation_ft": 8600,
@@ -2313,7 +2798,10 @@
         {
           "id": "red_river",
           "name": "Red River",
-          "coords": { "lat": 36.697, "lon": -105.405 },
+          "coords": {
+            "lat": 36.697,
+            "lon": -105.405
+          },
           "stats": {
             "summit_elevation_ft": 10350,
             "base_elevation_ft": 8750,
@@ -2339,7 +2827,11 @@
       "country": "US",
       "timezone": "America/Denver",
       "friction_tier": "high_friction_drive",
-      "coords": { "lat": 33.397, "lon": -105.792 },
+      "macro_region": "nm_southern",
+      "coords": {
+        "lat": 33.397,
+        "lon": -105.792
+      },
       "logistics": {
         "nearest_airport": "ABQ",
         "drive_time_hours": 7.5,
@@ -2350,7 +2842,10 @@
         {
           "id": "ski_apache",
           "name": "Ski Apache",
-          "coords": { "lat": 33.397, "lon": -105.792 },
+          "coords": {
+            "lat": 33.397,
+            "lon": -105.792
+          },
           "stats": {
             "summit_elevation_ft": 11500,
             "base_elevation_ft": 9600,
@@ -2371,7 +2866,10 @@
         {
           "id": "sandia_peak",
           "name": "Sandia Peak",
-          "coords": { "lat": 35.198, "lon": -106.416 },
+          "coords": {
+            "lat": 35.198,
+            "lon": -106.416
+          },
           "stats": {
             "summit_elevation_ft": 10378,
             "base_elevation_ft": 8678,
@@ -2397,7 +2895,11 @@
       "country": "US",
       "timezone": "America/Phoenix",
       "friction_tier": "flight",
-      "coords": { "lat": 35.330, "lon": -111.708 },
+      "macro_region": "az_flagstaff",
+      "coords": {
+        "lat": 35.33,
+        "lon": -111.708
+      },
       "logistics": {
         "nearest_airport": "PHX",
         "drive_time_hours": 11.5,
@@ -2408,7 +2910,10 @@
         {
           "id": "arizona_snowbowl",
           "name": "Arizona Snowbowl",
-          "coords": { "lat": 35.330, "lon": -111.708 },
+          "coords": {
+            "lat": 35.33,
+            "lon": -111.708
+          },
           "stats": {
             "summit_elevation_ft": 11500,
             "base_elevation_ft": 9200,
@@ -2429,7 +2934,10 @@
         {
           "id": "sunrise_park",
           "name": "Sunrise Park",
-          "coords": { "lat": 33.984, "lon": -109.560 },
+          "coords": {
+            "lat": 33.984,
+            "lon": -109.56
+          },
           "stats": {
             "summit_elevation_ft": 11100,
             "base_elevation_ft": 9200,
@@ -2455,7 +2963,11 @@
       "country": "US",
       "timezone": "America/Anchorage",
       "friction_tier": "flight",
-      "coords": { "lat": 60.960, "lon": -149.098 },
+      "macro_region": "ak_chugach",
+      "coords": {
+        "lat": 60.96,
+        "lon": -149.098
+      },
       "logistics": {
         "nearest_airport": "ANC",
         "drive_time_hours": 48.0,
@@ -2466,14 +2978,19 @@
         {
           "id": "alyeska",
           "name": "Alyeska",
-          "coords": { "lat": 60.960, "lon": -149.098 },
+          "coords": {
+            "lat": 60.96,
+            "lon": -149.098
+          },
           "stats": {
             "summit_elevation_ft": 2750,
             "base_elevation_ft": 250,
             "vertical_drop_ft": 2487,
             "skiable_acres": 1610,
             "lifts": 7,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "Incredible maritime snow totals and true Alaskan big-mountain riding.",
@@ -2487,14 +3004,19 @@
         {
           "id": "eaglecrest",
           "name": "Eaglecrest",
-          "coords": { "lat": 58.261, "lon": -134.522 },
+          "coords": {
+            "lat": 58.261,
+            "lon": -134.522
+          },
           "stats": {
             "summit_elevation_ft": 2600,
             "base_elevation_ft": 1200,
             "vertical_drop_ft": 1620,
             "skiable_acres": 640,
             "lifts": 4,
-            "pass_affiliations": ["indy"]
+            "pass_affiliations": [
+              "indy"
+            ]
           },
           "metadata": {
             "reputation": "Juneau's community-owned, no-frills powder gem.",
@@ -2513,7 +3035,11 @@
       "country": "US",
       "timezone": "America/Detroit",
       "friction_tier": "flight",
-      "coords": { "lat": 47.388, "lon": -88.015 },
+      "macro_region": "mi_upper_peninsula",
+      "coords": {
+        "lat": 47.388,
+        "lon": -88.015
+      },
       "logistics": {
         "nearest_airport": "CMX",
         "drive_time_hours": 18.0,
@@ -2524,7 +3050,10 @@
         {
           "id": "mount_bohemia",
           "name": "Mount Bohemia",
-          "coords": { "lat": 47.388, "lon": -88.015 },
+          "coords": {
+            "lat": 47.388,
+            "lon": -88.015
+          },
           "stats": {
             "summit_elevation_ft": 1465,
             "base_elevation_ft": 567,
@@ -2550,7 +3079,11 @@
       "country": "US",
       "timezone": "America/New_York",
       "friction_tier": "flight",
-      "coords": { "lat": 44.924, "lon": -72.454 },
+      "macro_region": "northeast",
+      "coords": {
+        "lat": 44.924,
+        "lon": -72.454
+      },
       "logistics": {
         "nearest_airport": "BTV",
         "drive_time_hours": 30.0,
@@ -2561,14 +3094,19 @@
         {
           "id": "jay_peak",
           "name": "Jay Peak",
-          "coords": { "lat": 44.924, "lon": -72.454 },
+          "coords": {
+            "lat": 44.924,
+            "lon": -72.454
+          },
           "stats": {
             "summit_elevation_ft": 3968,
             "base_elevation_ft": 1815,
             "vertical_drop_ft": 2112,
             "skiable_acres": 485,
             "lifts": 9,
-            "pass_affiliations": ["indy"]
+            "pass_affiliations": [
+              "indy"
+            ]
           },
           "metadata": {
             "reputation": "The undisputed powder king of the East Coast.",
@@ -2582,14 +3120,19 @@
         {
           "id": "stowe",
           "name": "Stowe",
-          "coords": { "lat": 44.530, "lon": -72.780 },
+          "coords": {
+            "lat": 44.53,
+            "lon": -72.78
+          },
           "stats": {
             "summit_elevation_ft": 3625,
             "base_elevation_ft": 1280,
             "vertical_drop_ft": 2360,
             "skiable_acres": 485,
             "lifts": 12,
-            "pass_affiliations": ["epic"]
+            "pass_affiliations": [
+              "epic"
+            ]
           },
           "metadata": {
             "reputation": "The luxury capital of East Coast skiing.",
@@ -2603,7 +3146,10 @@
         {
           "id": "smugglers_notch",
           "name": "Smugglers' Notch",
-          "coords": { "lat": 44.588, "lon": -72.790 },
+          "coords": {
+            "lat": 44.588,
+            "lon": -72.79
+          },
           "stats": {
             "summit_elevation_ft": 3640,
             "base_elevation_ft": 1030,
@@ -2624,14 +3170,19 @@
         {
           "id": "sugarbush",
           "name": "Sugarbush",
-          "coords": { "lat": 44.135, "lon": -72.894 },
+          "coords": {
+            "lat": 44.135,
+            "lon": -72.894
+          },
           "stats": {
             "summit_elevation_ft": 4083,
             "base_elevation_ft": 1483,
             "vertical_drop_ft": 2600,
             "skiable_acres": 581,
             "lifts": 16,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "Classic Vermont skiing with massive vertical and beautiful terrain.",
@@ -2645,14 +3196,19 @@
         {
           "id": "killington",
           "name": "Killington",
-          "coords": { "lat": 43.626, "lon": -72.797 },
+          "coords": {
+            "lat": 43.626,
+            "lon": -72.797
+          },
           "stats": {
             "summit_elevation_ft": 4241,
             "base_elevation_ft": 1165,
             "vertical_drop_ft": 2977,
             "skiable_acres": 1509,
             "lifts": 22,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "The 'Beast of the East'. Sprawling, massive, and aggressive.",
@@ -2666,14 +3222,19 @@
         {
           "id": "pico",
           "name": "Pico",
-          "coords": { "lat": 43.662, "lon": -72.842 },
+          "coords": {
+            "lat": 43.662,
+            "lon": -72.842
+          },
           "stats": {
             "summit_elevation_ft": 3967,
             "base_elevation_ft": 2000,
             "vertical_drop_ft": 1967,
             "skiable_acres": 468,
             "lifts": 7,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "Killington's quiet, old-school little sister.",
@@ -2687,7 +3248,10 @@
         {
           "id": "mad_river_glen",
           "name": "Mad River Glen",
-          "coords": { "lat": 44.202, "lon": -72.917 },
+          "coords": {
+            "lat": 44.202,
+            "lon": -72.917
+          },
           "stats": {
             "summit_elevation_ft": 3637,
             "base_elevation_ft": 1600,
@@ -2713,7 +3277,11 @@
       "country": "US",
       "timezone": "America/New_York",
       "friction_tier": "flight",
-      "coords": { "lat": 44.302, "lon": -70.313 },
+      "macro_region": "northeast",
+      "coords": {
+        "lat": 44.302,
+        "lon": -70.313
+      },
       "logistics": {
         "nearest_airport": "PWM",
         "drive_time_hours": 32.0,
@@ -2724,14 +3292,20 @@
         {
           "id": "sugarloaf",
           "name": "Sugarloaf",
-          "coords": { "lat": 45.031, "lon": -70.313 },
+          "coords": {
+            "lat": 45.031,
+            "lon": -70.313
+          },
           "stats": {
             "summit_elevation_ft": 4237,
             "base_elevation_ft": 1417,
             "vertical_drop_ft": 2748,
             "skiable_acres": 1360,
             "lifts": 13,
-            "pass_affiliations": ["ikon", "mountain_collective"]
+            "pass_affiliations": [
+              "ikon",
+              "mountain_collective"
+            ]
           },
           "metadata": {
             "reputation": "The only true above-treeline snowfields in the East.",
@@ -2745,14 +3319,19 @@
         {
           "id": "saddleback",
           "name": "Saddleback",
-          "coords": { "lat": 44.936, "lon": -70.503 },
+          "coords": {
+            "lat": 44.936,
+            "lon": -70.503
+          },
           "stats": {
             "summit_elevation_ft": 4120,
             "base_elevation_ft": 2120,
             "vertical_drop_ft": 1850,
             "skiable_acres": 600,
             "lifts": 6,
-            "pass_affiliations": ["indy"]
+            "pass_affiliations": [
+              "indy"
+            ]
           },
           "metadata": {
             "reputation": "A reborn independent legend. Raw, rugged, and completely uncrowded.",
@@ -2766,14 +3345,20 @@
         {
           "id": "sunday_river",
           "name": "Sunday River",
-          "coords": { "lat": 44.473, "lon": -70.856 },
+          "coords": {
+            "lat": 44.473,
+            "lon": -70.856
+          },
           "stats": {
             "summit_elevation_ft": 3140,
             "base_elevation_ft": 800,
             "vertical_drop_ft": 2350,
             "skiable_acres": 1184,
             "lifts": 18,
-            "pass_affiliations": ["ikon", "mountain_collective"]
+            "pass_affiliations": [
+              "ikon",
+              "mountain_collective"
+            ]
           },
           "metadata": {
             "reputation": "Sprawling, interconnected peaks with legendary snowmaking.",
@@ -2787,14 +3372,19 @@
         {
           "id": "whiteface",
           "name": "Whiteface",
-          "coords": { "lat": 44.365, "lon": -73.858 },
+          "coords": {
+            "lat": 44.365,
+            "lon": -73.858
+          },
           "stats": {
             "summit_elevation_ft": 4386,
             "base_elevation_ft": 1220,
             "vertical_drop_ft": 3166,
             "skiable_acres": 299,
             "lifts": 11,
-            "pass_affiliations": ["mountain_collective"]
+            "pass_affiliations": [
+              "mountain_collective"
+            ]
           },
           "metadata": {
             "reputation": "Host of the 1980 Olympics. Nicknamed 'Iceface'.",
@@ -2813,7 +3403,11 @@
       "country": "CA",
       "timezone": "America/Vancouver",
       "friction_tier": "flight",
-      "coords": { "lat": 50.115, "lon": -122.948 },
+      "macro_region": "bc_coast",
+      "coords": {
+        "lat": 50.115,
+        "lon": -122.948
+      },
       "logistics": {
         "nearest_airport": "YVR",
         "drive_time_hours": 24.0,
@@ -2824,14 +3418,19 @@
         {
           "id": "whistler_blackcomb",
           "name": "Whistler Blackcomb",
-          "coords": { "lat": 50.115, "lon": -122.948 },
+          "coords": {
+            "lat": 50.115,
+            "lon": -122.948
+          },
           "stats": {
             "summit_elevation_ft": 7494,
             "base_elevation_ft": 2140,
             "vertical_drop_ft": 5280,
             "skiable_acres": 8171,
             "lifts": 35,
-            "pass_affiliations": ["epic"]
+            "pass_affiliations": [
+              "epic"
+            ]
           },
           "metadata": {
             "reputation": "The largest resort in North America. An absolute giant.",
@@ -2850,7 +3449,11 @@
       "country": "CA",
       "timezone": "America/Vancouver",
       "friction_tier": "flight",
-      "coords": { "lat": 51.000, "lon": -118.200 },
+      "macro_region": "bc_interior",
+      "coords": {
+        "lat": 51.0,
+        "lon": -118.2
+      },
       "logistics": {
         "nearest_airport": "YLW",
         "drive_time_hours": 20.0,
@@ -2861,14 +3464,20 @@
         {
           "id": "revelstoke",
           "name": "Revelstoke",
-          "coords": { "lat": 50.958, "lon": -118.158 },
+          "coords": {
+            "lat": 50.958,
+            "lon": -118.158
+          },
           "stats": {
             "summit_elevation_ft": 7300,
             "base_elevation_ft": 1680,
             "vertical_drop_ft": 5620,
             "skiable_acres": 3121,
             "lifts": 7,
-            "pass_affiliations": ["ikon", "mountain_collective"]
+            "pass_affiliations": [
+              "ikon",
+              "mountain_collective"
+            ]
           },
           "metadata": {
             "reputation": "The most vertical drop in North America. Hardcore, steep, and deep.",
@@ -2882,14 +3491,19 @@
         {
           "id": "kicking_horse",
           "name": "Kicking Horse",
-          "coords": { "lat": 51.282, "lon": -117.045 },
+          "coords": {
+            "lat": 51.282,
+            "lon": -117.045
+          },
           "stats": {
             "summit_elevation_ft": 8218,
             "base_elevation_ft": 3904,
             "vertical_drop_ft": 4314,
             "skiable_acres": 3486,
             "lifts": 5,
-            "pass_affiliations": ["epic"]
+            "pass_affiliations": [
+              "epic"
+            ]
           },
           "metadata": {
             "reputation": "The 'Champagne Powder Capital of Canada'.",
@@ -2903,19 +3517,24 @@
         {
           "id": "fernie",
           "name": "Fernie",
-          "coords": { "lat": 49.462, "lon": -115.068 },
+          "coords": {
+            "lat": 49.462,
+            "lon": -115.068
+          },
           "stats": {
             "summit_elevation_ft": 7000,
             "base_elevation_ft": 3450,
             "vertical_drop_ft": 3550,
             "skiable_acres": 2504,
             "lifts": 10,
-            "pass_affiliations": ["epic"]
+            "pass_affiliations": [
+              "epic"
+            ]
           },
           "metadata": {
             "reputation": "Famous for its five massive, sprawling alpine bowls.",
             "terrain_character": "Endless ridges, saddles, and drops spread across the bowls.",
-            "snow_quality_notes": "Prone to the 'Fernie Factor' — unpredictable weather that can drop 3 feet of powder or unexpected rain.",
+            "snow_quality_notes": "Prone to the 'Fernie Factor' \u2014 unpredictable weather that can drop 3 feet of powder or unexpected rain.",
             "best_for": "alpine_bowls, tree_skiing, powder",
             "crowd_factor": "Low.",
             "logistics_notes": "Located far to the south, making it a viable (but long) drive from Montana/Idaho."
@@ -2924,14 +3543,19 @@
         {
           "id": "red_mountain",
           "name": "Red Mountain",
-          "coords": { "lat": 49.105, "lon": -117.806 },
+          "coords": {
+            "lat": 49.105,
+            "lon": -117.806
+          },
           "stats": {
             "summit_elevation_ft": 6807,
             "base_elevation_ft": 3888,
             "vertical_drop_ft": 2919,
             "skiable_acres": 3850,
             "lifts": 8,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "The purest soul-skiing tree destination in Canada.",
@@ -2945,14 +3569,19 @@
         {
           "id": "panorama",
           "name": "Panorama",
-          "coords": { "lat": 50.460, "lon": -116.230 },
+          "coords": {
+            "lat": 50.46,
+            "lon": -116.23
+          },
           "stats": {
             "summit_elevation_ft": 8038,
             "base_elevation_ft": 3773,
             "vertical_drop_ft": 4265,
             "skiable_acres": 2975,
             "lifts": 10,
-            "pass_affiliations": ["mountain_collective"]
+            "pass_affiliations": [
+              "mountain_collective"
+            ]
           },
           "metadata": {
             "reputation": "A Powder Highway staple with massive vertical drop.",
@@ -2971,7 +3600,11 @@
       "country": "CA",
       "timezone": "America/Edmonton",
       "friction_tier": "flight",
-      "coords": { "lat": 51.411, "lon": -116.155 },
+      "macro_region": "alberta_rockies",
+      "coords": {
+        "lat": 51.411,
+        "lon": -116.155
+      },
       "logistics": {
         "nearest_airport": "YYC",
         "drive_time_hours": 18.0,
@@ -2982,14 +3615,20 @@
         {
           "id": "lake_louise",
           "name": "Lake Louise",
-          "coords": { "lat": 51.411, "lon": -116.155 },
+          "coords": {
+            "lat": 51.411,
+            "lon": -116.155
+          },
           "stats": {
             "summit_elevation_ft": 8650,
             "base_elevation_ft": 5400,
             "vertical_drop_ft": 3250,
             "skiable_acres": 4200,
             "lifts": 11,
-            "pass_affiliations": ["ikon", "mountain_collective"]
+            "pass_affiliations": [
+              "ikon",
+              "mountain_collective"
+            ]
           },
           "metadata": {
             "reputation": "Jaw-dropping scenery and incredible, rugged back bowls.",
@@ -3003,14 +3642,20 @@
         {
           "id": "banff_sunshine",
           "name": "Banff Sunshine",
-          "coords": { "lat": 51.116, "lon": -115.760 },
+          "coords": {
+            "lat": 51.116,
+            "lon": -115.76
+          },
           "stats": {
             "summit_elevation_ft": 8954,
             "base_elevation_ft": 5440,
             "vertical_drop_ft": 3514,
             "skiable_acres": 3358,
             "lifts": 12,
-            "pass_affiliations": ["ikon", "mountain_collective"]
+            "pass_affiliations": [
+              "ikon",
+              "mountain_collective"
+            ]
           },
           "metadata": {
             "reputation": "High alpine plateau with incredible freeride zones.",
@@ -3029,7 +3674,11 @@
       "country": "US",
       "timezone": "America/New_York",
       "friction_tier": "flight",
-      "coords": { "lat": 43.113, "lon": -72.826 },
+      "macro_region": "northeast",
+      "coords": {
+        "lat": 43.113,
+        "lon": -72.826
+      },
       "logistics": {
         "nearest_airport": "BOS",
         "drive_time_hours": 30.0,
@@ -3040,14 +3689,19 @@
         {
           "id": "stratton",
           "name": "Stratton",
-          "coords": { "lat": 43.113, "lon": -72.906 },
+          "coords": {
+            "lat": 43.113,
+            "lon": -72.906
+          },
           "stats": {
             "summit_elevation_ft": 3875,
             "base_elevation_ft": 1872,
             "vertical_drop_ft": 2003,
             "skiable_acres": 670,
             "lifts": 11,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "Luxury resort with a massive village. Heavily favored by New York City weekenders.",
@@ -3061,14 +3715,19 @@
         {
           "id": "mount_snow",
           "name": "Mount Snow",
-          "coords": { "lat": 42.960, "lon": -72.920 },
+          "coords": {
+            "lat": 42.96,
+            "lon": -72.92
+          },
           "stats": {
             "summit_elevation_ft": 3600,
             "base_elevation_ft": 1900,
             "vertical_drop_ft": 1700,
             "skiable_acres": 601,
             "lifts": 20,
-            "pass_affiliations": ["epic"]
+            "pass_affiliations": [
+              "epic"
+            ]
           },
           "metadata": {
             "reputation": "The closest major Vermont resort to the major East Coast cities.",
@@ -3082,14 +3741,19 @@
         {
           "id": "okemo",
           "name": "Okemo",
-          "coords": { "lat": 43.401, "lon": -72.717 },
+          "coords": {
+            "lat": 43.401,
+            "lon": -72.717
+          },
           "stats": {
             "summit_elevation_ft": 3344,
             "base_elevation_ft": 1144,
             "vertical_drop_ft": 2200,
             "skiable_acres": 667,
             "lifts": 20,
-            "pass_affiliations": ["epic"]
+            "pass_affiliations": [
+              "epic"
+            ]
           },
           "metadata": {
             "reputation": "Impeccable grooming and family-focused luxury.",
@@ -3108,7 +3772,11 @@
       "country": "US",
       "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
-      "coords": { "lat": 34.236, "lon": -116.889 },
+      "macro_region": "ca_socal",
+      "coords": {
+        "lat": 34.236,
+        "lon": -116.889
+      },
       "logistics": {
         "nearest_airport": "ONT",
         "drive_time_hours": 16.0,
@@ -3119,14 +3787,19 @@
         {
           "id": "bear_mountain",
           "name": "Bear Mountain",
-          "coords": { "lat": 34.226, "lon": -116.840 },
+          "coords": {
+            "lat": 34.226,
+            "lon": -116.84
+          },
           "stats": {
             "summit_elevation_ft": 8805,
             "base_elevation_ft": 7140,
             "vertical_drop_ft": 1665,
             "skiable_acres": 198,
             "lifts": 8,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "The park capital of Southern California.",
@@ -3140,7 +3813,10 @@
         {
           "id": "mt_baldy",
           "name": "Mt. Baldy",
-          "coords": { "lat": 34.276, "lon": -117.636 },
+          "coords": {
+            "lat": 34.276,
+            "lon": -117.636
+          },
           "stats": {
             "summit_elevation_ft": 8600,
             "base_elevation_ft": 6500,
@@ -3166,7 +3842,11 @@
       "country": "US",
       "timezone": "America/Los_Angeles",
       "friction_tier": "flight",
-      "coords": { "lat": 41.319, "lon": -122.194 },
+      "macro_region": "ca_norcal",
+      "coords": {
+        "lat": 41.319,
+        "lon": -122.194
+      },
       "logistics": {
         "nearest_airport": "RDD",
         "drive_time_hours": 19.0,
@@ -3177,14 +3857,19 @@
         {
           "id": "mt_shasta",
           "name": "Mt. Shasta",
-          "coords": { "lat": 41.319, "lon": -122.194 },
+          "coords": {
+            "lat": 41.319,
+            "lon": -122.194
+          },
           "stats": {
             "summit_elevation_ft": 6890,
             "base_elevation_ft": 4854,
             "vertical_drop_ft": 2036,
             "skiable_acres": 635,
             "lifts": 4,
-            "pass_affiliations": ["indy"]
+            "pass_affiliations": [
+              "indy"
+            ]
           },
           "metadata": {
             "reputation": "A quiet, spectacular volcano isolated from the Tahoe and Cascades crowds.",
@@ -3203,7 +3888,11 @@
       "country": "US",
       "timezone": "America/Denver",
       "friction_tier": "local_drive",
-      "coords": { "lat": 39.938, "lon": -105.582 },
+      "macro_region": "co_front_range",
+      "coords": {
+        "lat": 39.938,
+        "lon": -105.582
+      },
       "logistics": {
         "nearest_airport": "DEN",
         "drive_time_hours": 1.5,
@@ -3214,14 +3903,19 @@
         {
           "id": "eldora",
           "name": "Eldora",
-          "coords": { "lat": 39.938, "lon": -105.582 },
+          "coords": {
+            "lat": 39.938,
+            "lon": -105.582
+          },
           "stats": {
             "summit_elevation_ft": 10600,
             "base_elevation_ft": 9200,
             "vertical_drop_ft": 1400,
             "skiable_acres": 680,
             "lifts": 10,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "Boulder's fiercely windy local hill that catches freak upslope blizzards.",
@@ -3240,7 +3934,11 @@
       "country": "CA",
       "timezone": "America/Vancouver",
       "friction_tier": "flight",
-      "coords": { "lat": 50.450, "lon": -119.230 },
+      "macro_region": "bc_interior",
+      "coords": {
+        "lat": 50.45,
+        "lon": -119.23
+      },
       "logistics": {
         "nearest_airport": "YLW",
         "drive_time_hours": 24.0,
@@ -3251,14 +3949,19 @@
         {
           "id": "sun_peaks",
           "name": "Sun Peaks",
-          "coords": { "lat": 50.884, "lon": -119.882 },
+          "coords": {
+            "lat": 50.884,
+            "lon": -119.882
+          },
           "stats": {
             "summit_elevation_ft": 6824,
             "base_elevation_ft": 3930,
             "vertical_drop_ft": 2894,
             "skiable_acres": 3678,
             "lifts": 13,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "Canada's second-largest ski area. Massive, quiet, and family-friendly.",
@@ -3272,7 +3975,10 @@
         {
           "id": "big_white",
           "name": "Big White",
-          "coords": { "lat": 49.722, "lon": -118.928 },
+          "coords": {
+            "lat": 49.722,
+            "lon": -118.928
+          },
           "stats": {
             "summit_elevation_ft": 7606,
             "base_elevation_ft": 4950,
@@ -3293,14 +3999,19 @@
         {
           "id": "silverstar",
           "name": "SilverStar",
-          "coords": { "lat": 50.258, "lon": -119.058 },
+          "coords": {
+            "lat": 50.258,
+            "lon": -119.058
+          },
           "stats": {
             "summit_elevation_ft": 6280,
             "base_elevation_ft": 3780,
             "vertical_drop_ft": 2500,
             "skiable_acres": 3282,
             "lifts": 10,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "Colorful, quiet village with a surprisingly aggressive backside.",
@@ -3319,7 +4030,11 @@
       "country": "CA",
       "timezone": "America/Edmonton",
       "friction_tier": "flight",
-      "coords": { "lat": 52.793, "lon": -118.093 },
+      "macro_region": "alberta_rockies",
+      "coords": {
+        "lat": 52.793,
+        "lon": -118.093
+      },
       "logistics": {
         "nearest_airport": "YEG",
         "drive_time_hours": 22.0,
@@ -3330,7 +4045,10 @@
         {
           "id": "marmot_basin",
           "name": "Marmot Basin",
-          "coords": { "lat": 52.793, "lon": -118.093 },
+          "coords": {
+            "lat": 52.793,
+            "lon": -118.093
+          },
           "stats": {
             "summit_elevation_ft": 8570,
             "base_elevation_ft": 5570,
@@ -3356,7 +4074,11 @@
       "country": "US",
       "timezone": "America/New_York",
       "friction_tier": "flight",
-      "coords": { "lat": 44.030, "lon": -71.630 },
+      "macro_region": "northeast",
+      "coords": {
+        "lat": 44.03,
+        "lon": -71.63
+      },
       "logistics": {
         "nearest_airport": "BOS",
         "drive_time_hours": 30.0,
@@ -3367,14 +4089,19 @@
         {
           "id": "cannon_mountain",
           "name": "Cannon Mountain",
-          "coords": { "lat": 44.156, "lon": -71.698 },
+          "coords": {
+            "lat": 44.156,
+            "lon": -71.698
+          },
           "stats": {
             "summit_elevation_ft": 4080,
             "base_elevation_ft": 1900,
             "vertical_drop_ft": 2180,
             "skiable_acres": 287,
             "lifts": 10,
-            "pass_affiliations": ["indy"]
+            "pass_affiliations": [
+              "indy"
+            ]
           },
           "metadata": {
             "reputation": "State-owned, no-frills, fiercely rugged and steep.",
@@ -3388,14 +4115,19 @@
         {
           "id": "loon_mountain",
           "name": "Loon Mountain",
-          "coords": { "lat": 44.035, "lon": -71.638 },
+          "coords": {
+            "lat": 44.035,
+            "lon": -71.638
+          },
           "stats": {
             "summit_elevation_ft": 3050,
             "base_elevation_ft": 950,
             "vertical_drop_ft": 2100,
             "skiable_acres": 403,
             "lifts": 13,
-            "pass_affiliations": ["ikon"]
+            "pass_affiliations": [
+              "ikon"
+            ]
           },
           "metadata": {
             "reputation": "The premier, modern mega-resort of New Hampshire.",
@@ -3409,14 +4141,19 @@
         {
           "id": "wildcat",
           "name": "Wildcat",
-          "coords": { "lat": 44.264, "lon": -71.239 },
+          "coords": {
+            "lat": 44.264,
+            "lon": -71.239
+          },
           "stats": {
             "summit_elevation_ft": 4062,
             "base_elevation_ft": 1950,
             "vertical_drop_ft": 2112,
             "skiable_acres": 225,
             "lifts": 5,
-            "pass_affiliations": ["epic"]
+            "pass_affiliations": [
+              "epic"
+            ]
           },
           "metadata": {
             "reputation": "Rugged, cold, and steep. Staring directly at Mount Washington.",

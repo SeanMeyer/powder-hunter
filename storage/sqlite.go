@@ -58,6 +58,7 @@ func runMigrations(db *sql.DB) error {
 	migrations := []string{
 		`ALTER TABLE evaluations ADD COLUMN summary TEXT NOT NULL DEFAULT ''`,
 		`ALTER TABLE evaluations ADD COLUMN top_resort_picks TEXT NOT NULL DEFAULT '[]'`,
+		`ALTER TABLE regions ADD COLUMN macro_region TEXT NOT NULL DEFAULT ''`,
 	}
 	for _, m := range migrations {
 		if _, err := db.ExecContext(context.Background(), m); err != nil {

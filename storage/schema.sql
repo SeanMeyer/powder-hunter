@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS regions (
     nearest_airport       TEXT NOT NULL DEFAULT '',
     drive_time_hours      REAL NOT NULL DEFAULT 0,
     drive_notes           TEXT NOT NULL DEFAULT '',
-    lodging_notes         TEXT NOT NULL DEFAULT ''
+    lodging_notes         TEXT NOT NULL DEFAULT '',
+    macro_region          TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS resorts (

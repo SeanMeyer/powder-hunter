@@ -26,14 +26,15 @@ type regionsFile struct {
 }
 
 type regionJSON struct {
-	ID           string       `json:"id"`
-	Name         string       `json:"name"`
-	Country      string       `json:"country"`
-	Timezone     string       `json:"timezone"`
-	FrictionTier string       `json:"friction_tier"`
-	Coords       coordsJSON   `json:"coords"`
+	ID           string        `json:"id"`
+	Name         string        `json:"name"`
+	Country      string        `json:"country"`
+	Timezone     string        `json:"timezone"`
+	FrictionTier string        `json:"friction_tier"`
+	MacroRegion  string        `json:"macro_region"`
+	Coords       coordsJSON    `json:"coords"`
 	Logistics    logisticsJSON `json:"logistics"`
-	Resorts      []resortJSON `json:"resorts"`
+	Resorts      []resortJSON  `json:"resorts"`
 }
 
 type coordsJSON struct {
@@ -104,6 +105,7 @@ func toRegion(j regionJSON) domain.Region {
 			DriveNotes:     j.Logistics.DriveNotes,
 			LodgingNotes:   j.Logistics.LodgingNotes,
 		},
+		MacroRegion: j.MacroRegion,
 	}
 }
 

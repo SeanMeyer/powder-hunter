@@ -15,11 +15,12 @@ func (d *DB) UpsertRegion(ctx context.Context, r domain.Region) error {
 	_, err := d.db.ExecContext(ctx, `
 		INSERT OR REPLACE INTO regions
 			(id, name, lat, lon, friction_tier, near_threshold_in, extended_threshold_in, country,
-			 nearest_airport, drive_time_hours, drive_notes, lodging_notes)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			 nearest_airport, drive_time_hours, drive_notes, lodging_notes, macro_region)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		r.ID, r.Name, r.Latitude, r.Longitude,
 		string(r.FrictionTier), r.NearThresholdIn, r.ExtendedThresholdIn, r.Country,
 		r.Logistics.NearestAirport, r.Logistics.DriveTimeHours, r.Logistics.DriveNotes, r.Logistics.LodgingNotes,
+		r.MacroRegion,
 	)
 	if err != nil {
 		return fmt.Errorf("upsert region %s: %w", r.ID, err)
@@ -59,7 +60,7 @@ func (d *DB) UpsertResort(ctx context.Context, r domain.Resort) error {
 func (d *DB) ListRegions(ctx context.Context) ([]domain.Region, error) {
 	rows, err := d.db.QueryContext(ctx, `
 		SELECT id, name, lat, lon, friction_tier, near_threshold_in, extended_threshold_in, country,
-		       nearest_airport, drive_time_hours, drive_notes, lodging_notes
+		       nearest_airport, drive_time_hours, drive_notes, lodging_notes, macro_region
 		FROM regions`)
 	if err != nil {
 		return nil, fmt.Errorf("list regions: %w", err)
@@ -84,7 +85,7 @@ func (d *DB) ListRegions(ctx context.Context) ([]domain.Region, error) {
 func (d *DB) GetRegionWithResorts(ctx context.Context, regionID string) (domain.Region, []domain.Resort, error) {
 	row := d.db.QueryRowContext(ctx, `
 		SELECT id, name, lat, lon, friction_tier, near_threshold_in, extended_threshold_in, country,
-		       nearest_airport, drive_time_hours, drive_notes, lodging_notes
+		       nearest_airport, drive_time_hours, drive_notes, lodging_notes, macro_region
 		FROM regions WHERE id = ?`, regionID)
 
 	region, err := scanRegionRow(row)
@@ -134,6 +135,7 @@ func scanRegion(s scanner) (domain.Region, error) {
 		&ft, &r.NearThresholdIn, &r.ExtendedThresholdIn, &r.Country,
 		&r.Logistics.NearestAirport, &r.Logistics.DriveTimeHours,
 		&r.Logistics.DriveNotes, &r.Logistics.LodgingNotes,
+		&r.MacroRegion,
 	)
 	if err != nil {
 		return domain.Region{}, err
@@ -150,6 +152,7 @@ func scanRegionRow(row *sql.Row) (domain.Region, error) {
 		&ft, &r.NearThresholdIn, &r.ExtendedThresholdIn, &r.Country,
 		&r.Logistics.NearestAirport, &r.Logistics.DriveTimeHours,
 		&r.Logistics.DriveNotes, &r.Logistics.LodgingNotes,
+		&r.MacroRegion,
 	)
 	if err != nil {
 		return domain.Region{}, err
