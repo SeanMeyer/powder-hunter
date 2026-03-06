@@ -244,10 +244,16 @@ func FormatConsolidatedWeatherForPrompt(forecasts []domain.Forecast, resorts []d
 				marker = " ← notable"
 			}
 
-			// Show sheltered range when gap is significant (1.5"+).
+			// For low-confidence days, show the model range instead of mean.
 			daySnowStr := fmt.Sprintf("%7.1f\"", daySnow)
 			nightSnowStr := fmt.Sprintf("%7.1f\"", nightSnow)
-			if shelteredTotal-totalSnow >= 1.5 {
+			if dc.Confidence == "low" && dc.SnowfallMaxCM > 0 {
+				minIn := domain.CMToInches(dc.SnowfallMinCM)
+				maxIn := domain.CMToInches(dc.SnowfallMaxCM)
+				daySnowStr = fmt.Sprintf("%4.0f-%.0f\"", minIn, maxIn)
+				nightSnowStr = fmt.Sprintf("%7s", "")
+			} else if shelteredTotal-totalSnow >= 1.5 {
+				// Show sheltered range when gap is significant (1.5"+).
 				dayShelteredSnow := domain.CMToInches(d.Day.ShelteredSnowfallCM)
 				nightShelteredSnow := domain.CMToInches(d.Night.ShelteredSnowfallCM)
 				daySnowStr = fmt.Sprintf("%5.1f-%.1f\"", daySnow, dayShelteredSnow)
