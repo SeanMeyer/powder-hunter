@@ -22,6 +22,7 @@ type Forecast struct {
 type DailyForecast struct {
 	Date            time.Time
 	SnowfallCM      float64 // SLR-adjusted total for the full calendar day (used by detection)
+	ShelteredSnowfallCM float64 // snowfall estimate for sheltered/tree terrain (reduced wind)
 	TemperatureMinC float64
 	TemperatureMaxC float64
 	PrecipitationMM float64
@@ -35,14 +36,15 @@ type DailyForecast struct {
 
 // HalfDay holds weather metrics for a 12-hour period (day or night).
 type HalfDay struct {
-	SnowfallCM      float64
-	TemperatureC    float64 // high for day periods, low for night periods
-	PrecipitationMM float64
-	WindSpeedKmh    float64
-	WindGustKmh     float64
-	FreezingLevelMinM float64 // minimum freezing level altitude during period (meters)
-	FreezingLevelMaxM float64 // maximum freezing level altitude during period (meters)
-	CloudCoverPct     float64 // average cloud cover during period (0-100%)
+	SnowfallCM          float64
+	ShelteredSnowfallCM float64 // sheltered terrain snowfall estimate
+	TemperatureC        float64 // high for day periods, low for night periods
+	PrecipitationMM     float64
+	WindSpeedKmh        float64
+	WindGustKmh         float64
+	FreezingLevelMinM   float64 // minimum freezing level altitude during period (meters)
+	FreezingLevelMaxM   float64 // maximum freezing level altitude during period (meters)
+	CloudCoverPct       float64 // average cloud cover during period (0-100%)
 }
 
 // SnowfallWindow summarizes accumulated snowfall over a date range. The near/extended
@@ -99,6 +101,10 @@ func AFDCoversSnowDays(d *ForecastDiscussion, forecasts []Forecast) bool {
 	}
 	return false
 }
+
+// WindShelterFactor reduces wind speed for sheltered terrain (trees, gullies).
+// Trees block ~50% of 10m wind at ground level.
+const WindShelterFactor = 0.5
 
 // Rain/snow temperature threshold in Celsius.
 const (

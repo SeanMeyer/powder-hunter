@@ -337,6 +337,7 @@ func parseOpenMeteoHourly(h openMeteoHourlyData) ([]domain.DailyForecast, error)
 	type dayAccum struct {
 		date               string
 		snowCM             float64
+		shelteredSnowCM    float64
 		tempMin            float64
 		tempMax            float64
 		precipMM           float64
@@ -346,22 +347,24 @@ func parseOpenMeteoHourly(h openMeteoHourlyData) ([]domain.DailyForecast, error)
 		weightedSLRSum     float64
 		rainHours          int
 		mixedHours         int
-		daySnowCM          float64
-		dayTempMax         float64
-		dayPrecipMM        float64
-		dayWindMax         float64
-		dayGustMax         float64
-		dayFzLvlMin        float64
-		dayFzLvlMax        float64
-		dayFzLvlInit       bool
-		nightSnowCM        float64
-		nightTempMin       float64
-		nightPrecipMM      float64
-		nightWindMax       float64
-		nightGustMax       float64
-		nightFzLvlMin      float64
-		nightFzLvlMax      float64
-		nightFzLvlInit     bool
+		daySnowCM              float64
+		dayShelteredSnowCM     float64
+		dayTempMax             float64
+		dayPrecipMM            float64
+		dayWindMax             float64
+		dayGustMax             float64
+		dayFzLvlMin            float64
+		dayFzLvlMax            float64
+		dayFzLvlInit           bool
+		nightSnowCM            float64
+		nightShelteredSnowCM   float64
+		nightTempMin           float64
+		nightPrecipMM          float64
+		nightWindMax           float64
+		nightGustMax           float64
+		nightFzLvlMin          float64
+		nightFzLvlMax          float64
+		nightFzLvlInit         bool
 		dayCloudCoverSum     float64
 		dayCloudCoverCount   int
 		nightCloudCoverSum   float64
@@ -396,6 +399,8 @@ func parseOpenMeteoHourly(h openMeteoHourlyData) ([]domain.DailyForecast, error)
 
 		windMs := wind / 3.6 // km/h → m/s
 		snowCM := domain.SnowfallFromPrecip(precip, temp, windMs)
+		shelteredWindMs := windMs * domain.WindShelterFactor
+		shelteredSnowCM := domain.SnowfallFromPrecip(precip, temp, shelteredWindMs)
 		density := domain.CalculateDensity(temp, windMs)
 		slr := domain.SLRFromDensity(density)
 
@@ -413,6 +418,7 @@ func parseOpenMeteoHourly(h openMeteoHourlyData) ([]domain.DailyForecast, error)
 		}
 
 		acc.snowCM += snowCM
+		acc.shelteredSnowCM += shelteredSnowCM
 		acc.precipMM += precip
 		if !acc.tempInit {
 			acc.tempMin = temp
@@ -435,6 +441,7 @@ func parseOpenMeteoHourly(h openMeteoHourlyData) ([]domain.DailyForecast, error)
 
 		if hour >= 6 && hour < 18 {
 			acc.daySnowCM += snowCM
+			acc.dayShelteredSnowCM += shelteredSnowCM
 			acc.dayPrecipMM += precip
 			acc.dayWindMax = math.Max(acc.dayWindMax, wind)
 			acc.dayGustMax = math.Max(acc.dayGustMax, gust)
@@ -461,6 +468,7 @@ func parseOpenMeteoHourly(h openMeteoHourlyData) ([]domain.DailyForecast, error)
 			}
 		} else {
 			acc.nightSnowCM += snowCM
+			acc.nightShelteredSnowCM += shelteredSnowCM
 			acc.nightPrecipMM += precip
 			acc.nightWindMax = math.Max(acc.nightWindMax, wind)
 			acc.nightGustMax = math.Max(acc.nightGustMax, gust)
@@ -505,34 +513,37 @@ func parseOpenMeteoHourly(h openMeteoHourlyData) ([]domain.DailyForecast, error)
 		}
 
 		forecasts = append(forecasts, domain.DailyForecast{
-			Date:            t,
-			SnowfallCM:      acc.snowCM,
-			TemperatureMinC: acc.tempMin,
-			TemperatureMaxC: acc.tempMax,
-			PrecipitationMM: acc.precipMM,
-			FreezingLevelM:  acc.freezingLevelM,
-			SLRatio:         slRatio,
-			RainHours:       acc.rainHours,
-			MixedHours:      acc.mixedHours,
+			Date:                t,
+			SnowfallCM:          acc.snowCM,
+			ShelteredSnowfallCM: acc.shelteredSnowCM,
+			TemperatureMinC:     acc.tempMin,
+			TemperatureMaxC:     acc.tempMax,
+			PrecipitationMM:     acc.precipMM,
+			FreezingLevelM:      acc.freezingLevelM,
+			SLRatio:             slRatio,
+			RainHours:           acc.rainHours,
+			MixedHours:          acc.mixedHours,
 			Day: domain.HalfDay{
-				SnowfallCM:        acc.daySnowCM,
-				TemperatureC:      acc.dayTempMax,
-				PrecipitationMM:   acc.dayPrecipMM,
-				WindSpeedKmh:      acc.dayWindMax,
-				WindGustKmh:       acc.dayGustMax,
-				FreezingLevelMinM: acc.dayFzLvlMin,
-				FreezingLevelMaxM: acc.dayFzLvlMax,
-				CloudCoverPct:     safeDivide(acc.dayCloudCoverSum, float64(acc.dayCloudCoverCount)),
+				SnowfallCM:          acc.daySnowCM,
+				ShelteredSnowfallCM: acc.dayShelteredSnowCM,
+				TemperatureC:        acc.dayTempMax,
+				PrecipitationMM:     acc.dayPrecipMM,
+				WindSpeedKmh:        acc.dayWindMax,
+				WindGustKmh:         acc.dayGustMax,
+				FreezingLevelMinM:   acc.dayFzLvlMin,
+				FreezingLevelMaxM:   acc.dayFzLvlMax,
+				CloudCoverPct:       safeDivide(acc.dayCloudCoverSum, float64(acc.dayCloudCoverCount)),
 			},
 			Night: domain.HalfDay{
-				SnowfallCM:        acc.nightSnowCM,
-				TemperatureC:      acc.nightTempMin,
-				PrecipitationMM:   acc.nightPrecipMM,
-				WindSpeedKmh:      acc.nightWindMax,
-				WindGustKmh:       acc.nightGustMax,
-				FreezingLevelMinM: acc.nightFzLvlMin,
-				FreezingLevelMaxM: acc.nightFzLvlMax,
-				CloudCoverPct:     safeDivide(acc.nightCloudCoverSum, float64(acc.nightCloudCoverCount)),
+				SnowfallCM:          acc.nightSnowCM,
+				ShelteredSnowfallCM: acc.nightShelteredSnowCM,
+				TemperatureC:        acc.nightTempMin,
+				PrecipitationMM:     acc.nightPrecipMM,
+				WindSpeedKmh:        acc.nightWindMax,
+				WindGustKmh:         acc.nightGustMax,
+				FreezingLevelMinM:   acc.nightFzLvlMin,
+				FreezingLevelMaxM:   acc.nightFzLvlMax,
+				CloudCoverPct:       safeDivide(acc.nightCloudCoverSum, float64(acc.nightCloudCoverCount)),
 			},
 		})
 	}
