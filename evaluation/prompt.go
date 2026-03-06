@@ -74,6 +74,7 @@ func FormatWeatherForPrompt(forecasts []domain.Forecast) string {
 				daySnow := domain.CMToInches(d.Day.SnowfallCM)
 				nightSnow := domain.CMToInches(d.Night.SnowfallCM)
 				totalSnow := domain.CMToInches(d.SnowfallCM)
+				shelteredTotal := domain.CMToInches(d.ShelteredSnowfallCM)
 				dayTempF := domain.CToF(d.Day.TemperatureC)
 				nightTempF := domain.CToF(d.Night.TemperatureC)
 				dayPrecip := d.Day.PrecipitationMM / 25.4
@@ -88,16 +89,29 @@ func FormatWeatherForPrompt(forecasts []domain.Forecast) string {
 					marker = " ← notable"
 				}
 
-				fmt.Fprintf(&b, "%-12s %-8s %7.1f\" %7.0f° %7.1f\" %9.0f %9.0f%s\n",
-					d.Date.Format("Jan 02 Mon"), "Day", daySnow, dayTempF, dayPrecip, dayWind, dayGust, "")
-				fmt.Fprintf(&b, "%-12s %-8s %7.1f\" %7.0f° %7.1f\" %9.0f %9.0f%s\n",
-					"", "Night", nightSnow, nightTempF, nightPrecip, nightWind, nightGust, marker)
+				// Show sheltered snow in parentheses when gap is significant (1.5"+).
+				daySnowStr := fmt.Sprintf("%7.1f\"", daySnow)
+				nightSnowStr := fmt.Sprintf("%7.1f\"", nightSnow)
+				if shelteredTotal-totalSnow >= 1.5 {
+					dayShelteredSnow := domain.CMToInches(d.Day.ShelteredSnowfallCM)
+					nightShelteredSnow := domain.CMToInches(d.Night.ShelteredSnowfallCM)
+					daySnowStr = fmt.Sprintf("%5.1f-%.1f\"", daySnow, dayShelteredSnow)
+					nightSnowStr = fmt.Sprintf("%5.1f-%.1f\"", nightSnow, nightShelteredSnow)
+				}
+
+				fmt.Fprintf(&b, "%-12s %-8s %8s %7.0f° %7.1f\" %9.0f %9.0f%s\n",
+					d.Date.Format("Jan 02 Mon"), "Day", daySnowStr, dayTempF, dayPrecip, dayWind, dayGust, "")
+				fmt.Fprintf(&b, "%-12s %-8s %8s %7.0f° %7.1f\" %9.0f %9.0f%s\n",
+					"", "Night", nightSnowStr, nightTempF, nightPrecip, nightWind, nightGust, marker)
 
 				// SLR context line when there's notable snow or precipitation concerns.
 				if totalSnow > 0 || d.RainHours > 0 || d.MixedHours > 0 {
 					var notes []string
 					if d.SLRatio > 0 {
 						notes = append(notes, fmt.Sprintf("SLR %.0f:1", d.SLRatio))
+					}
+					if shelteredTotal-totalSnow >= 1.5 {
+						notes = append(notes, fmt.Sprintf("sheltered: %.1f\" (trees get more)", shelteredTotal))
 					}
 					if d.RainHours > 0 {
 						notes = append(notes, fmt.Sprintf("%dh rain", d.RainHours))
@@ -209,6 +223,7 @@ func FormatConsolidatedWeatherForPrompt(forecasts []domain.Forecast, resorts []d
 				totalSnowCM = dc.SnowfallMeanCM
 			}
 			totalSnow := domain.CMToInches(totalSnowCM)
+			shelteredTotal := domain.CMToInches(d.ShelteredSnowfallCM)
 
 			daySnow := domain.CMToInches(d.Day.SnowfallCM)
 			nightSnow := domain.CMToInches(d.Night.SnowfallCM)
@@ -229,16 +244,35 @@ func FormatConsolidatedWeatherForPrompt(forecasts []domain.Forecast, resorts []d
 				marker = " ← notable"
 			}
 
-			fmt.Fprintf(&b, "%-12s %-8s %7.1f\" %7.0f° %7.1f\" %9.0f %10s%s\n",
-				d.Date.Format("Jan 02 Mon"), "Day", daySnow, dayTempF, dayPrecip, dayWind, "", "")
-			fmt.Fprintf(&b, "%-12s %-8s %7.1f\" %7.0f° %7.1f\" %9.0f %10s%s\n",
-				"", "Night", nightSnow, nightTempF, nightPrecip, nightWind, conf, marker)
+			// For low-confidence days, show the model range instead of mean.
+			daySnowStr := fmt.Sprintf("%7.1f\"", daySnow)
+			nightSnowStr := fmt.Sprintf("%7.1f\"", nightSnow)
+			if dc.Confidence == "low" && dc.SnowfallMaxCM > 0 {
+				minIn := domain.CMToInches(dc.SnowfallMinCM)
+				maxIn := domain.CMToInches(dc.SnowfallMaxCM)
+				daySnowStr = fmt.Sprintf("%4.0f-%.0f\"", minIn, maxIn)
+				nightSnowStr = fmt.Sprintf("%7s", "")
+			} else if shelteredTotal-totalSnow >= 1.5 {
+				// Show sheltered range when gap is significant (1.5"+).
+				dayShelteredSnow := domain.CMToInches(d.Day.ShelteredSnowfallCM)
+				nightShelteredSnow := domain.CMToInches(d.Night.ShelteredSnowfallCM)
+				daySnowStr = fmt.Sprintf("%5.1f-%.1f\"", daySnow, dayShelteredSnow)
+				nightSnowStr = fmt.Sprintf("%5.1f-%.1f\"", nightSnow, nightShelteredSnow)
+			}
+
+			fmt.Fprintf(&b, "%-12s %-8s %8s %7.0f° %7.1f\" %9.0f %10s%s\n",
+				d.Date.Format("Jan 02 Mon"), "Day", daySnowStr, dayTempF, dayPrecip, dayWind, "", "")
+			fmt.Fprintf(&b, "%-12s %-8s %8s %7.0f° %7.1f\" %9.0f %10s%s\n",
+				"", "Night", nightSnowStr, nightTempF, nightPrecip, nightWind, conf, marker)
 
 			// Annotations on notable snow days only.
 			if totalSnow > 1.0 || d.RainHours > 0 {
 				var notes []string
 				if d.SLRatio > 0 {
 					notes = append(notes, fmt.Sprintf("SLR %.0f:1", d.SLRatio))
+				}
+				if shelteredTotal-totalSnow >= 1.5 {
+					notes = append(notes, fmt.Sprintf("sheltered: %.1f\" (trees get more)", shelteredTotal))
 				}
 				if d.RainHours > 0 {
 					notes = append(notes, fmt.Sprintf("%dh rain", d.RainHours))

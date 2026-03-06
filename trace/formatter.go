@@ -50,19 +50,32 @@ func FormatWeather(w io.Writer, region domain.Region, resorts []domain.Resort, f
 		if hasHalfDay {
 			for _, d := range f.DailyData {
 				totalIn := domain.CMToInches(d.SnowfallCM)
+				shelteredIn := domain.CMToInches(d.ShelteredSnowfallCM)
 				dayIn := domain.CMToInches(d.Day.SnowfallCM)
 				nightIn := domain.CMToInches(d.Night.SnowfallCM)
+				dayShelteredIn := domain.CMToInches(d.Day.ShelteredSnowfallCM)
+				nightShelteredIn := domain.CMToInches(d.Night.ShelteredSnowfallCM)
 				daySLR := halfDaySLR(d.Day)
 				nightSLR := halfDaySLR(d.Night)
 				marker := ""
 				if totalIn >= 4.0 {
 					marker = "  ← notable"
 				}
-				fmt.Fprintf(w, "  %s: %4.1f\" total (day: %.1f\"%s / night: %.1f\"%s)    %3.0f°F / %3.0f°F",
-					d.Date.Format("Jan 02"), totalIn,
-					dayIn, fmtSLRInline(daySLR),
-					nightIn, fmtSLRInline(nightSLR),
-					domain.CToF(d.TemperatureMinC), domain.CToF(d.TemperatureMaxC))
+
+				showRange := shelteredIn-totalIn >= 1.5
+				if showRange {
+					fmt.Fprintf(w, "  %s: %4.1f–%.1f\" total (day: %.1f–%.1f\" / night: %.1f–%.1f\")    %3.0f°F / %3.0f°F",
+						d.Date.Format("Jan 02"), totalIn, shelteredIn,
+						dayIn, dayShelteredIn,
+						nightIn, nightShelteredIn,
+						domain.CToF(d.TemperatureMinC), domain.CToF(d.TemperatureMaxC))
+				} else {
+					fmt.Fprintf(w, "  %s: %4.1f\" total (day: %.1f\"%s / night: %.1f\"%s)    %3.0f°F / %3.0f°F",
+						d.Date.Format("Jan 02"), totalIn,
+						dayIn, fmtSLRInline(daySLR),
+						nightIn, fmtSLRInline(nightSLR),
+						domain.CToF(d.TemperatureMinC), domain.CToF(d.TemperatureMaxC))
+				}
 				if d.Day.WindGustKmh > 0 {
 					fmt.Fprintf(w, "    gusts: %.0f mph", d.Day.WindGustKmh*0.621371)
 				}

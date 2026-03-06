@@ -1,7 +1,9 @@
 package domain
 
 import (
+	"fmt"
 	"math"
+	"strings"
 	"time"
 )
 
@@ -22,6 +24,7 @@ type Forecast struct {
 type DailyForecast struct {
 	Date            time.Time
 	SnowfallCM      float64 // SLR-adjusted total for the full calendar day (used by detection)
+	ShelteredSnowfallCM float64 // snowfall estimate for sheltered/tree terrain (reduced wind)
 	TemperatureMinC float64
 	TemperatureMaxC float64
 	PrecipitationMM float64
@@ -35,14 +38,15 @@ type DailyForecast struct {
 
 // HalfDay holds weather metrics for a 12-hour period (day or night).
 type HalfDay struct {
-	SnowfallCM      float64
-	TemperatureC    float64 // high for day periods, low for night periods
-	PrecipitationMM float64
-	WindSpeedKmh    float64
-	WindGustKmh     float64
-	FreezingLevelMinM float64 // minimum freezing level altitude during period (meters)
-	FreezingLevelMaxM float64 // maximum freezing level altitude during period (meters)
-	CloudCoverPct     float64 // average cloud cover during period (0-100%)
+	SnowfallCM          float64
+	ShelteredSnowfallCM float64 // sheltered terrain snowfall estimate
+	TemperatureC        float64 // high for day periods, low for night periods
+	PrecipitationMM     float64
+	WindSpeedKmh        float64
+	WindGustKmh         float64
+	FreezingLevelMinM   float64 // minimum freezing level altitude during period (meters)
+	FreezingLevelMaxM   float64 // maximum freezing level altitude during period (meters)
+	CloudCoverPct       float64 // average cloud cover during period (0-100%)
 }
 
 // SnowfallWindow summarizes accumulated snowfall over a date range. The near/extended
@@ -99,6 +103,10 @@ func AFDCoversSnowDays(d *ForecastDiscussion, forecasts []Forecast) bool {
 	}
 	return false
 }
+
+// WindShelterFactor reduces wind speed for sheltered terrain (trees, gullies).
+// Trees block ~50% of 10m wind at ground level.
+const WindShelterFactor = 0.5
 
 // Rain/snow temperature threshold in Celsius.
 const (
@@ -171,16 +179,12 @@ func ComputeConsensus(forecasts []Forecast) ModelConsensus {
 	}
 
 	regionID := forecasts[0].RegionID
-	models := make([]string, 0, len(forecasts))
-	for _, f := range forecasts {
-		if f.Model != "" {
-			models = append(models, f.Model)
-		}
-	}
+	models := deduplicateGFSModels(forecasts)
 
 	// Collect per-date snowfall values from each model.
 	type dateSnow struct {
 		values []float64
+		models []string // parallel to values — tracks which model produced each value
 	}
 	byDate := make(map[string]*dateSnow)
 	var dateOrder []string
@@ -195,6 +199,7 @@ func ComputeConsensus(forecasts []Forecast) ModelConsensus {
 				dateOrder = append(dateOrder, key)
 			}
 			ds.values = append(ds.values, d.SnowfallCM)
+			ds.models = append(ds.models, f.Model)
 		}
 	}
 
@@ -207,10 +212,13 @@ func ComputeConsensus(forecasts []Forecast) ModelConsensus {
 			continue
 		}
 
-		minVal := ds.values[0]
-		maxVal := ds.values[0]
+		// Deduplicate GFS variants that report identical values for this date.
+		dedupedValues := deduplicateGFS(ds.values, ds.models)
+
+		minVal := dedupedValues[0]
+		maxVal := dedupedValues[0]
 		sum := 0.0
-		for _, v := range ds.values {
+		for _, v := range dedupedValues {
 			sum += v
 			if v < minVal {
 				minVal = v
@@ -219,7 +227,7 @@ func ComputeConsensus(forecasts []Forecast) ModelConsensus {
 				maxVal = v
 			}
 		}
-		mean := sum / float64(len(ds.values))
+		mean := sum / float64(len(dedupedValues))
 
 		var spreadToMean float64
 		var confidence string
@@ -254,4 +262,52 @@ func ComputeConsensus(forecasts []Forecast) ModelConsensus {
 		Models:         models,
 		DailyConsensus: daily,
 	}
+}
+
+// deduplicateGFS removes duplicate values from GFS model variants that report
+// identical snowfall for the same date. gfs_hrrr and gfs_seamless share the
+// same underlying data for near-range forecasts, so counting both double-weights
+// GFS against ECMWF.
+func deduplicateGFS(values []float64, models []string) []float64 {
+	if len(values) != len(models) {
+		return values
+	}
+
+	seen := make(map[string]bool) // "gfs:<rounded value>" key
+	var result []float64
+
+	for i, v := range values {
+		model := models[i]
+		if strings.HasPrefix(model, "gfs_") {
+			key := fmt.Sprintf("gfs:%.1f", v)
+			if seen[key] {
+				continue // skip duplicate GFS value
+			}
+			seen[key] = true
+		}
+		result = append(result, v)
+	}
+	return result
+}
+
+// deduplicateGFSModels returns the unique model names from forecasts, keeping
+// only one GFS variant when multiple exist (since they share near-range data).
+func deduplicateGFSModels(forecasts []Forecast) []string {
+	seen := make(map[string]bool)
+	var gfsSeen bool
+	var models []string
+	for _, f := range forecasts {
+		if f.Model == "" || seen[f.Model] {
+			continue
+		}
+		seen[f.Model] = true
+		if strings.HasPrefix(f.Model, "gfs_") {
+			if gfsSeen {
+				continue
+			}
+			gfsSeen = true
+		}
+		models = append(models, f.Model)
+	}
+	return models
 }
