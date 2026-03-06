@@ -2,7 +2,7 @@
 <Container version="2">
   <Name>powder-hunter</Name>
   <Repository>ghcr.io/seanmeyer/powder-hunter</Repository>
-  <Registry/>
+  <Registry>https://ghcr.io/v2/seanmeyer/powder-hunter/tags/list</Registry>
   <Network>bridge</Network>
   <Privileged>false</Privileged>
   <Support/>
