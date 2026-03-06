@@ -180,6 +180,9 @@ func FormatEvaluation(w io.Writer, eval domain.Evaluation) {
 	if eval.CrowdEstimate != "" {
 		fmt.Fprintf(w, "  Crowd Estimate: %s\n", eval.CrowdEstimate)
 	}
+	if eval.InformationEdge != "" {
+		fmt.Fprintf(w, "  Information Edge: %s\n", eval.InformationEdge)
+	}
 	if eval.ClosureRisk != "" {
 		fmt.Fprintf(w, "  Closure Risk: %s\n", eval.ClosureRisk)
 	}

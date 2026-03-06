@@ -53,8 +53,8 @@ func (d *DB) SaveEvaluation(ctx context.Context, e domain.Evaluation) (int64, er
 			 day_by_day, key_factors, logistics_summary, strategy, snow_quality,
 			 crowd_estimate, closure_risk, weather_snapshot, raw_llm_response,
 			 structured_response, grounding_sources, change_class, delivered,
-			 summary, top_resort_picks)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			 summary, top_resort_picks, information_edge)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		e.StormID,
 		e.EvaluatedAt.UTC().Format(time.RFC3339),
 		e.PromptVersion,
@@ -75,6 +75,7 @@ func (d *DB) SaveEvaluation(ctx context.Context, e domain.Evaluation) (int64, er
 		delivered,
 		e.Summary,
 		string(resortPicks),
+		e.InformationEdge,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("save evaluation: %w", err)
@@ -93,7 +94,7 @@ func (d *DB) GetLatestEvaluation(ctx context.Context, stormID int64) (*domain.Ev
 		       day_by_day, key_factors, logistics_summary, strategy, snow_quality,
 		       crowd_estimate, closure_risk, weather_snapshot, raw_llm_response,
 		       structured_response, grounding_sources, change_class, delivered,
-		       summary, top_resort_picks
+		       summary, top_resort_picks, information_edge
 		FROM evaluations
 		WHERE storm_id = ?
 		ORDER BY evaluated_at DESC
@@ -117,7 +118,7 @@ func (d *DB) GetEvaluationHistory(ctx context.Context, stormID int64) ([]domain.
 		       day_by_day, key_factors, logistics_summary, strategy, snow_quality,
 		       crowd_estimate, closure_risk, weather_snapshot, raw_llm_response,
 		       structured_response, grounding_sources, change_class, delivered,
-		       summary, top_resort_picks
+		       summary, top_resort_picks, information_edge
 		FROM evaluations
 		WHERE storm_id = ?
 		ORDER BY evaluated_at ASC`,
@@ -166,7 +167,7 @@ func (d *DB) GetEvaluation(ctx context.Context, evalID int64) (*domain.Evaluatio
 		       day_by_day, key_factors, logistics_summary, strategy, snow_quality,
 		       crowd_estimate, closure_risk, weather_snapshot, raw_llm_response,
 		       structured_response, grounding_sources, change_class, delivered,
-		       summary, top_resort_picks
+		       summary, top_resort_picks, information_edge
 		FROM evaluations
 		WHERE id = ?`,
 		evalID,
@@ -192,7 +193,7 @@ func scanEvaluation(s scanner) (domain.Evaluation, error) {
 		&dayByDay, &keyFactors, &logistics, &e.Strategy, &e.SnowQuality,
 		&e.CrowdEstimate, &e.ClosureRisk, &weatherSnap, &e.RawLLMResponse,
 		&structured, &grounding, &changeClass, &delivered,
-		&e.Summary, &resortPicks,
+		&e.Summary, &resortPicks, &e.InformationEdge,
 	)
 	if err != nil {
 		return domain.Evaluation{}, err

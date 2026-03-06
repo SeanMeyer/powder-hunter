@@ -19,7 +19,7 @@ func DefaultProfile() domain.UserProfile {
 }
 
 const stormEvalPromptID = "storm_eval"
-const stormEvalPromptVersion = "v3.0.0"
+const stormEvalPromptVersion = "v3.1.0"
 
 // stormEvalPromptTemplate is the LLM prompt for storm evaluation.
 // Placeholders are substituted by evaluation.RenderPrompt before each API call.
@@ -88,6 +88,13 @@ in this priority order:
    Is the snow volume so large that it doesn't matter — 30" at a big resort means days of
    untouched runs even with crowds?
 
+   Also look for *information asymmetry* — reasons the crowd might be lighter than the snow deserves:
+   - The biggest dump happens overnight or in early morning hours, so daily snow reports understate what's on the ground at first chair
+   - An unusual wind direction is loading slopes that aren't this resort's typical powder targets
+   - The best ski day falls mid-week and isn't obvious from a casual forecast glance
+   - A less-hyped resort in the region is getting disproportionate snowfall while attention focuses elsewhere
+   - Road closures, wind holds, or avy delays create a window where only committed skiers show up
+
 3. **Will the terrain deliver for this specific storm?** If it's windy, are there protected
    trees? Is the terrain steep enough for the expected depth? Will avalanche control delays
    eat into the ski day? This is context for the storm assessment, not a resort review.
@@ -102,6 +109,7 @@ determines which factors dominate.
 - Snow density: temperature-driven (< 20°F = dry champagne powder, 20-28°F = moderate, 28-32°F = wet/heavy)
 - Freezing level elevation vs. base elevation of the resort (low freezing level = snow to base)
 - Timing of heaviest snowfall within the window
+- Sustained refill cycles: consecutive days where fresh snow falls overnight, burying the previous day's tracks. A 3-day window with 8" each night can be more valuable than a single 24" dump that gets tracked out on day one — flag these patterns explicitly.
 
 **Timing:**
 - Day-of-week analysis: consider the specific resort's crowd patterns, not just generic weekday/weekend rules
@@ -268,6 +276,8 @@ Return a JSON object matching this exact schema. All fields are required.
   "heavy." Answer: will the subscriber find untouched powder? For how long? What factors
   help (mid-week timing, road closures filtering crowds, resort size absorbing skiers) or
   hurt (weekend timing, holiday proximity, small resort that tracks out fast)?
+  Also identify which resort in this region offers the best snow-to-crowd ratio for this specific storm — not necessarily the most total snow, but the most accessible untouched powder given likely crowd distribution.
+- information_edge: what would an experienced powder chaser notice about this storm that a casual skier would miss? Think about timing nuances, underappreciated resorts, unusual loading patterns, or crowd dynamics that create an opening. If there's no meaningful edge, say so — don't fabricate one.
 - closure_risk: assessment of road/pass access including both difficulty AND crowd-thinning upside
 - best_ski_day: the single best date to ski in "YYYY-MM-DD" format, based on your analysis of the storm
   progression, lift operations, conditions, and crowds for the specific resorts in this region

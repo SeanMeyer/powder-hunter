@@ -233,6 +233,10 @@ func buildFields(eval domain.Evaluation, region domain.Region) []EmbedField {
 		fields = append(fields, EmbedField{Name: "Crowd Estimate", Value: eval.CrowdEstimate, Inline: true})
 	}
 
+	if eval.InformationEdge != "" {
+		fields = append(fields, EmbedField{Name: "Information Edge", Value: eval.InformationEdge, Inline: true})
+	}
+
 	if eval.ClosureRisk != "" {
 		fields = append(fields, EmbedField{Name: "Closure Risk", Value: eval.ClosureRisk, Inline: true})
 	}

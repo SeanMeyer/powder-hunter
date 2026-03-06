@@ -52,6 +52,7 @@ type GeminiResult struct {
 	Strategy           string
 	SnowQuality        string
 	CrowdEstimate      string
+	InformationEdge    string
 	ClosureRisk        string
 	BestSkiDay         time.Time
 	BestSkiDayReason   string
@@ -134,6 +135,7 @@ numbers, dates, and findings from the research. Do not add information that isn'
 	result.Strategy = stringField(structured, "strategy")
 	result.SnowQuality = stringField(structured, "snow_quality")
 	result.CrowdEstimate = stringField(structured, "crowd_estimate")
+	result.InformationEdge = stringField(structured, "information_edge")
 	result.ClosureRisk = stringField(structured, "closure_risk")
 
 	bestDay, _ := time.Parse("2006-01-02", stringField(structured, "best_ski_day"))
@@ -235,6 +237,7 @@ func stormEvalSchema() *genai.Schema {
 			"strategy":                 {Type: genai.TypeString},
 			"snow_quality":             {Type: genai.TypeString},
 			"crowd_estimate":           {Type: genai.TypeString},
+			"information_edge":         {Type: genai.TypeString},
 			"closure_risk":             {Type: genai.TypeString},
 			"best_ski_day": {
 				Type:        genai.TypeString,
@@ -280,7 +283,7 @@ func stormEvalSchema() *genai.Schema {
 		},
 		Required: []string{
 			"tier", "recommendation", "summary", "resort_insights", "strategy",
-			"snow_quality", "crowd_estimate", "closure_risk",
+			"snow_quality", "crowd_estimate", "information_edge", "closure_risk",
 			"best_ski_day", "best_ski_day_reason",
 			"key_factors_pros", "key_factors_cons",
 			"logistics_lodging", "logistics_transportation",
@@ -471,6 +474,7 @@ func (e *GeminiEvaluator) Evaluate(ctx context.Context, ec EvalContext) (domain.
 		Strategy:           gemResult.Strategy,
 		SnowQuality:        gemResult.SnowQuality,
 		CrowdEstimate:      gemResult.CrowdEstimate,
+		InformationEdge:    gemResult.InformationEdge,
 		ClosureRisk:        gemResult.ClosureRisk,
 		BestSkiDay:         gemResult.BestSkiDay,
 		BestSkiDayReason:   gemResult.BestSkiDayReason,

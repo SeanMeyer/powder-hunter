@@ -20,6 +20,7 @@ type Evaluation struct {
 	Strategy           string
 	SnowQuality        string
 	CrowdEstimate      string
+	InformationEdge    string
 	ClosureRisk        string
 	BestSkiDay         time.Time
 	BestSkiDayReason   string
