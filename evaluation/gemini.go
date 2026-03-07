@@ -433,13 +433,13 @@ func (e *GeminiEvaluator) Evaluate(ctx context.Context, ec EvalContext) (domain.
 		historyStr = string(histJSON)
 	}
 
-	detection := domain.Detect(region, forecasts)
+	detection := domain.Detect(region, forecasts, time.Now().UTC())
 
 	weatherData := FormatConsolidatedWeatherForPrompt(forecasts, resorts)
 	if rainRisk := FormatRainLineRisk(forecasts, resorts); rainRisk != "" {
 		weatherData += "\n" + rainRisk
 	}
-	if rideQuality := FormatRideQualityForPrompt(forecasts, resorts); rideQuality != "" {
+	if rideQuality := FormatRideQualityForPrompt(forecasts, resorts, time.Now().UTC()); rideQuality != "" {
 		weatherData += "\n" + rideQuality
 	}
 
@@ -448,7 +448,7 @@ func (e *GeminiEvaluator) Evaluate(ctx context.Context, ec EvalContext) (domain.
 		RegionName:         region.Name,
 		Resorts:            FormatResortsForPrompt(resorts),
 		UserProfile:        FormatProfileForPrompt(profile),
-		StormWindow:        FormatDetectionForPrompt(detection),
+		StormWindow:        FormatDetectionForPrompt(detection, time.Now().UTC()),
 		EvaluationHistory:  historyStr,
 		PromptVersion:      promptVersion,
 		ModelConsensus:     FormatResortConsensusForPrompt(ec.ResortConsensus, resorts),

@@ -373,14 +373,14 @@ func runReplay(ctx context.Context, args []string) int {
 		return 1
 	}
 
-	replayDetection := domain.Detect(region, eval.WeatherSnapshot)
+	replayDetection := domain.Detect(region, eval.WeatherSnapshot, eval.EvaluatedAt)
 
 	renderedPrompt := evaluation.RenderPrompt(promptTemplate, evaluation.PromptData{
 		WeatherData:       evaluation.FormatWeatherForPrompt(eval.WeatherSnapshot),
 		RegionName:        region.Name,
 		Resorts:           evaluation.FormatResortsForPrompt(resorts),
 		UserProfile:       evaluation.FormatProfileForPrompt(*profile),
-		StormWindow:       evaluation.FormatDetectionForPrompt(replayDetection),
+		StormWindow:       evaluation.FormatDetectionForPrompt(replayDetection, eval.EvaluatedAt),
 		EvaluationHistory: "Replay — no history applied",
 		PromptVersion:     *promptVersion,
 	})
@@ -683,7 +683,7 @@ func runTrace(ctx context.Context, args []string) int {
 	trace.FormatAFD(w, fetchResult.Discussion, forecasts)
 
 	// ── Detection ────────────────────────────────────────────────────────────
-	detection := domain.Detect(found.Region, forecasts)
+	detection := domain.Detect(found.Region, forecasts, time.Now().UTC())
 	trace.FormatDetection(w, found.Region, detection)
 
 	if *weatherOnly {
@@ -789,10 +789,11 @@ func runTrace(ctx context.Context, args []string) int {
 func buildPrompt(region domain.Region, resorts []domain.Resort, forecasts []domain.Forecast, profile domain.UserProfile) string {
 	_, promptVersion, promptTemplate := catalog.InitialPromptTemplate()
 
-	detection := domain.Detect(region, forecasts)
+	now := time.Now().UTC()
+	detection := domain.Detect(region, forecasts, now)
 
 	weatherData := evaluation.FormatWeatherForPrompt(forecasts)
-	if rideQuality := evaluation.FormatRideQualityForPrompt(forecasts, resorts); rideQuality != "" {
+	if rideQuality := evaluation.FormatRideQualityForPrompt(forecasts, resorts, now); rideQuality != "" {
 		weatherData += "\n" + rideQuality
 	}
 
@@ -801,7 +802,7 @@ func buildPrompt(region domain.Region, resorts []domain.Resort, forecasts []doma
 		RegionName:        region.Name,
 		Resorts:           evaluation.FormatResortsForPrompt(resorts),
 		UserProfile:       evaluation.FormatProfileForPrompt(profile),
-		StormWindow:       evaluation.FormatDetectionForPrompt(detection),
+		StormWindow:       evaluation.FormatDetectionForPrompt(detection, now),
 		EvaluationHistory: "No prior evaluations",
 		PromptVersion:     promptVersion,
 	})

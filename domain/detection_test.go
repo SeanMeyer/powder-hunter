@@ -140,7 +140,7 @@ func TestDetect(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			result := Detect(tc.region, tc.forecasts)
+			result := Detect(tc.region, tc.forecasts, time.Now().UTC())
 
 			if result.Detected != tc.wantDetected {
 				t.Errorf("Detected = %v, want %v", result.Detected, tc.wantDetected)
@@ -256,7 +256,7 @@ func TestDetect_SourcePreference(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			result := Detect(tc.region, tc.forecasts)
+			result := Detect(tc.region, tc.forecasts, time.Now().UTC())
 
 			if result.Detected != tc.wantDetected {
 				t.Errorf("Detected = %v, want %v", result.Detected, tc.wantDetected)
@@ -358,7 +358,7 @@ func TestDetect_BridgeWindows(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			result := Detect(tc.region, tc.forecasts)
+			result := Detect(tc.region, tc.forecasts, time.Now().UTC())
 			if result.Detected != tc.wantDetected {
 				t.Errorf("Detected = %v, want %v", result.Detected, tc.wantDetected)
 				for _, w := range result.Windows {

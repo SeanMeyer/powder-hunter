@@ -21,8 +21,7 @@ type DetectionResult struct {
 // Source preference is applied per-day: NWS preferred for days 1-7 when it has
 // data, Open-Meteo otherwise. This uses each source where it's strongest without
 // double-counting the same snowfall.
-func Detect(region Region, forecasts []Forecast) DetectionResult {
-	now := time.Now().UTC()
+func Detect(region Region, forecasts []Forecast, now time.Time) DetectionResult {
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 
 	nearStart := today.AddDate(0, 0, 1)

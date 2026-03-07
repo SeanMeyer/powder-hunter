@@ -19,7 +19,7 @@ func DefaultProfile() domain.UserProfile {
 }
 
 const stormEvalPromptID = "storm_eval"
-const stormEvalPromptVersion = "v3.1.0"
+const stormEvalPromptVersion = "v3.3.0"
 
 // stormEvalPromptTemplate is the LLM prompt for storm evaluation.
 // Placeholders are substituted by evaluation.RenderPrompt before each API call.
@@ -34,13 +34,18 @@ understands the nuances.
 
 ## Tier Definitions
 
-**DROP_EVERYTHING** — Exceptional opportunity where the key factors align strongly in the subscriber's favor.
-Outstanding snowfall at ideal density, with timing and logistics that make this trip highly actionable.
-The subscriber should act immediately — these windows are rare and fleeting.
+**DROP_EVERYTHING** — A rare, high-conviction alert. Multiple factors align exceptionally well: outstanding
+snowfall at ideal density, favorable timing, and logistics that make the trip highly actionable. The
+subscriber should act immediately. This tier should feel *rare* — a handful of times per season across all
+monitored regions. If you're giving DROP_EVERYTHING to every solid storm cycle, the signal loses meaning
+and the subscriber stops trusting it. A good storm is not automatically a great one. Reserve this for
+opportunities where an experienced powder chaser would genuinely rearrange their life.
 
-**WORTH_A_LOOK** — Genuinely interesting storm with real potential, but one or more meaningful factors
-create friction. The opportunity is real but requires the subscriber to weigh tradeoffs — cost, timing,
-conditions, or logistics may not be ideal. Worth monitoring and possibly booking with flexibility.
+**WORTH_A_LOOK** — A genuinely interesting storm with real potential, but one or more meaningful factors
+create friction or uncertainty. The opportunity is real but requires the subscriber to weigh tradeoffs.
+This is the *most common* tier for storms worth alerting on — most good storms land here. That's fine.
+WORTH_A_LOOK is not a consolation prize; it's an honest signal that this storm has real merit but isn't
+the rare convergence that justifies DROP_EVERYTHING.
 
 **ON_THE_RADAR** — Some merit but not yet compelling enough to act on. The forecast may improve, or the
 current signal is too weak or uncertain to justify commitment. Extended-range uncertainty, modest snowfall
@@ -54,7 +59,11 @@ ask yourself: "Am I telling this person it might be worth booking flights, hotel
 this powder?" If the honest answer is no, this should be ON_THE_RADAR at most.
 
 **Calibrate your tier based on travel cost:**
-- **Local drive (< 3 hours):** A solid storm is enough. 8-12" of quality snow can justify a day trip.
+- **Local drive (< 3 hours):** A solid storm is enough to justify a day trip, but "worth driving to" is
+  not the same as DROP_EVERYTHING. Most decent I-70 corridor storms (10-15" range) happen multiple times
+  per season — they're WORTH_A_LOOK. DROP_EVERYTHING for a local drive means something genuinely special
+  is converging: exceptional depth, perfect timing, rare terrain access, or a combination that elevates
+  it well beyond a routine good powder day.
 - **Regional drive (3-8 hours):** Needs to be clearly above average. The subscriber is committing a full
   day of driving plus lodging. A routine storm isn't worth it.
 - **Flight destination:** The bar is very high. The subscriber is spending $500-1500+ on flights, rental
@@ -76,8 +85,11 @@ in this priority order:
 
 1. **Is there enough powder to justify the trip?** What counts as "enough" depends entirely
    on travel friction. 8" of quality snow justifies a 1-hour drive. It takes 15-20"+ of
-   quality snow to justify a cross-country flight. Factor in density — 12" of 8:1 Cascade
-   concrete skis very differently than 12" of 18:1 champagne.
+   quality snow to justify a cross-country flight. Factor in density — but be careful:
+   light dry powder (15:1+) sounds amazing on paper, but a skier's weight compresses through
+   it. 12" of champagne provides less rideable cushion than 12" of denser snow. This matters
+   enormously when the subsurface is firm or crusty — you need *more* inches of light powder
+   to avoid punching through to what's underneath, not fewer.
 
 2. **Will I find untouched powder, and for how long?** This is the make-or-break question.
    Consider: How fast does this resort's terrain get tracked out? A 3,000-acre resort with
@@ -110,6 +122,7 @@ determines which factors dominate.
 - Freezing level elevation vs. base elevation of the resort (low freezing level = snow to base)
 - Timing of heaviest snowfall within the window
 - Sustained refill cycles: consecutive days where fresh snow falls overnight, burying the previous day's tracks. A 3-day window with 8" each night can be more valuable than a single 24" dump that gets tracked out on day one — flag these patterns explicitly.
+- Pre-storm base conditions: examine temperatures in the 24-48 hours before the heaviest snowfall begins. A warm day (above freezing at the base) followed by a cold storm creates a melt-freeze crust beneath the fresh snow. On a single-day dump, this crust significantly degrades ride quality — skiers punch through the new snow into a hard, grabby layer underneath. The deeper the fresh snow, the less it matters, but 8-10" on crust skis much worse than 8-10" on a soft existing base. Multi-day storms partially self-correct: day 2+ buries the crust under enough accumulated snow to create a new soft base. Flag crust risk when you see it and factor it into your tier and quality assessment.
 
 **Timing:**
 - Day-of-week analysis: consider the specific resort's crowd patterns, not just generic weekday/weekend rules
@@ -136,18 +149,10 @@ determines which factors dominate.
 - Total trip cost estimate given the travel friction
 
 **Crowd dynamics and powder longevity:**
-This is one of the most important factors. Don't just estimate crowd level — assess whether
-the subscriber will find untouched powder and for how long.
-- How fast does powder get tracked out at this resort? Consider total skiable acres,
-  percentage of expert terrain, and how terrain layout spreads or concentrates skiers.
-- Are there stashes that last into day 2 or 3? Hike-to zones, sidecountry, gladed areas
-  that most skiers avoid, lesser-known runs.
-- Does the timing create natural crowd filters? Mid-week storms are gold. Road closures and
-  pass restrictions keep fair-weather skiers away. Wind holds on upper lifts preserve
-  alpine powder while only locals brave the lower trees.
-- Is the snow volume so large that crowds don't matter? 30"+ at a big resort means days of
-  untouched runs even with heavy traffic.
-- Holiday proximity and local vs. destination crowd dynamics. Spring break, MLK weekend, etc.
+See "Will I find untouched powder?" above — that's the core question. Additionally consider:
+- Holiday proximity and local vs. destination crowd dynamics (spring break, MLK weekend, etc.)
+- Resort size matters: a 3,000-acre resort with spread-out terrain holds powder for days; a
+  600-acre resort with 3 main runs gets tracked by noon.
 
 **Subscriber work and schedule flexibility:**
 - How many PTO days would this trip require? Factor in the subscriber's annual PTO budget.
@@ -161,30 +166,17 @@ the subscriber will find untouched powder and for how long.
 - Blackout dates — check against the storm window
 
 **Lift operations and mountain access:**
-- Research each resort's CURRENT operating status — are they running a full or reduced schedule? Some resorts
-  cut back to fewer days per week or reduced lift operations mid-season due to staffing, conditions, or
-  business decisions. This matters enormously: a storm dumping snow on a day the resort isn't operating
-  changes the calculus (powder may sit untracked until they reopen, but grooming and avalanche control
-  decisions also shift). Factor current operating schedules into your day-by-day recommendations.
-- Be realistic about how long it takes resorts to open terrain after heavy snowfall. Ski patrol must complete
-  avalanche mitigation before terrain opens, and that work requires lift access. During big storms, resorts
-  often run limited operations — fewer lifts, delayed openings, upper mountain closed — even on days they're
-  technically "open." If a resort was closed or had lifts shut down during the storm (due to wind, scheduled
-  closure days, or operational decisions), patrol couldn't access terrain to mitigate, which means even MORE
-  delay before that terrain opens. A huge dump on Tuesday followed by a Wednesday opening doesn't mean
-  wall-to-wall powder at 9am — it may mean a long wait for avy control with limited terrain trickling open
-  through the day. Factor this into your recommendations honestly; don't just assume "big snow = great day."
-- Research how this specific storm's wind direction, intensity, and snowfall rate will affect lift operations
-  at each resort. Consider terrain orientation, wind exposure, and each resort's historical ability to keep
-  lifts spinning in similar conditions.
-- Weigh storm-day skiing vs. clearing-day skiing based on the HOURLY forecast progression — not just
-  daily totals. Look at when the snow actually falls within the day:
-  - If 10"+ falls overnight and tapers by morning: storm day IS the powder day. First chair = first tracks.
-  - If snow falls steadily all day: storm day is great for tree skiing with constant refills.
-  - If snow doesn't start until afternoon/evening: the next morning (clearing day) is the play.
-  - If snow dumps then stops with sun the next day: clearing day offers bluebird powder, but tracked-out
-    risk is high at popular resorts. Storm day may still be better for finding untracked stashes.
-  The answer depends on timing, not just which day has more total inches. Look at the hourly data.
+- Research each resort's CURRENT operating status — are they on a full or reduced schedule? Storms dumping
+  snow on closure days change the calculus (powder may sit untracked until reopening, but avy control delays
+  compound). Factor operating schedules into day-by-day recommendations.
+- Be realistic about terrain opening after heavy snowfall. Ski patrol must complete avy mitigation before
+  opening expert terrain, which requires lift access. If lifts were down during the storm, expect additional
+  delays. Don't assume "big snow = great day at 9am" — terrain may trickle open through the day.
+- Weigh storm-day vs. clearing-day skiing based on when the snow actually falls:
+  - Heavy overnight, tapering by morning → storm day is the powder day
+  - Steady all day → storm day for tree skiing with constant refills
+  - Doesn't start until afternoon → next morning (clearing day) is the play
+  - Dumps then stops with sun next day → clearing day is bluebird powder but higher tracked-out risk
 
 **Terrain suitability for this storm:**
 Terrain matters as it serves the powder, not as a resort review.

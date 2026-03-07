@@ -336,12 +336,10 @@ func FormatResortsForPrompt(resorts []domain.Resort) string {
 
 // FormatDetectionForPrompt converts detection results into a human-readable summary
 // giving the LLM the detection signal as context for identifying optimal travel dates.
-func FormatDetectionForPrompt(detection domain.DetectionResult) string {
+func FormatDetectionForPrompt(detection domain.DetectionResult, now time.Time) string {
 	if !detection.Detected || len(detection.Windows) == 0 {
 		return "No storm window detected. Evaluate the full forecast period for any emerging opportunities."
 	}
-
-	now := time.Now().UTC()
 	var b strings.Builder
 	for i, w := range detection.Windows {
 		if i > 0 {
@@ -366,7 +364,7 @@ func FormatDetectionForPrompt(detection domain.DetectionResult) string {
 // FormatRideQualityForPrompt computes and formats ride quality notes for the LLM.
 // It appends per-resort snow quality assessments (density, crystal quality, layering,
 // base risk, bluebird conditions) to the weather context.
-func FormatRideQualityForPrompt(forecasts []domain.Forecast, resorts []domain.Resort) string {
+func FormatRideQualityForPrompt(forecasts []domain.Forecast, resorts []domain.Resort, now time.Time) string {
 	var b strings.Builder
 
 	for _, resort := range resorts {
@@ -381,7 +379,7 @@ func FormatRideQualityForPrompt(forecasts []domain.Forecast, resorts []domain.Re
 		}
 
 		templateF := resortForecasts[0]
-		qualities := domain.AssessRideQuality(templateF.DailyData, nil, resort.Latitude, time.Now())
+		qualities := domain.AssessRideQuality(templateF.DailyData, nil, resort.Latitude, now)
 
 		hasNotes := false
 		for _, q := range qualities {

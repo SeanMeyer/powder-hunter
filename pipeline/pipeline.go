@@ -218,7 +218,7 @@ func (p *Pipeline) Scan(ctx context.Context, regionFilter string) ([]ScanResult,
 				resortConsensus[resortID] = domain.ComputeConsensus(mf)
 			}
 
-			detection := domain.Detect(region, forecasts)
+			detection := domain.Detect(region, forecasts, time.Now().UTC())
 			p.logDetection(gctx, region, detection)
 
 			activeStorms := activeByRegion[region.ID]
