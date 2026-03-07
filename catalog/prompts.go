@@ -19,7 +19,7 @@ func DefaultProfile() domain.UserProfile {
 }
 
 const stormEvalPromptID = "storm_eval"
-const stormEvalPromptVersion = "v3.3.0"
+const stormEvalPromptVersion = "v3.4.0"
 
 // stormEvalPromptTemplate is the LLM prompt for storm evaluation.
 // Placeholders are substituted by evaluation.RenderPrompt before each API call.
@@ -41,15 +41,18 @@ monitored regions. If you're giving DROP_EVERYTHING to every solid storm cycle, 
 and the subscriber stops trusting it. A good storm is not automatically a great one. Reserve this for
 opportunities where an experienced powder chaser would genuinely rearrange their life.
 
-**WORTH_A_LOOK** — A genuinely interesting storm with real potential, but one or more meaningful factors
-create friction or uncertainty. The opportunity is real but requires the subscriber to weigh tradeoffs.
-This is the *most common* tier for storms worth alerting on — most good storms land here. That's fine.
-WORTH_A_LOOK is not a consolation prize; it's an honest signal that this storm has real merit but isn't
-the rare convergence that justifies DROP_EVERYTHING.
+**WORTH_A_LOOK** — A genuinely interesting storm that the subscriber would want to know about even if they
+weren't actively looking. Something about this storm stands out — unusual depth, perfect timing, a rare
+convergence of factors. Most storms, even good ones, are ON_THE_RADAR. WORTH_A_LOOK should feel selective
+enough that when it appears, the subscriber thinks "oh, interesting" and actually reads the details.
+If you're giving WORTH_A_LOOK to every decent storm at every destination, you're diluting the signal.
 
-**ON_THE_RADAR** — Some merit but not yet compelling enough to act on. The forecast may improve, or the
-current signal is too weak or uncertain to justify commitment. Extended-range uncertainty, modest snowfall
-for the travel cost, or misaligned timing. Keep watching.
+**ON_THE_RADAR** — This is the default tier for most detected storms. A storm being detected means it
+crossed a snowfall threshold — that alone doesn't make it interesting. ON_THE_RADAR means: "there's snow
+in the forecast, and if the subscriber is browsing for options or monitoring conditions, here's what we
+see." Routine storms at big mountains, storms with poor timing, uncertain extended-range signals, modest
+snowfall for the travel cost, or storms where the conditions (density, base, wind) undercut the headline
+numbers all belong here. When in doubt between ON_THE_RADAR and WORTH_A_LOOK, choose ON_THE_RADAR.
 
 ## Travel Friction Calibration
 
@@ -65,16 +68,18 @@ this powder?" If the honest answer is no, this should be ON_THE_RADAR at most.
   is converging: exceptional depth, perfect timing, rare terrain access, or a combination that elevates
   it well beyond a routine good powder day.
 - **Regional drive (3-8 hours):** Needs to be clearly above average. The subscriber is committing a full
-  day of driving plus lodging. A routine storm isn't worth it.
-- **Flight destination:** The bar is very high. The subscriber is spending $500-1500+ on flights, rental
-  cars, and hotels, plus burning PTO days. A storm that would be exciting locally is routine at a big
-  mountain. Ask: would an experienced powder chaser actually book this flight? If a closer region is
-  getting comparable snow, the far-flung destination should tier lower — the subscriber can get a similar
-  experience for a fraction of the cost and hassle.
-- **Remote/extreme flight (Alaska, international):** The bar is the highest. These trips require 8+ hours
-  of travel each way, often $1000+ all-in, and multiple PTO days. Only truly exceptional, multi-day,
-  high-confidence windows should be WORTH_A_LOOK. Routine big-mountain snowfall (even 20-30") at these
-  destinations is not alert-worthy — that's just what these places do.
+  day of driving plus lodging. A routine storm isn't worth it — ON_THE_RADAR at most. WORTH_A_LOOK means
+  exceptional conditions that justify the commitment.
+- **Flight destination:** The bar is very high. The subscriber is spending $1000-2500+ all-in on flights,
+  rental cars, hotels, and burning PTO days. Before assigning WORTH_A_LOOK, ask: "Would I actually tell
+  a friend to book flights for this?" Most storms at big mountains are routine — 30" in the Cascades,
+  25" at Whistler, 20" in interior BC happen every few weeks. That's just what those places do. A flight
+  destination needs something that makes it genuinely *unusual* to earn WORTH_A_LOOK: a historic multi-day
+  cycle, perfect timing convergence, rare terrain opening, or conditions that are exceptional even by that
+  region's standards. If the storm would barely make local news at the destination, it's ON_THE_RADAR.
+- **Remote/extreme flight (Alaska, international):** Same principle, even higher bar. These places get
+  huge snow routinely. Only truly exceptional, multi-day, high-confidence windows with conditions that
+  are remarkable even for locals should be WORTH_A_LOOK. Most storms here are ON_THE_RADAR.
 
 **Opportunity cost matters.** If both a local region and a distant flight destination are getting storms, the local storm is more interesting unless the distant storm is truly exceptional — the subscriber can get a similar experience for a fraction of the cost and hassle.
 
