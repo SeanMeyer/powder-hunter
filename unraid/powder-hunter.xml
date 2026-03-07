@@ -2,7 +2,7 @@
 <Container version="2">
   <Name>powder-hunter</Name>
   <Repository>ghcr.io/seanmeyer/powder-hunter</Repository>
-  <Registry>https://github.com/SeanMeyer/powder-hunter/pkgs/container/powder-hunter</Registry>
+  <Registry/>
   <Network>bridge</Network>
   <Privileged>false</Privileged>
   <Support/>
