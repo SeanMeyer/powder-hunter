@@ -223,9 +223,9 @@ func runPipeline(ctx context.Context, args []string) int {
 	return 0
 }
 
-// autoSeed detects a fresh database (no regions) and seeds regions, resorts,
-// and the initial prompt template. It always upserts the user profile from
-// environment variables so config changes take effect on restart.
+// autoSeed detects a fresh database (no regions) and seeds regions and resorts.
+// It always upserts the prompt template and user profile so code and config
+// changes take effect on restart.
 func autoSeed(ctx context.Context, db *storage.DB, profile domain.UserProfile) error {
 	count, err := db.CountRegions(ctx)
 	if err != nil {
@@ -246,13 +246,14 @@ func autoSeed(ctx context.Context, db *storage.DB, profile domain.UserProfile) e
 			}
 		}
 		slog.Info("seeded regions", "count", len(regions))
-
-		promptID, promptVersion, promptTemplate := catalog.InitialPromptTemplate()
-		if err := db.SavePromptTemplate(ctx, promptID, promptVersion, promptTemplate); err != nil {
-			return fmt.Errorf("seed prompt template: %w", err)
-		}
-		slog.Info("seeded prompt template", "version", promptVersion)
 	}
+
+	// Always upsert the prompt template so code updates take effect on restart.
+	promptID, promptVersion, promptTemplate := catalog.InitialPromptTemplate()
+	if err := db.SavePromptTemplate(ctx, promptID, promptVersion, promptTemplate); err != nil {
+		return fmt.Errorf("seed prompt template: %w", err)
+	}
+	slog.Info("prompt template synced", "version", promptVersion)
 
 	if err := db.SaveProfile(ctx, profile); err != nil {
 		return fmt.Errorf("save profile: %w", err)
