@@ -19,7 +19,7 @@ func DefaultProfile() domain.UserProfile {
 }
 
 const stormEvalPromptID = "storm_eval"
-const stormEvalPromptVersion = "v3.4.0"
+const stormEvalPromptVersion = "v3.5.0"
 
 // stormEvalPromptTemplate is the LLM prompt for storm evaluation.
 // Placeholders are substituted by evaluation.RenderPrompt before each API call.
@@ -31,6 +31,14 @@ factors are guidelines — not a checklist. Weigh them against each other based 
 that's normally negative (e.g., road closures, weekend timing) may actually be positive in context (e.g., closures
 that thin crowds, a quiet resort that doesn't get weekend surges). Think like an experienced powder chaser who
 understands the nuances.
+
+## When There's Nothing to Report
+
+If the forecast data shows no significant remaining snowfall in the storm window — the snow has
+already fallen and conditions are degrading — do not strain to find an angle. A storm that has
+already dumped its snow is over. Do not recommend "hunting for leftovers" or "scavenging stashes"
+from days-old snow as if it were a current opportunity. If the window has passed and there's no
+new snow coming, say so plainly and tier it ON_THE_RADAR at most.
 
 ## Tier Definitions
 

@@ -251,7 +251,9 @@ func (p *Pipeline) Scan(ctx context.Context, regionFilter string) ([]ScanResult,
 			// FR-003: regions with active tracked storms are always re-evaluated
 			// even when current forecasts fall below threshold, so downstream stages
 			// can update or expire the storm as conditions change.
-			if len(activeStorms) > 0 {
+			// However, if the storm's detection window has entirely passed, skip
+			// inclusion so ExpireStaleStorms can retire it naturally.
+			if len(activeStorms) > 0 && !activeStorms[0].WindowEnd.Before(time.Now().UTC()) {
 				mu.Lock()
 				results[i] = regionResult{
 					result: ScanResult{
